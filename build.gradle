@@ -1,0 +1,203 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        jcenter()
+    }
+}
+
+plugins {
+    id 'com.github.johnrengelman.shadow' version '5.1.0'
+    id 'java'
+    id 'application'
+    id 'net.minecrell.licenser' version '0.4.1' apply false
+}
+
+apply plugin: 'net.minecrell.licenser'
+apply plugin: 'checkstyle'
+apply plugin: 'signing'
+apply plugin: 'maven'
+
+def bablVersion = file('version.txt').text.trim()
+def aeronVersion = file('aeron-version.txt').text.trim()
+group = 'com.aitusoftware'
+version = bablVersion
+
+defaultTasks('clean', 'licenseFormat', 'check', 'assemble', 'shadowJar')
+
+repositories {
+    jcenter()
+}
+
+ext {
+    fullName = 'Babl WebSocket Server'
+    fullDescription = 'Babl: A High-Performance WebSocket Server'
+    teamName = 'Aitu Software Limited'
+    siteUrl = 'https://babl.ws'
+    sourceUrl = 'https://github.com/babl-ws/babl.git'
+
+    javaCompilerExecutable = System.env['JAVA_HOME'] ? System.env['JAVA_HOME'] + '/bin/javac' : 'javac'
+    if (!project.hasProperty('sonatypeUrl')) sonatypeUrl = 'https://oss.sonatype.org/service/local/staging/deploy/maven2'
+    if (!project.hasProperty('sonatypeUsername')) sonatypeUsername = ''
+    if (!project.hasProperty('sonatypePassword')) sonatypePassword = ''
+}
+
+def projectPom = {
+    name = fullName
+    description = fullDescription
+    url = siteUrl
+    packaging = 'pom'
+
+    scm {
+        url = "$sourceUrl"
+        connection = "scm:git:https://github.com/babl-ws/babl.git"
+        developerConnection = "scm:git:https://github.com/babl-ws/babl.git"
+    }
+
+    licenses {
+        license {
+            name = 'The Apache Software License, Version 2.0'
+            url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+            distribution = 'repo'
+        }
+    }
+
+    developers {
+        developer {
+            id = 'epickrram'
+            name = 'Mark Price'
+            email = 'babl@aitusoftware.com'
+        }
+    }
+}
+
+configurations {
+    codegen
+    jmh
+}
+
+signing {
+    required { gradle.taskGraph.hasTask('uploadArchives') }
+    sign configurations.archives, configurations.shadow
+}
+
+uploadArchives {
+    repositories.mavenDeployer {
+        beforeDeployment { deployment -> signing.signPom(deployment) }
+
+        repository(url: sonatypeUrl) {
+            authentication(userName: sonatypeUsername, password: sonatypePassword)
+        }
+
+        pom.project(projectPom)
+    }
+}
+
+uploadShadow {
+    repositories {
+        mavenDeployer {
+            beforeDeployment {
+                MavenDeployment deployment -> signing.signPom(deployment)
+            }
+
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                authentication(userName: sonatypeUsername, password: sonatypePassword)
+            }
+
+            pom.project(projectPom)
+        }
+    }
+
+    mustRunAfter 'uploadArchives'
+}
+
+
+shadowJar {
+    mainClassName = 'com.aitusoftware.babl.websocket.ServerLauncher'
+}
+
+File generatedSrcDir = file("${buildDir}/generated-sources/java")
+
+sourceSets {
+    main {
+        java.srcDirs += generatedSrcDir
+    }
+    jmh {
+        java.srcDirs += 'src/jmh/java'
+        compileClasspath += project.sourceSets.test.compileClasspath
+        runtimeClasspath += project.sourceSets.main.compileClasspath
+    }
+}
+
+dependencies {
+    implementation 'org.agrona:agrona:1.4.0'
+    implementation "io.aeron:aeron-driver:${aeronVersion}"
+    codegen 'uk.co.real-logic:sbe-all:1.10.2'
+
+    jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.22'
+    jmhImplementation 'org.openjdk.jmh:jmh-core:1.22'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.4.2'
+    testImplementation 'org.mockito:mockito-all:1.10.19'
+    testImplementation 'com.google.truth:truth:0.42'
+    testImplementation 'io.vertx:vertx-core:3.8.1'
+    testImplementation 'io.vertx:vertx-web:3.8.1'
+    testImplementation 'org.hdrhistogram:HdrHistogram:2.1.11'
+    testImplementation 'org.awaitility:awaitility:4.0.1'
+    testImplementation 'com.caucho:resin:4.0.63'
+
+
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.4.2'
+}
+
+compileJava.dependsOn('generateCodecs')
+
+task generateCodecs(type: JavaExec) {
+    main 'uk.co.real_logic.sbe.SbeTool'
+    classpath configurations.codegen.asPath
+    jvmArgs = ["-Dsbe.output.dir=${generatedSrcDir.getAbsolutePath()}", '-Dsbe.generate.ir=true', '-Dsbe.java.generate.interfaces=true']
+    args "${project.projectDir}/src/main/resources/sbe-schema.xml"
+}
+
+test {
+    useJUnitPlatform()
+}
+
+task benchmarkJar(type: Jar) {
+    manifest {
+        attributes('Main-Class': 'org.openjdk.jmh.Main')
+    }
+    archiveClassifier = 'benchmarks'
+    from sourceSets.jmh.output
+    from sourceSets.main.output
+    from sourceSets.jmh.runtimeClasspath.collect {
+        if (it.exists()) {
+            it.isDirectory() ? it : zipTree(it)
+        }
+    }
+}
+
+task sourcesJar(type: Jar) {
+    archiveClassifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    archiveClassifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives sourcesJar, javadocJar
+}
+
+javadoc {
+}
+
+checkstyle {
+    toolVersion = '8.20'
+    sourceSets = project.sourceSets
+}
+
+license {
+    header = new File(rootDir, 'config/header.txt')
+    newLine = false
+}

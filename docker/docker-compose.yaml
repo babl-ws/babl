@@ -1,0 +1,28 @@
+version: '3'
+services:
+  http_host:
+    image: "nginx:latest"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./html:/usr/share/nginx/html:ro
+    hostname: babl-proxy
+    networks:
+      mgt:
+        ipv4_address: 172.30.2.2
+    ports:
+      - "8020:8020"
+  babl-server:
+    image: "babl-example:latest"
+    hostname: babl-server
+    networks:
+      mgt:
+        ipv4_address: 172.30.2.3
+networks:
+  mgt:
+    driver: bridge
+    driver_opts:
+      com.docker.network.enable_ipv6: 'false'
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.30.2.0/24
