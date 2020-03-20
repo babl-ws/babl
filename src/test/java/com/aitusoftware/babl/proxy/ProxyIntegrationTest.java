@@ -180,29 +180,6 @@ class ProxyIntegrationTest
         verify(session).send(eq(CONTENT_TYPE), any(), anyInt(), eq(MESSAGE_LENGTH));
     }
 
-    private static void idle()
-    {
-        LockSupport.parkNanos(TimeUnit.MICROSECONDS.toNanos(1L));
-    }
-
-    private static Matcher<Session> sessionWithId(final long expectedId)
-    {
-        return new TypeSafeMatcher<>()
-        {
-            @Override
-            protected boolean matchesSafely(final Session item)
-            {
-                return item.id() == expectedId;
-            }
-
-            @Override
-            public void describeTo(final Description description)
-            {
-                description.appendText("a session with id: " + expectedId);
-            }
-        };
-    }
-
     @Test
     void shouldWrapMessages()
     {
@@ -237,5 +214,37 @@ class ProxyIntegrationTest
         final byte[] tmp = new byte[PAYLOAD_LENGTH];
         decodedMessage.buffer().getBytes(decodedMessage.offset() + varDataEncodingOffset(), tmp);
         assertThat(tmp).asList().containsAllIn(new Byte[] {PAYLOAD_VALUE});
+    }
+
+    private static void idle()
+    {
+        LockSupport.parkNanos(TimeUnit.MICROSECONDS.toNanos(1L));
+    }
+
+    private static Matcher<Session> sessionWithId(final long expectedId)
+    {
+        return new SessionMatcher(expectedId);
+    }
+
+    private static class SessionMatcher extends TypeSafeMatcher<Session>
+    {
+        private final long expectedId;
+
+        SessionMatcher(final long expectedId)
+        {
+            this.expectedId = expectedId;
+        }
+
+        @Override
+        protected boolean matchesSafely(final Session item)
+        {
+            return item.id() == expectedId;
+        }
+
+        @Override
+        public void describeTo(final Description description)
+        {
+            description.appendText("a session with id: " + expectedId);
+        }
     }
 }
