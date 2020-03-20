@@ -147,7 +147,6 @@ public final class Server
             {
                 serverSocketChannel = ServerSocketChannel.open();
                 serverSocketChannel.configureBlocking(false);
-                serverSocketChannel.setOption(StandardSocketOptions.SO_REUSEPORT, true);
                 serverSocketChannel.bind(new InetSocketAddress(
                     sessionContainerConfig.bindAddress(), sessionContainerConfig.listenPort()),
                     sessionContainerConfig.connectionBacklog());
@@ -232,7 +231,6 @@ public final class Server
         {
             serverSocketChannel = ServerSocketChannel.open();
             serverSocketChannel.configureBlocking(false);
-            serverSocketChannel.setOption(StandardSocketOptions.SO_REUSEPORT, true);
             serverSocketChannel.bind(new InetSocketAddress(
                 sessionContainerConfig.bindAddress(), sessionContainerConfig.listenPort()),
                 sessionContainerConfig.connectionBacklog());
