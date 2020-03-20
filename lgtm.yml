@@ -1,1 +1,4 @@
-java_version: 8
+extraction:
+  java:
+    index:
+      java_version: 8
