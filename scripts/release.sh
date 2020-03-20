@@ -10,7 +10,7 @@ VERSION=$(cat "$PROJECT_DIR/version.txt")
 
 ./gradlew clean assemble shadowJar
 
-./gradlew uploadShadow
+./gradlew uploadArchives uploadShadow
 
 git tag "v$VERSION"
 git push --tags
