@@ -2,3 +2,8 @@ extraction:
   java:
     index:
       java_version: 11
+  javascript:
+    index:
+      exclude:
+        - src/
+        - docker/html
