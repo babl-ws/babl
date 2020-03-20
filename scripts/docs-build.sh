@@ -21,6 +21,10 @@ sed -ie 's/max-width: 800px/max-width: 1000px' book/sass/_content.scss
 find "$OUTPUT_DIR/docs/content" -name '*.md' | xargs sed -ie "s/BABL_VERSION/${VERSION}/g"
 cd "$OUTPUT_DIR/docs/" && ../bin/zola build --drafts
 echo "$OUTPUT_DIR"
-if [[ "x$1" != "x" ]]; then
+if [[ "x$1" == "xserve" ]]; then
   ../bin/zola serve --drafts # || rm -r "$OUTPUT_DIR"
+elif [[ "x$1" == "xpublish" ]]; then
+  PUBLISH_DIR="$2"
+  echo "Publishing to $PUBLISH_DIR"
+  rsync -a "$OUTPUT_DIR/docs/public/" "$PUBLISH_DIR/"
 fi
