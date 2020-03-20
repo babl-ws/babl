@@ -73,17 +73,17 @@ On validation failure, the connection will be closed.
 The result code passed to `validationFailure` will be propagated to the 
 web-socket client as the _close reason_.
 
-## CONNECTED
+## `CONNECTED`
 
 Normal operation, web-socket messages will be passed to the application as they are received.
 
 Messages sent to the `Session` will be framed and transmitted to the remote peer.
 
-## CLOSING
+## `CLOSING`
 
 Close has been requested by the application or the session container. The close frame will be sent to
 the remote peer.
 
-## DISCONNECTED
+## `DISCONNECTED`
 
 The session is no longer connected.
