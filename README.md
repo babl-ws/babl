@@ -2,6 +2,7 @@
 
 [![Code Alerts](https://img.shields.io/lgtm/alerts/g/babl-ws/babl.svg)](https://lgtm.com/projects/g/babl-ws/babl/alerts)
 [![Code Quality](https://img.shields.io/lgtm/grade/java/github/babl-ws/babl.svg)](https://lgtm.com/projects/g/babl-ws/babl/context:java)
+[![Build Status](https://circleci.com/gh/babl-ws/babl.svg?style=svg)](https://circleci.com/gh/babl-ws/babl)
 
 **Babl** is a high-performance, scalable web-socket server designed for use in low-latency applications.
 
