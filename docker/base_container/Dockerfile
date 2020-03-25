@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM debian:latest
 SHELL [ "/bin/bash", "-o", "pipefail", "-c" ]
 
 COPY build/libs/* /babl/lib/

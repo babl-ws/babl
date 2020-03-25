@@ -26,12 +26,14 @@ For more information, see [Application](@/application/_index.md).
 
 ### Docker
 
+Repository is available at [https://hub.docker.com/r/aitusoftware/babl](https://hub.docker.com/r/aitusoftware/babl)
+
 **Babl** is packaged in a `docker` container for ease of deployment. The base container is tagged as 
-`"babl:BABL_VERSION"` (or `"babl:latest"` for the latest released image), 
+`"aitusoftware/babl:BABL_VERSION"` (or `"aitusoftware/babl:latest"` for the latest released image), 
 and should be extended with your own container definition:
 
 ```
-FROM babl:latest
+FROM aitusoftware/babl:latest
 
 COPY my-app/build/lib/ /babl/lib/
 COPY my-app/build/config/my-app.properties /babl/config

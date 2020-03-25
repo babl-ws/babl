@@ -14,3 +14,5 @@ VERSION=$(cat "$PROJECT_DIR/version.txt")
 
 git tag "v$VERSION"
 git push --tags
+
+docker push "aitusoftware/babl:$VERSION"

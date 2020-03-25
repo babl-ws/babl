@@ -12,7 +12,7 @@ services:
     ports:
       - "8020:8020"
   babl-server:
-    image: "babl-example:latest"
+    image: "aitusoftware/babl-example:latest"
     hostname: babl-server
     networks:
       mgt:
