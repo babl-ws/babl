@@ -25,6 +25,8 @@ import com.aitusoftware.babl.codec.SessionClosedDecoder;
 import com.aitusoftware.babl.codec.SessionMessageDecoder;
 import com.aitusoftware.babl.codec.SessionOpenedDecoder;
 import com.aitusoftware.babl.codec.VarDataEncodingDecoder;
+import com.aitusoftware.babl.log.Category;
+import com.aitusoftware.babl.log.Logger;
 import com.aitusoftware.babl.monitoring.ApplicationAdapterStatistics;
 import com.aitusoftware.babl.user.Application;
 import com.aitusoftware.babl.user.ContentType;
@@ -117,6 +119,8 @@ public final class ApplicationAdapter implements Agent, ControlledFragmentHandle
                 setSessionProxy(sessionMessageDecoder.sessionId(), sessionMessageDecoder.containerId());
                 final ContentType contentType = CONTENT_TYPES[sessionMessageDecoder.contentType()];
                 final VarDataEncodingDecoder decodedMessage = sessionMessageDecoder.message();
+                Logger.log(Category.PROXY, "[%d] ApplicationAdapter onSessionMessage(%d)",
+                    sessionMessageDecoder.containerId(), sessionMessageDecoder.sessionId());
                 applicationResult = application.onSessionMessage(
                     sessionProxy, contentType, decodedMessage.buffer(),
                     decodedMessage.offset() + varDataEncodingOffset(), (int)decodedMessage.length());
@@ -126,6 +130,8 @@ public final class ApplicationAdapter implements Agent, ControlledFragmentHandle
                 sessionOpenDecoder.wrap(buffer, offset + MessageHeaderDecoder.ENCODED_LENGTH,
                     messageHeaderDecoder.blockLength(), messageHeaderDecoder.version());
                 setSessionProxy(sessionOpenDecoder.sessionId(), sessionOpenDecoder.containerId());
+                Logger.log(Category.PROXY, "[%d] ApplicationAdapter onSessionConnected(%d)",
+                    sessionOpenDecoder.containerId(), sessionOpenDecoder.sessionId());
                 applicationResult = application.onSessionConnected(sessionProxy);
                 action = sendResultToAction(applicationResult);
                 break;
@@ -133,6 +139,8 @@ public final class ApplicationAdapter implements Agent, ControlledFragmentHandle
                 sessionCloseDecoder.wrap(buffer, offset + MessageHeaderDecoder.ENCODED_LENGTH,
                     messageHeaderDecoder.blockLength(), messageHeaderDecoder.version());
                 setSessionProxy(sessionCloseDecoder.sessionId(), sessionCloseDecoder.containerId());
+                Logger.log(Category.PROXY, "[%d] ApplicationAdapter onSessionDisconnected(%d)",
+                    sessionCloseDecoder.containerId(), sessionCloseDecoder.sessionId());
                 applicationResult = application.onSessionDisconnected(sessionProxy,
                     DISCONNECT_REASONS[sessionCloseDecoder.closeReason()]);
                 action = sendResultToAction(applicationResult);

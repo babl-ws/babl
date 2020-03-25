@@ -24,6 +24,8 @@ import com.aitusoftware.babl.codec.ApplicationMessageDecoder;
 import com.aitusoftware.babl.codec.CloseSessionDecoder;
 import com.aitusoftware.babl.codec.MessageHeaderDecoder;
 import com.aitusoftware.babl.codec.VarDataEncodingDecoder;
+import com.aitusoftware.babl.log.Category;
+import com.aitusoftware.babl.log.Logger;
 import com.aitusoftware.babl.monitoring.SessionAdapterStatistics;
 import com.aitusoftware.babl.user.ContentType;
 import com.aitusoftware.babl.websocket.BackPressureStrategy;
@@ -104,7 +106,8 @@ public final class SessionContainerAdapter implements ControlledFragmentHandler,
             final long sessionId = applicationMessageDecoder.sessionId();
             final ContentType contentType = CONTENT_TYPES[applicationMessageDecoder.contentType()];
             final VarDataEncodingDecoder decodedMessage = applicationMessageDecoder.message();
-
+            Logger.log(Category.PROXY, "[%d] SessionContainerAdapter send(%d)",
+                sessionContainerId, sessionId);
             final Session session = sessionByIdMap.get(sessionId);
             int sendResult = session.send(contentType, decodedMessage.buffer(),
                 decodedMessage.offset() + varDataEncodingOffset(), (int)decodedMessage.length());
@@ -124,6 +127,8 @@ public final class SessionContainerAdapter implements ControlledFragmentHandler,
             }
             final long sessionId = closeSessionDecoder.sessionId();
             final DisconnectReason disconnectReason = DISCONNECT_REASONS[closeSessionDecoder.closeReason()];
+            Logger.log(Category.PROXY, "[%d] SessionContainerAdapter close(%d)",
+                sessionContainerId, sessionId);
             final Session session = sessionByIdMap.get(sessionId);
             session.close(disconnectReason);
         }

@@ -25,6 +25,8 @@ import com.aitusoftware.babl.codec.SessionClosedEncoder;
 import com.aitusoftware.babl.codec.SessionMessageEncoder;
 import com.aitusoftware.babl.codec.SessionOpenedEncoder;
 import com.aitusoftware.babl.codec.VarDataEncodingEncoder;
+import com.aitusoftware.babl.log.Category;
+import com.aitusoftware.babl.log.Logger;
 import com.aitusoftware.babl.monitoring.SessionAdapterStatistics;
 import com.aitusoftware.babl.user.Application;
 import com.aitusoftware.babl.user.ContentType;
@@ -102,6 +104,8 @@ public final class ApplicationProxy implements Application
             sessionOpenEncoder.sessionId(session.id());
             sessionOpenEncoder.containerId(sessionContainerId);
             bufferClaim.commit();
+            Logger.log(Category.PROXY, "[%d] ApplicationProxy onSessionConnected(%d)",
+                sessionContainerId, session.id());
             return SendResult.OK;
         }
         sessionAdapterStatistics.proxyBackPressure();
@@ -123,6 +127,8 @@ public final class ApplicationProxy implements Application
             sessionCloseEncoder.closeReason(reason.ordinal());
             bufferClaim.commit();
             sessionByIdMap.remove(session.id());
+            Logger.log(Category.PROXY, "[%d] ApplicationProxy onSessionDisconnected(%d)",
+                sessionContainerId, session.id());
             return SendResult.OK;
         }
         sessionAdapterStatistics.proxyBackPressure();
@@ -154,6 +160,8 @@ public final class ApplicationProxy implements Application
             encodedMessage.buffer().putBytes(
                 encodedMessage.offset() + varDataEncodingOffset(), msg, offset, length);
             bufferClaim.commit();
+            Logger.log(Category.PROXY, "[%d] ApplicationProxy onSessionMessage(%d)",
+                sessionContainerId, session.id());
             return SendResult.OK;
         }
         bufferClaim.abort();

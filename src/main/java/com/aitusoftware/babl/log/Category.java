@@ -22,5 +22,6 @@ public enum Category
     DECODE,
     ENCODE,
     CONNECTION,
-    HEARTBEAT
+    HEARTBEAT,
+    PROXY
 }

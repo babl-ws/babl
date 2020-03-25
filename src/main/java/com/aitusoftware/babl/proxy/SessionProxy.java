@@ -24,6 +24,8 @@ import com.aitusoftware.babl.codec.ApplicationMessageEncoder;
 import com.aitusoftware.babl.codec.CloseSessionEncoder;
 import com.aitusoftware.babl.codec.MessageHeaderEncoder;
 import com.aitusoftware.babl.codec.VarDataEncodingEncoder;
+import com.aitusoftware.babl.log.Category;
+import com.aitusoftware.babl.log.Logger;
 import com.aitusoftware.babl.monitoring.ApplicationAdapterStatistics;
 import com.aitusoftware.babl.user.ContentType;
 import com.aitusoftware.babl.websocket.DisconnectReason;
@@ -75,7 +77,6 @@ final class SessionProxy implements Session
         final int offset,
         final int length)
     {
-
         final long result = acquireBuffer(
             length + APPLICATION_MESSAGE_BASE_SIZE, currentServerPublication, bufferClaim);
         if (result > 0)
@@ -91,6 +92,7 @@ final class SessionProxy implements Session
             encodedMessage.buffer().putBytes(
                 encodedMessage.offset() + varDataEncodingOffset(), buffer, offset, length);
             bufferClaim.commit();
+            Logger.log(Category.PROXY, "[%d] SessionProxy send(%d)", sessionContainerId, sessionId);
             return SendResult.OK;
         }
         bufferClaim.abort();
@@ -114,6 +116,7 @@ final class SessionProxy implements Session
             closeSessionEncoder.containerId(sessionContainerId);
             closeSessionEncoder.closeReason(disconnectReason.ordinal());
             bufferClaim.commit();
+            Logger.log(Category.PROXY, "[%d] SessionProxy close(%d)", sessionContainerId, sessionId);
             return SendResult.OK;
         }
         bufferClaim.abort();
