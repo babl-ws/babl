@@ -212,8 +212,10 @@ class ProxyIntegrationTest
         final VarDataEncodingDecoder decodedMessage = sessionMessageDecoder.message();
         assertThat(decodedMessage.length()).isEqualTo(PAYLOAD_LENGTH);
         final byte[] tmp = new byte[PAYLOAD_LENGTH];
+        final Byte[] expected = new Byte[PAYLOAD_LENGTH];
+        Arrays.fill(expected, PAYLOAD_VALUE);
         decodedMessage.buffer().getBytes(decodedMessage.offset() + varDataEncodingOffset(), tmp);
-        assertThat(tmp).asList().containsAllIn(new Byte[] {PAYLOAD_VALUE});
+        assertThat(tmp).asList().containsExactlyElementsIn(expected);
     }
 
     private static void idle()

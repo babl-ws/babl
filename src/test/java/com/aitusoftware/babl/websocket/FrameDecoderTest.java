@@ -86,7 +86,7 @@ class FrameDecoderTest
         assertThat(captureMessageReceiver.lastMessage.length).isEqualTo(PAYLOAD_LENGTH);
         for (int i = 0; i < captureMessageReceiver.lastMessage.length; i++)
         {
-            assertThat(captureMessageReceiver.lastMessage[i]).named("Failed at " + i).isEqualTo(DATUM);
+            assertThat(captureMessageReceiver.lastMessage[i]).isEqualTo(DATUM);
         }
     }
 
@@ -110,7 +110,7 @@ class FrameDecoderTest
         assertThat(captureMessageReceiver.lastMessage.length).isEqualTo(1);
         for (int i = 0; i < captureMessageReceiver.lastMessage.length; i++)
         {
-            assertThat(captureMessageReceiver.lastMessage[i]).named("Failed at " + i).isEqualTo(msg);
+            assertThat(captureMessageReceiver.lastMessage[i]).isEqualTo(msg);
         }
     }
 
@@ -166,7 +166,7 @@ class FrameDecoderTest
         assertThat(captureMessageReceiver.lastMessage.length).isEqualTo(PAYLOAD_LENGTH);
         for (int i = 0; i < captureMessageReceiver.lastMessage.length; i++)
         {
-            assertThat(captureMessageReceiver.lastMessage[i]).named("Failed at " + i).isEqualTo(DATUM);
+            assertThat(captureMessageReceiver.lastMessage[i]).isEqualTo(DATUM);
         }
     }
 
@@ -313,7 +313,7 @@ class FrameDecoderTest
         assertThat(captureMessageReceiver.lastMessage.length).isEqualTo(payload.length * 2);
         for (int i = 0; i < captureMessageReceiver.lastMessage.length; i++)
         {
-            assertThat(captureMessageReceiver.lastMessage[i]).named("Failed at " + i).isEqualTo(DATUM);
+            assertThat(captureMessageReceiver.lastMessage[i]).isEqualTo(DATUM);
         }
     }
 
@@ -372,9 +372,9 @@ class FrameDecoderTest
         assertThat(captureMessageReceiver.lastMessage.length).isEqualTo(payload.length);
         for (int i = 0; i < captureMessageReceiver.lastMessage.length; i++)
         {
-            assertThat(captureMessageReceiver.lastMessage[i]).named("Failed at " + i).isEqualTo(DATUM);
+            assertThat(captureMessageReceiver.lastMessage[i]).isEqualTo(DATUM);
         }
-        assertThat(captureMessageReceiver.sourceBuffer).isSameAs(sourceBuffer);
+        assertThat(captureMessageReceiver.sourceBuffer).isSameInstanceAs(sourceBuffer);
     }
 
     private static class CaptureMessageReceiver implements MessageReceiver
@@ -415,7 +415,7 @@ class FrameDecoderTest
         assertThat(receivedMessage.length).isEqualTo(payload.length);
         for (int i = 0; i < receivedMessage.length; i++)
         {
-            assertThat(receivedMessage[i]).named("Failed at " + i).isEqualTo(DATUM);
+            assertThat(receivedMessage[i]).isEqualTo(DATUM);
         }
     }
 }
