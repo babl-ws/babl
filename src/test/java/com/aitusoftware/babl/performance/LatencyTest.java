@@ -98,7 +98,7 @@ class LatencyTest
     void testBablDetachedLatency() throws Exception
     {
         harness.serverConfig().deploymentMode(DeploymentMode.DETACHED);
-        harness.serverConfig().serverInstanceCount(1);
+        harness.serverConfig().sessionContainerInstanceCount(1);
         final ProxyConfig proxyConfig = harness.proxyConfig();
         final MediaDriver.Context mediaDriverContext = proxyConfig.mediaDriverContext();
         mediaDriverContext.termBufferSparseFile(false);

@@ -63,7 +63,7 @@ class MultipleWebSocketSessionDetachedSessionContainerAcceptanceTest
     void setUp() throws IOException
     {
         harness.serverConfig().deploymentMode(DeploymentMode.DETACHED);
-        harness.serverConfig().serverInstanceCount(SERVER_INSTANCE_COUNT);
+        harness.serverConfig().sessionContainerInstanceCount(SERVER_INSTANCE_COUNT);
         harness.proxyConfig()
             .launchMediaDriver(true)
             .mediaDriverDir(workingDir.resolve("driver").toString());

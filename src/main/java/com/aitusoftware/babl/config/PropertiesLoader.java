@@ -18,10 +18,13 @@
 package com.aitusoftware.babl.config;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -59,7 +62,7 @@ public final class PropertiesLoader
         final SocketConfig socketConfig,
         final ProxyConfig proxyConfig)
     {
-        try (InputStream inputStream = new FileInputStream(propertyFile.toFile()))
+        try (InputStream inputStream = findConfigFile(propertyFile))
         {
             final Properties properties = new Properties();
             properties.load(inputStream);
@@ -69,6 +72,17 @@ public final class PropertiesLoader
         {
             throw new UncheckedIOException(e);
         }
+    }
+
+    private static InputStream findConfigFile(final Path propertyFile) throws FileNotFoundException
+    {
+        if (Files.exists(propertyFile))
+        {
+            return new FileInputStream(propertyFile.toFile());
+        }
+        return Optional.ofNullable(Thread.currentThread().getContextClassLoader().getResourceAsStream(
+            propertyFile.toString())).orElseThrow(
+                () -> new IllegalArgumentException(String.format("Cannot load resource: %s", propertyFile)));
     }
 
     private static void load(
@@ -84,7 +98,8 @@ public final class PropertiesLoader
         mapInt(Constants.LISTEN_PORT_PROPERTY, sessionContainerConfig::listenPort, properties);
         mapInt(Constants.POLL_MODE_SESSION_LIMIT_PROPERTY, sessionContainerConfig::pollModeSessionLimit, properties);
         mapInt(Constants.CONNECTION_BACKLOG_PROPERTY, sessionContainerConfig::connectionBacklog, properties);
-        mapInt(Constants.SERVER_INSTANCE_COUNT_PROPERTY, sessionContainerConfig::serverInstanceCount, properties);
+        mapInt(Constants.SESSION_CONTAINER_INSTANCE_COUNT_PROPERTY,
+            sessionContainerConfig::sessionContainerInstanceCount, properties);
         mapInt(Constants.SESSION_MONITORING_FILE_ENTRY_COUNT_PROPERTY,
             sessionContainerConfig::sessionMonitoringFileEntryCount, properties);
         mapType(Constants.POLL_MODE_ENABLED_PROPERTY,

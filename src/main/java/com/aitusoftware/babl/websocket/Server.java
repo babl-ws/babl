@@ -34,6 +34,7 @@ import com.aitusoftware.babl.config.DeploymentMode;
 import com.aitusoftware.babl.config.PropertiesLoader;
 import com.aitusoftware.babl.config.ProxyConfig;
 import com.aitusoftware.babl.config.SessionContainerConfig;
+import com.aitusoftware.babl.config.SessionContainerInstanceCountCalculator;
 import com.aitusoftware.babl.io.ConnectionPoller;
 import com.aitusoftware.babl.monitoring.MappedApplicationAdapterStatistics;
 import com.aitusoftware.babl.monitoring.MappedFile;
@@ -99,13 +100,13 @@ public final class Server
             final Application application = allConfig.applicationConfig().application();
             final Aeron aeron = proxyConfig.aeron();
             final Publication toApplicationPublication =
-                sessionContainerConfig.serverInstanceCount() == 1 ?
+                sessionContainerConfig.sessionContainerInstanceCount() == 1 ?
                 aeron.addExclusivePublication(CommonContext.IPC_CHANNEL, applicationStreamId) :
                 aeron.addPublication(CommonContext.IPC_CHANNEL, applicationStreamId);
             final Subscription toApplicationSubscription =
                 aeron.addSubscription(CommonContext.IPC_CHANNEL, applicationStreamId);
-
-            final int serverInstanceCount = sessionContainerConfig.serverInstanceCount();
+            final int serverInstanceCount = SessionContainerInstanceCountCalculator.calculateSessionContainerCount(
+                sessionContainerConfig);
             final Publication[] toServerPublications = new Publication[serverInstanceCount];
             final int applicationInstanceId = 0;
             final SessionContainer[] sessionContainers = new SessionContainer[serverInstanceCount];

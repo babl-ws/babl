@@ -82,7 +82,7 @@ public final class AllConfig
         sessionConfig.conclude();
         if (sessionContainerConfig.deploymentMode() == DeploymentMode.DETACHED)
         {
-            if (sessionContainerConfig.serverInstanceCount() < 1)
+            if (sessionContainerConfig.sessionContainerInstanceCount() < 1)
             {
                 throw new IllegalStateException("Server instance count must be greater than zero");
             }

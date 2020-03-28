@@ -115,7 +115,7 @@ public final class ServerHarness implements AutoCloseable
     {
         if (serverDir != null)
         {
-            for (int i = 0; i < sessionContainerConfig.serverInstanceCount(); i++)
+            for (int i = 0; i < sessionContainerConfig.sessionContainerInstanceCount(); i++)
             {
                 final String[] args = {sessionContainerConfig.serverDirectory(i)};
                 ErrorPrinter.main(args);

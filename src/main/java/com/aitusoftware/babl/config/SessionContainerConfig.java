@@ -59,8 +59,8 @@ public final class SessionContainerConfig
         Constants.SESSION_MONITORING_FILE_ENTRY_COUNT_PROPERTY, Constants.SESSION_MONITORING_FILE_ENTRY_COUNT_DEFAULT);
     private DeploymentMode deploymentMode = ConfigUtil.mapEnum(
         DeploymentMode::valueOf, Constants.DEPLOYMENT_MODE_PROPERTY, Constants.DEPLOYMENT_MODE_DEFAULT);
-    private int serverInstanceCount = Integer.getInteger(
-        Constants.SERVER_INSTANCE_COUNT_PROPERTY, Constants.SERVER_INSTANCE_COUNT_DEFAULT);
+    private int sessionContainerInstanceCount = Integer.getInteger(
+        Constants.SESSION_CONTAINER_INSTANCE_COUNT_PROPERTY, Constants.SESSION_CONTAINER_INSTANCE_COUNT_DEFAULT);
     private int sessionPollLimit = Integer.getInteger(
         Constants.SESSION_POLL_LIMIT_PROPERTY, Constants.SESSION_POLL_LIMIT_DEFAULT);
     private ConnectionValidator connectionValidator = ConfigUtil.mapInstance(ConnectionValidator.class,
@@ -68,6 +68,8 @@ public final class SessionContainerConfig
     private long validationTimeoutNanos = SystemUtil.getDurationInNanos(
         SessionContainerConfig.Constants.VALIDATION_TIMEOUT_PROPERTY,
         SessionContainerConfig.Constants.VALIDATION_TIMEOUT_DEFAULT);
+    private boolean autoScale = ConfigUtil.mapBoolean(Constants.AUTO_SCALE_PROPERTY,
+        Constants.AUTO_SCALE_DEFAULT);
 
     /**
      * Validates configuration and creates the server's mark file.
@@ -75,10 +77,15 @@ public final class SessionContainerConfig
     public void conclude()
     {
         if (deploymentMode == DeploymentMode.DIRECT &&
-            serverInstanceCount != Constants.SERVER_INSTANCE_COUNT_DEFAULT)
+            sessionContainerInstanceCount != Constants.SESSION_CONTAINER_INSTANCE_COUNT_DEFAULT)
         {
             throw new IllegalStateException(
                 String.format("Multiple server instances are not supported in %s deployment mode.", deploymentMode));
+        }
+        if (sessionContainerInstanceCount != Constants.SESSION_CONTAINER_INSTANCE_COUNT_DEFAULT &&
+            autoScale)
+        {
+            throw new IllegalStateException("Cannot use auto-scaling and specify server instance count");
         }
     }
 
@@ -272,7 +279,7 @@ public final class SessionContainerConfig
      */
     public String serverDirectory(final int serverId)
     {
-        return serverInstanceCount == Constants.SERVER_INSTANCE_COUNT_DEFAULT ?
+        return sessionContainerInstanceCount == Constants.SESSION_CONTAINER_INSTANCE_COUNT_DEFAULT ?
             Paths.get(serverDirectory).toString() :
             Paths.get(serverDirectory).resolve(Integer.toString(serverId)).toString();
     }
@@ -330,23 +337,23 @@ public final class SessionContainerConfig
     }
 
     /**
-     * Returns the server instance count.
-     * @return the server instance count
+     * Returns the session container instance count.
+     * @return the session container instance count
      */
-    public int serverInstanceCount()
+    public int sessionContainerInstanceCount()
     {
-        return serverInstanceCount;
+        return sessionContainerInstanceCount;
     }
 
     /**
-     * Sets the server instance count.
+     * Sets the session container instance count.
      *
-     * @param serverInstanceCount the server instance count
+     * @param sessionContainerInstanceCount the server instance count
      * @return this for a fluent API
      */
-    public SessionContainerConfig serverInstanceCount(final int serverInstanceCount)
+    public SessionContainerConfig sessionContainerInstanceCount(final int sessionContainerInstanceCount)
     {
-        this.serverInstanceCount = serverInstanceCount;
+        this.sessionContainerInstanceCount = sessionContainerInstanceCount;
         return this;
     }
 
@@ -408,6 +415,26 @@ public final class SessionContainerConfig
     public SessionContainerConfig validationTimeoutNanos(final long validationTimeoutNanos)
     {
         this.validationTimeoutNanos = validationTimeoutNanos;
+        return this;
+    }
+
+    /**
+     * Returns the auto-scale value.
+     * @return the auto-scale value
+     */
+    public boolean autoScale()
+    {
+        return autoScale;
+    }
+
+    /**
+     * Sets the auto-scale value
+     * @param autoScale the auto-scale value
+     * @return this for a fluent API
+     */
+    public SessionContainerConfig autoScale(final boolean autoScale)
+    {
+        this.autoScale = autoScale;
         return this;
     }
 
@@ -500,12 +527,12 @@ public final class SessionContainerConfig
         /**
          * System property used to configure the number of server instances
          */
-        public static final String SERVER_INSTANCE_COUNT_PROPERTY = "babl.server.instances";
+        public static final String SESSION_CONTAINER_INSTANCE_COUNT_PROPERTY = "babl.server.instances";
 
         /**
          * Default value for the number of server instances
          */
-        public static final int SERVER_INSTANCE_COUNT_DEFAULT = 1;
+        public static final int SESSION_CONTAINER_INSTANCE_COUNT_DEFAULT = 1;
 
         /**
          * System property used to configure the session poll limit
@@ -543,8 +570,18 @@ public final class SessionContainerConfig
         public static final String IDLE_STRATEGY_PROPERTY = "babl.server.idle.strategy";
 
         /**
-         * Default value for Server idle strategy
+         * Default value for server idle strategy
          */
         public static final String IDLE_STRATEGY_DEFAULT = "SLEEPING";
+
+        /**
+         * System property used to configure the server scaling mode
+         */
+        public static final String AUTO_SCALE_PROPERTY = "babl.server.auto.scale";
+
+        /**
+         * Default value for the server scaling mode
+         */
+        public static final boolean AUTO_SCALE_DEFAULT = false;
     }
 }

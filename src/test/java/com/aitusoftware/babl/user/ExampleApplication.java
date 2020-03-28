@@ -17,8 +17,6 @@
  */
 package com.aitusoftware.babl.user;
 
-import java.nio.charset.StandardCharsets;
-
 import com.aitusoftware.babl.websocket.DisconnectReason;
 import com.aitusoftware.babl.websocket.SendResult;
 import com.aitusoftware.babl.websocket.Session;
@@ -34,14 +32,12 @@ public final class ExampleApplication implements Application
     @Override
     public int onSessionConnected(final Session session)
     {
-        System.out.printf("Session %d connected%n", session.id());
         return SendResult.OK;
     }
 
     @Override
     public int onSessionDisconnected(final Session session, final DisconnectReason reason)
     {
-        System.out.printf("Session %d disconnected due to %s%n", session.id(), reason.name());
         return SendResult.OK;
     }
 
@@ -55,8 +51,6 @@ public final class ExampleApplication implements Application
     {
         final byte[] content = new byte[length];
         msg.getBytes(offset, content);
-        System.out.printf("Received msg %s from session %d%n",
-            new String(content, StandardCharsets.UTF_8), session.id());
         buffer.putBytes(0, msg, offset, length);
         int sendResult;
         do
