@@ -29,10 +29,14 @@ import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntConsumer;
+import java.util.function.LongConsumer;
+import java.util.function.Supplier;
 
 import com.aitusoftware.babl.config.SessionContainerConfig.Constants;
+import com.aitusoftware.babl.websocket.ConnectionValidator;
 
 import org.agrona.SystemUtil;
+import org.agrona.concurrent.IdleStrategy;
 
 /**
  * Utility class to load configuration from a properties file.
@@ -104,6 +108,20 @@ public final class PropertiesLoader
             sessionContainerConfig::sessionMonitoringFileEntryCount, properties);
         mapType(Constants.POLL_MODE_ENABLED_PROPERTY,
             sessionContainerConfig::pollModeEnabled, Boolean::parseBoolean, properties);
+        mapType(Constants.DEPLOYMENT_MODE_PROPERTY,
+            sessionContainerConfig::deploymentMode, DeploymentMode::valueOf, properties);
+        mapInt(Constants.SESSION_POLL_LIMIT_PROPERTY,
+            sessionContainerConfig::sessionPollLimit, properties);
+        mapLong(Constants.VALIDATION_TIMEOUT_PROPERTY,
+            sessionContainerConfig::validationTimeoutNanos, properties);
+        mapType(Constants.CONNECTION_VALIDATOR_PROPERTY,
+            sessionContainerConfig::connectionValidator, (clsName) ->
+            ConfigUtil.instantiate(ConnectionValidator.class).apply(clsName), properties);
+        mapType(Constants.IDLE_STRATEGY_PROPERTY,
+            sessionContainerConfig::serverIdleStrategySupplier, (strategyName) ->
+            (Supplier<IdleStrategy>)() -> ConfigUtil.idleStrategyByName(strategyName), properties);
+        mapType(Constants.AUTO_SCALE_PROPERTY,
+            sessionContainerConfig::autoScale, Boolean::parseBoolean, properties);
 
         mapInt(SessionConfig.Constants.MAX_BUFFER_SIZE_PROPERTY, sessionConfig::maxBufferSize, properties);
         mapInt(SessionConfig.Constants.RECEIVE_BUFFER_SIZE_PROPERTY, sessionConfig::receiveBufferSize, properties);
@@ -133,6 +151,8 @@ public final class PropertiesLoader
             proxyConfig::serverStreamBaseId, properties);
         mapType(ProxyConfig.Constants.LAUNCH_MEDIA_DRIVER_PROPERTY,
             proxyConfig::launchMediaDriver, Boolean::parseBoolean, properties);
+        map(ProxyConfig.Constants.MEDIA_DRIVER_DIRECTORY_PROPERTY,
+            proxyConfig::mediaDriverDir, properties);
         mapType(ProxyConfig.Constants.PERFORMANCE_MODE_PROPERTY,
             proxyConfig::performanceMode, PerformanceMode::valueOf, properties);
         mapType(ProxyConfig.Constants.BACK_PRESSURE_POLICY_PROPERTY,
@@ -164,6 +184,18 @@ public final class PropertiesLoader
         if (propertyValue != null)
         {
             receiver.accept(Integer.parseInt(propertyValue));
+        }
+    }
+
+    private static void mapLong(
+        final String propertyName,
+        final LongConsumer receiver,
+        final Properties properties)
+    {
+        final String propertyValue = properties.getProperty(propertyName);
+        if (propertyValue != null)
+        {
+            receiver.accept(Long.parseLong(propertyValue));
         }
     }
 

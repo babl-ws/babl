@@ -68,9 +68,8 @@ public final class Server
      * Configures and starts a web socket server.
      *
      * @param args path to a properties file containing configuration
-     * @throws IOException if an exception occurs during loading properties
      */
-    public static void main(final String[] args) throws IOException
+    public static void main(final String[] args)
     {
         final AllConfig allConfig;
         if (args.length > 0)

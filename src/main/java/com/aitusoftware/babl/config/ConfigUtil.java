@@ -46,6 +46,11 @@ final class ConfigUtil
     static IdleStrategy mapIdleStrategy(final String property, final String defaultValue)
     {
         final String value = System.getProperty(property, defaultValue);
+        return idleStrategyByName(value);
+    }
+
+    static IdleStrategy idleStrategyByName(final String value)
+    {
         if ("BUSY_SPIN".equals(value))
         {
             return BusySpinIdleStrategy.INSTANCE;
@@ -75,7 +80,7 @@ final class ConfigUtil
         return Boolean.parseBoolean(value);
     }
 
-    private static <T> Function<String, T> instantiate(final Class<T> cls)
+    static <T> Function<String, T> instantiate(final Class<T> cls)
     {
         return className ->
         {
