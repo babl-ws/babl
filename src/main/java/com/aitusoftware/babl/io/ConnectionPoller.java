@@ -124,7 +124,7 @@ public final class ConnectionPoller extends TransportPoller implements Agent
     @Override
     public void onClose()
     {
-        CloseHelper.close(serverSocket);
+        CloseHelper.closeAll(selector, serverSocket);
     }
 
     /**

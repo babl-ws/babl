@@ -34,7 +34,6 @@ import com.aitusoftware.babl.config.DeploymentMode;
 import com.aitusoftware.babl.config.PropertiesLoader;
 import com.aitusoftware.babl.config.ProxyConfig;
 import com.aitusoftware.babl.config.SessionContainerConfig;
-import com.aitusoftware.babl.config.SessionContainerInstanceCountCalculator;
 import com.aitusoftware.babl.io.ConnectionPoller;
 import com.aitusoftware.babl.monitoring.MappedApplicationAdapterStatistics;
 import com.aitusoftware.babl.monitoring.MappedFile;
@@ -62,7 +61,7 @@ import io.aeron.Subscription;
 /**
  * Main class for starting a web socket server.
  */
-public final class Server
+public final class BablServer
 {
     /**
      * Configures and starts a web socket server.
@@ -104,16 +103,15 @@ public final class Server
                 aeron.addPublication(CommonContext.IPC_CHANNEL, applicationStreamId);
             final Subscription toApplicationSubscription =
                 aeron.addSubscription(CommonContext.IPC_CHANNEL, applicationStreamId);
-            final int serverInstanceCount = SessionContainerInstanceCountCalculator.calculateSessionContainerCount(
-                sessionContainerConfig);
-            final Publication[] toServerPublications = new Publication[serverInstanceCount];
+            final int instanceCount = sessionContainerConfig.sessionContainerInstanceCount();
+            final Publication[] toServerPublications = new Publication[instanceCount];
             final int applicationInstanceId = 0;
-            final SessionContainer[] sessionContainers = new SessionContainer[serverInstanceCount];
-            final ServerMarkFile[] serverMarkFiles = new ServerMarkFile[serverInstanceCount];
-            final Queue<SocketChannel>[] toServerChannels = new Queue[serverInstanceCount];
+            final SessionContainer[] sessionContainers = new SessionContainer[instanceCount];
+            final ServerMarkFile[] serverMarkFiles = new ServerMarkFile[instanceCount];
+            final Queue<SocketChannel>[] toServerChannels = new Queue[instanceCount];
             final BackPressureStrategy backPressureStrategy = forPolicy(proxyConfig.backPressurePolicy());
             final List<AutoCloseable> dependencies = new ArrayList<>();
-            for (int i = 0; i < serverInstanceCount; i++)
+            for (int i = 0; i < instanceCount; i++)
             {
                 initialiseServerInstance(
                     allConfig, sessionContainerConfig, proxyConfig, aeron, toApplicationPublication,

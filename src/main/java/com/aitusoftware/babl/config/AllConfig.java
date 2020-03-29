@@ -80,6 +80,7 @@ public final class AllConfig
     {
         applicationConfig.conclude();
         sessionConfig.conclude();
+        sessionContainerConfig.conclude();
         if (sessionContainerConfig.deploymentMode() == DeploymentMode.DETACHED)
         {
             if (sessionContainerConfig.sessionContainerInstanceCount() < 1)

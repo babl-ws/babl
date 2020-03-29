@@ -27,6 +27,8 @@ import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import com.aitusoftware.babl.config.SessionConfig;
+import com.aitusoftware.babl.config.SessionContainerConfig;
 import com.aitusoftware.babl.io.WebSocketPoller;
 import com.aitusoftware.babl.log.Category;
 import com.aitusoftware.babl.log.Logger;
@@ -38,8 +40,6 @@ import com.aitusoftware.babl.pool.BufferPool;
 import com.aitusoftware.babl.pool.ObjectPool;
 import com.aitusoftware.babl.time.SingleThreadedCachedClock;
 import com.aitusoftware.babl.user.Application;
-import com.aitusoftware.babl.config.SessionContainerConfig;
-import com.aitusoftware.babl.config.SessionConfig;
 
 import org.agrona.CloseHelper;
 import org.agrona.collections.Hashing;
@@ -110,7 +110,6 @@ final class SessionContainer implements Agent, AutoCloseable
         this.sessionContainerConfig = sessionContainerConfig;
         this.pollModeEnabled = sessionContainerConfig.pollModeEnabled();
         this.pollModeSessionLimit = sessionContainerConfig.pollModeSessionLimit();
-        sessionContainerConfig.conclude();
         validateMessageConfig(sessionConfig);
         final Path serverDirectory = Paths.get(sessionContainerConfig.serverDirectory(sessionContainerId));
         this.serverMarkFile = new ServerMarkFile(serverDirectory);

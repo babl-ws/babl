@@ -25,6 +25,11 @@ import java.nio.file.Paths;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
+import com.aitusoftware.babl.config.AllConfig;
+import com.aitusoftware.babl.config.DeploymentMode;
+import com.aitusoftware.babl.config.ProxyConfig;
+import com.aitusoftware.babl.config.SessionConfig;
+import com.aitusoftware.babl.config.SessionContainerConfig;
 import com.aitusoftware.babl.monitoring.AdapterStatisticsPrinter;
 import com.aitusoftware.babl.monitoring.ErrorPrinter;
 import com.aitusoftware.babl.monitoring.MappedApplicationAdapterStatistics;
@@ -32,13 +37,8 @@ import com.aitusoftware.babl.monitoring.MappedSessionAdapterStatistics;
 import com.aitusoftware.babl.monitoring.SessionContainerStatisticsPrinter;
 import com.aitusoftware.babl.performance.PortProbe;
 import com.aitusoftware.babl.user.Application;
-import com.aitusoftware.babl.websocket.Server;
+import com.aitusoftware.babl.websocket.BablServer;
 import com.aitusoftware.babl.websocket.SessionContainers;
-import com.aitusoftware.babl.config.AllConfig;
-import com.aitusoftware.babl.config.DeploymentMode;
-import com.aitusoftware.babl.config.ProxyConfig;
-import com.aitusoftware.babl.config.SessionContainerConfig;
-import com.aitusoftware.babl.config.SessionConfig;
 
 import org.agrona.CloseHelper;
 import org.agrona.concurrent.IdleStrategy;
@@ -72,7 +72,7 @@ public final class ServerHarness implements AutoCloseable
             .listenPort(findFreePort())
             .serverDirectory(serverDir.toString())
             .sessionMonitoringFileEntryCount(32);
-        sessionContainers = Server.launch(allConfig);
+        sessionContainers = BablServer.launch(allConfig);
         sessionContainers.start();
         PortProbe.ensurePortOpen(sessionContainerConfig.listenPort());
     }

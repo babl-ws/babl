@@ -87,6 +87,11 @@ public final class SessionContainerConfig
         {
             throw new IllegalStateException("Cannot use auto-scaling and specify server instance count");
         }
+        if (autoScale)
+        {
+            sessionContainerInstanceCount =
+                SessionContainerInstanceCountCalculator.calculateSessionContainerCount(this);
+        }
     }
 
     /**
