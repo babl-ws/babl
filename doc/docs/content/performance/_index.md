@@ -28,6 +28,26 @@ Disable bounds-checking with this JVM parameter:
 -Dagrona.disable.bounds.checks=true
 ```
 
+### Pre-touch LogBuffers
+
+Pre-touches pages to ensure they are faulted into the process immediately.
+
+Only useful in `DETACHED` mode.
+
+```
+-Daeron.pre.touch.mapped.memory=true
+```
+
+### Disable Sparse Files
+
+Forces Aeron to create non-sparse files.
+
+Only useful in `DETACHED` mode.
+
+```
+-Daeron.term.buffer.sparse.file=false
+```
+
 ### Cache `java.lang.Integer` Objects
 
 Deep in the heart of the Java IO libraries, `java.lang.Integer` variables are used to 
@@ -73,6 +93,16 @@ Enable with this JVM parameter:
 
 ```
 -XX:BiasedLockingStartupDelay=0
+```
+
+### Pre-touch memory pages
+
+Causes the JVM to fault-in heap memory pages on start-up.
+
+Enable with this JVM parameter:
+
+```
+-XX:+AlwaysPreTouch
 ```
 
 ## Babl Configuration
