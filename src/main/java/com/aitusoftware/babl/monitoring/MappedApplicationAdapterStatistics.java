@@ -17,16 +17,20 @@
  */
 package com.aitusoftware.babl.monitoring;
 
+import java.io.Closeable;
+
 import org.agrona.BitUtil;
+import org.agrona.CloseHelper;
 import org.agrona.concurrent.AtomicBuffer;
 
-public final class MappedApplicationAdapterStatistics extends ApplicationAdapterStatistics
+public final class MappedApplicationAdapterStatistics extends ApplicationAdapterStatistics implements Closeable
 {
     private static final int POLL_LIMIT_REACHED_OFFSET = 0;
     private static final int PROXY_BACK_PRESSURE_OFFSET = POLL_LIMIT_REACHED_OFFSET + BitUtil.SIZE_OF_LONG;
     public static final int LENGTH = PROXY_BACK_PRESSURE_OFFSET + BitUtil.SIZE_OF_LONG;
     public static final String FILE_NAME = "application-adapter-stats.data";
 
+    private final MappedFile mappedFile;
     private final AtomicBuffer buffer;
     private final int offset;
 
@@ -36,6 +40,7 @@ public final class MappedApplicationAdapterStatistics extends ApplicationAdapter
     public MappedApplicationAdapterStatistics(
         final MappedFile mappedFile)
     {
+        this.mappedFile = mappedFile;
         this.buffer = mappedFile.buffer();
         this.offset = 0;
     }
@@ -60,7 +65,7 @@ public final class MappedApplicationAdapterStatistics extends ApplicationAdapter
         updateProxyBackPressureCount(0);
     }
 
-    long pollLimitReachedCount()
+    public long pollLimitReachedCount()
     {
         return buffer.getLongVolatile(toOffset(POLL_LIMIT_REACHED_OFFSET));
     }
@@ -70,7 +75,7 @@ public final class MappedApplicationAdapterStatistics extends ApplicationAdapter
         buffer.putLongOrdered(toOffset(POLL_LIMIT_REACHED_OFFSET), pollLimitReachedCount);
     }
 
-    long proxyBackPressureCount()
+    public long proxyBackPressureCount()
     {
         return buffer.getLongVolatile(toOffset(PROXY_BACK_PRESSURE_OFFSET));
     }
@@ -83,5 +88,11 @@ public final class MappedApplicationAdapterStatistics extends ApplicationAdapter
     private int toOffset(final int delta)
     {
         return offset + delta;
+    }
+
+    @Override
+    public void close()
+    {
+        CloseHelper.close(mappedFile);
     }
 }

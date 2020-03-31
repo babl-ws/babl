@@ -24,9 +24,9 @@ import java.util.function.Consumer;
 import org.agrona.IoUtil;
 import org.agrona.concurrent.UnsafeBuffer;
 
-final class SessionStatisticsFileReader
+public final class SessionStatisticsFileReader
 {
-    static void readEntries(final Path file, final Consumer<MappedSessionStatistics> statisticsConsumer)
+    public static void readEntries(final Path file, final Consumer<MappedSessionStatistics> statisticsConsumer)
     {
         final long length = file.toFile().length();
         final MappedByteBuffer mappedByteBuffer = IoUtil.mapExistingFile(file.toFile(), "session-statistics");

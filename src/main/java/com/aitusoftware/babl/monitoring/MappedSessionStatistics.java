@@ -86,64 +86,69 @@ public final class MappedSessionStatistics extends SessionStatistics implements 
         init(sessionId, WebSocketSession.SessionState.CONNECTED);
     }
 
-    long bytesRead()
+    public long bytesRead()
     {
         return buffer.getLongVolatile(toOffset(BYTES_READ_OFFSET));
     }
 
-    long bytesWritten()
+    public long bytesWritten()
     {
         return buffer.getLongVolatile(toOffset(BYTES_WRITTEN_OFFSET));
     }
 
-    long framesDecoded()
+    public long framesDecoded()
     {
         return buffer.getLongVolatile(toOffset(FRAMES_DECODED_OFFSET));
     }
 
-    long framesEncoded()
+    public long framesEncoded()
     {
         return buffer.getLongVolatile(toOffset(FRAMES_ENCODED_OFFSET));
     }
 
-    long messagesReceived()
+    public long messagesReceived()
     {
         return buffer.getLongVolatile(toOffset(MESSAGES_RECEIVED_OFFSET));
     }
 
-    long messagesSent()
+    public long messagesSent()
     {
         return buffer.getLongVolatile(toOffset(MESSAGES_SENT_OFFSET));
     }
 
-    int invalidMessagesReceived()
+    public int invalidMessagesReceived()
     {
         return buffer.getIntVolatile(toOffset(INVALID_MESSAGES_RECEIVED_OFFSET));
     }
 
-    int invalidPingsReceived()
+    public int invalidPingsReceived()
     {
         return buffer.getIntVolatile(toOffset(INVALID_PINGS_RECEIVED_OFFSET));
     }
 
-    long sendBackPressureEvents()
+    public long sendBackPressureEvents()
     {
         return buffer.getLongVolatile(toOffset(SEND_BACK_PRESSURE_EVENTS_OFFSET));
     }
 
-    int receiveBufferedBytes()
+    public int receiveBufferedBytes()
     {
         return buffer.getIntVolatile(toOffset(RECEIVE_BUFFERED_BYTES_OFFSET));
     }
 
-    int sendBufferedBytes()
+    public int sendBufferedBytes()
     {
         return buffer.getIntVolatile(toOffset(SEND_BUFFERED_BYTES_OFFSET));
     }
 
-    long sessionId()
+    public long sessionId()
     {
         return buffer.getLongVolatile(toOffset(SESSION_ID_OFFSET));
+    }
+
+    public WebSocketSession.SessionState sessionState()
+    {
+        return WebSocketSession.SessionState.values()[buffer.getIntVolatile(toOffset(SESSION_STATE_OFFSET))];
     }
 
     @Override
@@ -225,11 +230,6 @@ public final class MappedSessionStatistics extends SessionStatistics implements 
     {
         sendBackPressureEvents++;
         buffer.putLongOrdered(toOffset(SEND_BACK_PRESSURE_EVENTS_OFFSET), sendBackPressureEvents);
-    }
-
-    WebSocketSession.SessionState sessionState()
-    {
-        return WebSocketSession.SessionState.values()[buffer.getIntVolatile(toOffset(SESSION_STATE_OFFSET))];
     }
 
     public int offset()

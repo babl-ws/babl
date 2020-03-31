@@ -17,17 +17,14 @@
  */
 package com.aitusoftware.babl.ext;
 
-import java.io.File;
-import java.nio.MappedByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 
 import com.aitusoftware.babl.monitoring.ServerMarkFile;
 
-import org.agrona.IoUtil;
+import org.agrona.CloseHelper;
 import org.agrona.concurrent.Agent;
-import org.agrona.concurrent.UnsafeBuffer;
 import org.agrona.concurrent.errors.ErrorLogReader;
 
 final class ErrorLogMonitoringAgent implements Agent
@@ -35,10 +32,8 @@ final class ErrorLogMonitoringAgent implements Agent
     private final int index;
     private final String roleName;
     private final Path sessionContainerDir;
-    private MappedByteBuffer mappedByteBuffer;
-    private UnsafeBuffer errorBuffer;
+    private MappedErrorBuffer mappedErrorBuffer;
     private long maxObservedTimestamp;
-
 
     ErrorLogMonitoringAgent(final int index, final Path sessionContainerDir)
     {
@@ -50,20 +45,18 @@ final class ErrorLogMonitoringAgent implements Agent
     @Override
     public int doWork()
     {
-        if (mappedByteBuffer == null)
+        if (mappedErrorBuffer == null)
         {
             if (Files.exists(sessionContainerDir.resolve(ServerMarkFile.MARK_FILE_NAME)))
             {
-                mappedByteBuffer = IoUtil.mapExistingFile(
-                    new File(sessionContainerDir.toFile(), ServerMarkFile.MARK_FILE_NAME), "error-buffer",
+                mappedErrorBuffer = new MappedErrorBuffer(sessionContainerDir.resolve(ServerMarkFile.MARK_FILE_NAME),
                     ServerMarkFile.ERROR_BUFFER_OFFSET, ServerMarkFile.ERROR_BUFFER_LENGTH);
-                errorBuffer = new UnsafeBuffer(mappedByteBuffer);
                 return 1;
             }
         }
         else
         {
-            return ErrorLogReader.read(errorBuffer, this::printException, maxObservedTimestamp);
+            return ErrorLogReader.read(mappedErrorBuffer.errorBuffer(), this::printException, maxObservedTimestamp);
         }
 
         return 0;
@@ -87,10 +80,7 @@ final class ErrorLogMonitoringAgent implements Agent
     @Override
     public void onClose()
     {
-        if (mappedByteBuffer != null)
-        {
-            IoUtil.unmap(mappedByteBuffer);
-        }
+        CloseHelper.close(mappedErrorBuffer);
     }
 
     @Override

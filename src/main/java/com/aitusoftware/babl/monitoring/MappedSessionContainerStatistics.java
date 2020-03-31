@@ -54,7 +54,7 @@ public final class MappedSessionContainerStatistics extends SessionContainerStat
         buffer.putLongOrdered(toOffset(ACTIVITY_TIMESTAMP_OFFSET), timestamp);
     }
 
-    long timestamp()
+    public long timestamp()
     {
         return buffer.getLongVolatile(toOffset(ACTIVITY_TIMESTAMP_OFFSET));
     }
@@ -67,7 +67,7 @@ public final class MappedSessionContainerStatistics extends SessionContainerStat
             Math.max(eventLoopDurationMs, currentMax));
     }
 
-    long maxEventLoopDurationMs()
+    public long maxEventLoopDurationMs()
     {
         return buffer.getLongVolatile(toOffset(MAX_EVENT_LOOP_DURATION_MS_OFFSET));
     }
@@ -82,7 +82,7 @@ public final class MappedSessionContainerStatistics extends SessionContainerStat
         }
     }
 
-    long bytesRead()
+    public long bytesRead()
     {
         return buffer.getLongVolatile(toOffset(BYTES_READ_OFFSET));
     }
@@ -97,7 +97,7 @@ public final class MappedSessionContainerStatistics extends SessionContainerStat
         }
     }
 
-    long bytesWritten()
+    public long bytesWritten()
     {
         return buffer.getLongVolatile(toOffset(BYTES_WRITTEN_OFFSET));
     }
@@ -108,7 +108,7 @@ public final class MappedSessionContainerStatistics extends SessionContainerStat
         buffer.putIntOrdered(toOffset(ACTIVE_SESSION_COUNT_OFFSET), activeSessionCount);
     }
 
-    int activeSessionCount()
+    public int activeSessionCount()
     {
         return buffer.getIntVolatile(toOffset(ACTIVE_SESSION_COUNT_OFFSET));
     }
@@ -120,7 +120,7 @@ public final class MappedSessionContainerStatistics extends SessionContainerStat
         buffer.putLongOrdered(toOffset(RECEIVE_BACK_PRESSURE_EVENTS_OFFSET), receiveBackPressureEvents);
     }
 
-    long receiveBackPressureEvents()
+    public long receiveBackPressureEvents()
     {
         return buffer.getLongVolatile(toOffset(RECEIVE_BACK_PRESSURE_EVENTS_OFFSET));
     }
@@ -132,7 +132,7 @@ public final class MappedSessionContainerStatistics extends SessionContainerStat
         buffer.putLongOrdered(toOffset(INVALID_OPCODE_EVENTS_OFFSET), invalidOpCodeEvents);
     }
 
-    long invalidOpCodeEvents()
+    public long invalidOpCodeEvents()
     {
         return buffer.getLongVolatile(toOffset(INVALID_OPCODE_EVENTS_OFFSET));
     }

@@ -17,6 +17,7 @@
  */
 package com.aitusoftware.babl.monitoring;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.MappedByteBuffer;
@@ -31,7 +32,7 @@ import org.agrona.IoUtil;
 import org.agrona.concurrent.AtomicBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
 
-public final class SessionStatisticsFile implements AutoCloseable
+public final class SessionStatisticsFile implements Closeable
 {
     private static final String FILENAME_PREFIX = "babl-session-statistics-";
     private static final String FILENAME_SUFFIX = ".data";

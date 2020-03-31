@@ -42,8 +42,8 @@ public final class SessionStatisticsPrinter
         System.out.printf("Session State:             %20s%n", sessionStatistics.sessionState());
         System.out.printf("Bytes Read:                %20d%n", sessionStatistics.bytesRead());
         System.out.printf("Bytes Written:             %20d%n", sessionStatistics.bytesWritten());
-        System.out.printf("Frames Decoded:         %20d%n", sessionStatistics.framesDecoded());
-        System.out.printf("Frames Encoded:         %20d%n", sessionStatistics.framesEncoded());
+        System.out.printf("Frames Decoded:            %20d%n", sessionStatistics.framesDecoded());
+        System.out.printf("Frames Encoded:            %20d%n", sessionStatistics.framesEncoded());
         System.out.printf("Messages Received:         %20d%n", sessionStatistics.messagesReceived());
         System.out.printf("Messages Sent:             %20d%n", sessionStatistics.messagesSent());
         System.out.printf("Receive Buffered Bytes:    %20d%n", sessionStatistics.receiveBufferedBytes());

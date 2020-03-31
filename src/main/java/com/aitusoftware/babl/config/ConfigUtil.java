@@ -33,7 +33,7 @@ final class ConfigUtil
     {
     }
 
-    static <T extends Enum> T mapEnum(final Function<String, T> parser, final String property, final T defaultValue)
+    static <T extends Enum<?>> T mapEnum(final Function<String, T> parser, final String property, final T defaultValue)
     {
         return Optional.ofNullable(System.getProperty(property)).map(parser).orElse(defaultValue);
     }
@@ -80,6 +80,7 @@ final class ConfigUtil
         return Boolean.parseBoolean(value);
     }
 
+    @SuppressWarnings("unchecked")
     static <T> Function<String, T> instantiate(final Class<T> cls)
     {
         return className ->
@@ -92,7 +93,7 @@ final class ConfigUtil
                 InvocationTargetException | ClassNotFoundException e)
             {
                 throw new IllegalArgumentException(String.format("Failed to instantiate %s to type %s",
-                    className, cls.getName()));
+                    className, cls.getName()), e);
             }
         };
     }
