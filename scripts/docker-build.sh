@@ -9,3 +9,4 @@ docker build --build-arg AERON_VERSION="${AERON_VERSION}" -t "aitusoftware/babl:
 docker build --build-arg AERON_VERSION="${AERON_VERSION}" -t "aitusoftware/babl:latest" -f "$PROJECT_DIR/docker/base_container/Dockerfile" .
 
 docker build -t "aitusoftware/babl-example:latest" -f "$PROJECT_DIR/docker/application_container/Dockerfile" .
+docker build -t "aitusoftware/babl-monitoring:latest" -f "$PROJECT_DIR/docker/monitoring_container/Dockerfile" .

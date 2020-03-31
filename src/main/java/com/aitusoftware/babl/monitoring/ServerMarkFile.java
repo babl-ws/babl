@@ -36,7 +36,7 @@ public final class ServerMarkFile extends MarkFile
 
     public ServerMarkFile(final Path directory)
     {
-        super(directory.toFile(), MARK_FILE_NAME, false, false,
+        super(directory.resolve(MARK_FILE_NAME).toFile(), false,
             0, BitUtil.SIZE_OF_INT, TOTAL_LENGTH, 5_000L,
             new SystemEpochClock(), v -> {}, System.out::println);
     }

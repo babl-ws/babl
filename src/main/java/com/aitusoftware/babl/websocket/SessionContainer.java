@@ -18,7 +18,9 @@
 package com.aitusoftware.babl.websocket;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.channels.SocketChannel;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
@@ -112,6 +114,7 @@ final class SessionContainer implements Agent, AutoCloseable
         this.pollModeSessionLimit = sessionContainerConfig.pollModeSessionLimit();
         validateMessageConfig(sessionConfig);
         final Path serverDirectory = Paths.get(sessionContainerConfig.serverDirectory(sessionContainerId));
+        ensureDirectoryExists(serverDirectory);
         this.serverMarkFile = new ServerMarkFile(serverDirectory);
         this.sessionContainerStatistics = new MappedSessionContainerStatistics(
             serverMarkFile.serverStatisticsBuffer(), 0);
@@ -132,7 +135,7 @@ final class SessionContainer implements Agent, AutoCloseable
     }
 
     /**
-     * Constructs a web socket server that will dispatch messages to the supplied {@code Application}.
+     * Constructs a web-socket server that will dispatch messages to the supplied {@code Application}.
      *
      * @param application   the application that will process inbound messages
      * @param sessionConfig configuration for web socket sessions
@@ -401,6 +404,18 @@ final class SessionContainer implements Agent, AutoCloseable
     ServerMarkFile serverMarkFile()
     {
         return serverMarkFile;
+    }
+
+    private static void ensureDirectoryExists(final Path serverDirectory)
+    {
+        try
+        {
+            Files.createDirectories(serverDirectory);
+        }
+        catch (final IOException e)
+        {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private static final class DoubleAgent implements Agent
