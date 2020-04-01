@@ -17,6 +17,10 @@
  */
 package com.aitusoftware.babl.user;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
+
 import com.aitusoftware.babl.websocket.DisconnectReason;
 import com.aitusoftware.babl.websocket.SendResult;
 import com.aitusoftware.babl.websocket.Session;
@@ -27,6 +31,7 @@ import org.agrona.MutableDirectBuffer;
 
 public final class ExampleApplication implements Application
 {
+    private static final int ERROR_FLAG = ByteBuffer.wrap("erro".getBytes(StandardCharsets.UTF_8)).getInt();
     private final MutableDirectBuffer buffer = new ExpandableDirectByteBuffer(512);
 
     @Override
@@ -49,8 +54,13 @@ public final class ExampleApplication implements Application
         final int offset,
         final int length)
     {
-        final byte[] content = new byte[length];
-        msg.getBytes(offset, content);
+        for (int i = 0; i < length - 4; i++)
+        {
+            if (msg.getInt(i, ByteOrder.BIG_ENDIAN) == ERROR_FLAG)
+            {
+                throw new RuntimeException("Boom!");
+            }
+        }
         buffer.putBytes(0, msg, offset, length);
         int sendResult;
         do

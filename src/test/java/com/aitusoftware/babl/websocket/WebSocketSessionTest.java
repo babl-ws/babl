@@ -38,13 +38,13 @@ import java.nio.channels.SocketChannel;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import com.aitusoftware.babl.config.SessionConfig;
 import com.aitusoftware.babl.log.Logger;
 import com.aitusoftware.babl.monitoring.SessionContainerStatistics;
 import com.aitusoftware.babl.monitoring.SessionStatistics;
 import com.aitusoftware.babl.pool.BufferPool;
 import com.aitusoftware.babl.user.Application;
 import com.aitusoftware.babl.user.ContentType;
-import com.aitusoftware.babl.config.SessionConfig;
 
 import org.agrona.DirectBuffer;
 import org.agrona.concurrent.EpochClock;
@@ -57,6 +57,7 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+@SuppressWarnings("unchecked")
 class WebSocketSessionTest
 {
     private static final long SESSION_ID = 17L;
@@ -139,16 +140,12 @@ class WebSocketSessionTest
         provideSocketData(handshake());
         upgradeConnection();
         final ByteBuffer captureBuffer = ByteBuffer.allocate(INITIAL_SOCKET_BUFFER_CAPACITY);
-        doAnswer(new Answer()
+        doAnswer(invocation ->
         {
-            @Override
-            public Object answer(final InvocationOnMock invocation) throws Throwable
-            {
-                final ByteBuffer content = invocation.getArgumentAt(0, ByteBuffer.class);
-                captureBuffer.put(content);
-                captureBuffer.flip();
-                return captureBuffer.remaining();
-            }
+            final ByteBuffer content = invocation.getArgumentAt(0, ByteBuffer.class);
+            captureBuffer.put(content);
+            captureBuffer.flip();
+            return captureBuffer.remaining();
         }).when(channel).write(any(ByteBuffer.class));
 
 
@@ -367,14 +364,15 @@ class WebSocketSessionTest
         };
     }
 
+    @SuppressWarnings("unchecked")
     private void provideSocketData(final Consumer<ByteBuffer>... socketReads) throws IOException
     {
-        doAnswer(new Answer()
+        doAnswer(new Answer<Integer>()
         {
             private int position = 0;
 
             @Override
-            public Object answer(final InvocationOnMock invocation) throws Throwable
+            public Integer answer(final InvocationOnMock invocation)
             {
                 final ByteBuffer buffer = invocation.getArgumentAt(0, ByteBuffer.class);
 
@@ -386,15 +384,11 @@ class WebSocketSessionTest
 
     private void upgradeConnection()
     {
-        doAnswer(new Answer()
+        doAnswer((Answer<Boolean>)invocation ->
         {
-            @Override
-            public Object answer(final InvocationOnMock invocation) throws Throwable
-            {
-                final ByteBuffer receiveBuffer = invocation.getArgumentAt(0, ByteBuffer.class);
-                receiveBuffer.position(receiveBuffer.limit());
-                return true;
-            }
+            final ByteBuffer receiveBuffer = invocation.getArgumentAt(0, ByteBuffer.class);
+            receiveBuffer.position(receiveBuffer.limit());
+            return true;
         }).when(connectionUpgrade).handleUpgrade(any(), any());
     }
 }

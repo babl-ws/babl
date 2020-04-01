@@ -19,11 +19,11 @@ services:
     networks:
       mgt:
         ipv4_address: 172.30.2.3
-#  babl-error-monitor:
-#    image: "aitusoftware/babl-example:latest"
-#    hostname: babl-error-monitor
-#    volumes:
-#      - server-data-dir:/babl/server
+  babl-error-monitor:
+    image: "aitusoftware/babl-error-printer:latest"
+    hostname: babl-error-monitor
+    volumes:
+      - server-data-dir:/babl/server
   babl-stats-monitor:
     image: "aitusoftware/babl-monitoring:latest"
     hostname: babl-stats-monitor

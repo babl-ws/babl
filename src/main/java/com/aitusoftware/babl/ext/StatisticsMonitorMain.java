@@ -34,6 +34,7 @@ import org.agrona.concurrent.Agent;
 import org.agrona.concurrent.AgentRunner;
 import org.agrona.concurrent.ShutdownSignalBarrier;
 import org.agrona.concurrent.SleepingMillisIdleStrategy;
+import org.agrona.concurrent.errors.ErrorLogReader;
 
 /**
  * Program to periodically report statistics.
@@ -79,6 +80,9 @@ public final class StatisticsMonitorMain
 
     private static final class LoggingMonitoringConsumer implements MonitoringConsumer
     {
+
+        private static final NoOpErrorConsumer NO_OP_ERROR_CONSUMER = new NoOpErrorConsumer();
+
         @Override
         public void applicationAdapterStatistics(
             final MappedApplicationAdapterStatistics applicationAdapterStatistics)
@@ -86,7 +90,7 @@ public final class StatisticsMonitorMain
             System.out.printf("Application Adapter Statistics%n");
             System.out.printf("Proxy back-pressure events: %20d%n",
                 applicationAdapterStatistics.proxyBackPressureCount());
-            System.out.printf("Poll-limit reached count: %20d%n",
+            System.out.printf("Poll-limit reached count:   %20d%n",
                 applicationAdapterStatistics.pollLimitReachedCount());
         }
 
@@ -99,7 +103,7 @@ public final class StatisticsMonitorMain
                 final MappedSessionAdapterStatistics stats = sessionAdapterStatistics[i];
                 System.out.printf("Session Adapter %d Statistics%n", i);
                 System.out.printf("Proxy back-pressure events: %20d%n", stats.proxyBackPressureCount());
-                System.out.printf("Poll-limit reached count: %20d%n", stats.pollLimitReachedCount());
+                System.out.printf("Poll-limit reached count:   %20d%n", stats.pollLimitReachedCount());
             }
         }
 
@@ -107,7 +111,12 @@ public final class StatisticsMonitorMain
         public void errorBuffers(
             final MappedErrorBuffer[] errorBuffers)
         {
-
+            long totalErrorCount = 0;
+            for (final MappedErrorBuffer errorBuffer : errorBuffers)
+            {
+                totalErrorCount += ErrorLogReader.read(errorBuffer.errorBuffer(), NO_OP_ERROR_CONSUMER);
+            }
+            System.out.printf("Total error count:      %20d%n", totalErrorCount);
         }
 
         @Override

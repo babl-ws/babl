@@ -214,6 +214,7 @@ public final class BablServer
         sessionContainerAdapter.sessionAdapterStatistics(sessionAdapterStatistics);
     }
 
+    @SuppressWarnings("unchecked")
     private static SessionContainers launchDirectServer(
         final AllConfig allConfig, final SessionContainerConfig sessionContainerConfig)
     {

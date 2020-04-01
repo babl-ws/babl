@@ -74,7 +74,7 @@ final class ErrorLogMonitoringAgent implements Agent
             Instant.ofEpochMilli(firstObservationTimestamp),
             Instant.ofEpochMilli(lastObservationTimestamp));
         System.out.printf("%s%n", encodedException);
-        maxObservedTimestamp = Math.max(maxObservedTimestamp, lastObservationTimestamp);
+        maxObservedTimestamp = Math.max(maxObservedTimestamp, lastObservationTimestamp + 1);
     }
 
     @Override
