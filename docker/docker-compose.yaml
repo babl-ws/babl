@@ -16,6 +16,8 @@ services:
     hostname: babl-server
     volumes:
       - server-data-dir:/babl/server
+    ports:
+      - "8080:8080"
     networks:
       mgt:
         ipv4_address: 172.30.2.3

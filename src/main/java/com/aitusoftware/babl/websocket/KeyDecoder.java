@@ -76,7 +76,7 @@ final class KeyDecoder implements Consumer<BiConsumer<CharSequence, CharSequence
             switch (state)
             {
                 case READ_HEADER_KEY:
-                    if (current == '\r' && canPeek(input, i + 1) && next(input, i) == '\n')
+                    if (current == '\r' && canRead(input, i + 1) && next(input, i) == '\n')
                     {
                         if (accumulator.length() == 0)
                         {
@@ -102,7 +102,7 @@ final class KeyDecoder implements Consumer<BiConsumer<CharSequence, CharSequence
                     }
                     break;
                 case READ_HEADER_VALUE:
-                    if (current == '\r' && canPeek(input, i + 1) && next(input, i) == '\n')
+                    if (current == '\r' && canRead(input, i + 1) && next(input, i) == '\n')
                     {
                         i++;
                         switch (header)
@@ -187,7 +187,7 @@ final class KeyDecoder implements Consumer<BiConsumer<CharSequence, CharSequence
         }
     }
 
-    private boolean canPeek(final ByteBuffer buffer, final int position)
+    private boolean canRead(final ByteBuffer buffer, final int position)
     {
         return position < buffer.limit();
     }

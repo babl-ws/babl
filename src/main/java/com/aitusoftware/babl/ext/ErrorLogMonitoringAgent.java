@@ -56,7 +56,16 @@ final class ErrorLogMonitoringAgent implements Agent
         }
         else
         {
-            return ErrorLogReader.read(mappedErrorBuffer.errorBuffer(), this::printException, maxObservedTimestamp);
+            try
+            {
+                return ErrorLogReader.read(mappedErrorBuffer.errorBuffer(), this::printException, maxObservedTimestamp);
+            }
+            catch (final RuntimeException e)
+            {
+                System.out.println("Error reading from error buffer. Skipping existing errors.");
+                e.printStackTrace(System.out);
+                maxObservedTimestamp = System.currentTimeMillis();
+            }
         }
 
         return 0;

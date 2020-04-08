@@ -265,12 +265,6 @@ final class LatencyTestHarness
         }
 
         @Override
-        public void onWebSocketConnectionEstablished()
-        {
-
-        }
-
-        @Override
         public void onHeartbeatTimeout()
         {
 

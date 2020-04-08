@@ -380,7 +380,8 @@ public final class WebSocketSession implements Pooled, Session
         {
             this.handshakeSendBuffer = bufferPool.acquire(UPGRADE_SEND_BUFFER_SIZE);
         }
-        Logger.log(Category.CONNECTION, "Session %d attempting upgrade%n", id);
+        Logger.log(Category.CONNECTION, "Session %d attempting upgrade with %d available bytes%n",
+            id, receiveBuffer.limit());
         if (connectionUpgrade.handleUpgrade(receiveBuffer, handshakeSendBuffer))
         {
             Logger.log(Category.CONNECTION, "Session %d upgraded%n", id);

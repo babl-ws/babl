@@ -23,6 +23,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 
+import com.aitusoftware.babl.log.Category;
+import com.aitusoftware.babl.log.Logger;
 import com.aitusoftware.babl.pool.ObjectPool;
 import com.aitusoftware.babl.pool.Pooled;
 
@@ -71,6 +73,7 @@ class ConnectionUpgrade implements Pooled
         final boolean decoded = keyDecoder.decode(input, this::writeUpgradeResponse);
         if (decoded)
         {
+            Logger.log(Category.CONNECTION, "Session %d key decoded", sessionId);
             final ValidationResult validationResult = validationResultPool.acquire();
             validationResult.sessionId(sessionId);
             connectionValidator.validateConnection(validationResult, keyDecoder, validationResultPublisher);
@@ -91,6 +94,7 @@ class ConnectionUpgrade implements Pooled
 
     private void writeUpgradeResponse(final CharSequence key)
     {
+        Logger.log(Category.CONNECTION, "Session %d web-socket key: %s%n", sessionId, key);
         sha1.reset();
         for (int i = 0; i < key.length(); i++)
         {

@@ -142,12 +142,6 @@ class ClientAcceptanceTest
         }
 
         @Override
-        public void onWebSocketConnectionEstablished()
-        {
-
-        }
-
-        @Override
         public void onHeartbeatTimeout()
         {
 

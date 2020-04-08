@@ -86,7 +86,7 @@ public final class Logger
         System.out.printf(format, arg0);
     }
 
-    public static void log(final Category category, final String format, final long arg0, final String arg1)
+    public static void log(final Category category, final String format, final long arg0, final CharSequence arg1)
     {
         if (shouldIgnore(category))
         {

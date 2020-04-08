@@ -28,8 +28,6 @@ public interface ClientEventHandler
 {
     void onMessage(DirectBuffer buffer, int offset, int length, ContentType contentType);
 
-    void onWebSocketConnectionEstablished();
-
     void onHeartbeatTimeout();
 
     void onConnectionClosed();

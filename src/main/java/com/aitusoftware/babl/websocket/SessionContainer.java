@@ -262,8 +262,7 @@ final class SessionContainer implements Agent, AutoCloseable
             while (sessionsForRemoval.hasNext())
             {
                 final long sessionId = sessionsForRemoval.nextValue();
-                removeInactiveSession(sessionId);
-                notYetValidatedSessionMap.remove(sessionId);
+                sessionPool.release(notYetValidatedSessionMap.remove(sessionId));
             }
             workCount += pollIncomingValidationResults();
         }
