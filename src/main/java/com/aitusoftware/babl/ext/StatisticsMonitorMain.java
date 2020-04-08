@@ -17,6 +17,7 @@
  */
 package com.aitusoftware.babl.ext;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -68,7 +69,7 @@ public final class StatisticsMonitorMain
             MONITORING_CONSUMER_CLASS_NAME_PROPERTY, LoggingMonitoringConsumer.class.getName());
         try
         {
-            return (MonitoringConsumer)Class.forName(consumerClassName).getDeclaredConstructors()[0].newInstance();
+            return (MonitoringConsumer)findNoArgConstructor(consumerClassName).newInstance();
         }
         catch (final InstantiationException | IllegalAccessException |
             InvocationTargetException | ClassNotFoundException e)
@@ -76,6 +77,20 @@ public final class StatisticsMonitorMain
             throw new IllegalArgumentException(String.format("Failed to instantiate %s",
                 consumerClassName), e);
         }
+    }
+
+    private static Constructor<?> findNoArgConstructor(final String consumerClassName)
+        throws ClassNotFoundException
+    {
+        final Constructor<?>[] declaredConstructors = Class.forName(consumerClassName).getDeclaredConstructors();
+        for (final Constructor<?> declaredConstructor : declaredConstructors)
+        {
+            if (declaredConstructor.getParameterCount() == 0)
+            {
+                return declaredConstructor;
+            }
+        }
+        throw new IllegalArgumentException("No no-arg constructor found for class " + consumerClassName);
     }
 
     private static final class LoggingMonitoringConsumer implements MonitoringConsumer

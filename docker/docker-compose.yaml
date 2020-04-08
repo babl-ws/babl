@@ -2,10 +2,10 @@ version: '3'
 services:
   http_host:
     image: "nginx:latest"
+    hostname: babl-proxy
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ./html:/usr/share/nginx/html:ro
-    hostname: babl-proxy
     networks:
       mgt:
         ipv4_address: 172.30.2.2
@@ -16,11 +16,11 @@ services:
     hostname: babl-server
     volumes:
       - server-data-dir:/babl/server
-    ports:
-      - "8080:8080"
     networks:
       mgt:
         ipv4_address: 172.30.2.3
+    ports:
+      - "8080:8080"
   babl-error-monitor:
     image: "aitusoftware/babl-error-printer:latest"
     hostname: babl-error-monitor
@@ -31,6 +31,13 @@ services:
     hostname: babl-stats-monitor
     volumes:
       - server-data-dir:/babl/server
+  babl-health-monitor:
+    image: "aitusoftware/babl-healthcheck:latest"
+    hostname: babl-health-monitor
+    volumes:
+      - server-data-dir:/babl/server
+    ports:
+      - "8090:8090"
 
 volumes:
   server-data-dir:

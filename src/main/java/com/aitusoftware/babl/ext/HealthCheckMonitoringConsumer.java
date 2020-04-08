@@ -26,12 +26,14 @@ import com.aitusoftware.babl.monitoring.MappedSessionContainerStatistics;
 import com.aitusoftware.babl.monitoring.MappedSessionStatistics;
 
 import org.agrona.concurrent.EpochClock;
+import org.agrona.concurrent.SystemEpochClock;
 import org.agrona.concurrent.errors.ErrorLogReader;
 
 final class HealthCheckMonitoringConsumer implements MonitoringConsumer
 {
     private static final long UPDATE_EXPIRY_TIMEOUT_MS = TimeUnit.SECONDS.toMillis(10);
     private static final NoOpErrorConsumer NO_OP_ERROR_CONSUMER = new NoOpErrorConsumer();
+
     private final EpochClock clock;
     private volatile boolean isHealthy = true;
     private volatile String reason = null;
@@ -40,6 +42,14 @@ final class HealthCheckMonitoringConsumer implements MonitoringConsumer
     HealthCheckMonitoringConsumer(final EpochClock clock)
     {
         this.clock = clock;
+        final Thread thread = new Thread(new HealthCheckEndpoint(this::isHealthy, this::reason, clock));
+        thread.setDaemon(true);
+        thread.start();
+    }
+
+    HealthCheckMonitoringConsumer()
+    {
+        this(new SystemEpochClock());
     }
 
     boolean isHealthy()
@@ -115,5 +125,4 @@ final class HealthCheckMonitoringConsumer implements MonitoringConsumer
             isHealthy = false;
         }
     }
-
 }
