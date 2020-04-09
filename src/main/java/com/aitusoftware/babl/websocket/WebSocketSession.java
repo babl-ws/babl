@@ -97,6 +97,7 @@ public final class WebSocketSession implements Pooled, Session
         state = SessionState.UPGRADING;
         pingAgent.reset();
         id = -1;
+        CloseHelper.close(channel);
         channel = null;
         frameDecoder.reset();
         frameEncoder.reset();
@@ -170,7 +171,16 @@ public final class WebSocketSession implements Pooled, Session
 
     int doAdminWork()
     {
-        return pingAgent.doWork() + processLingeringClose();
+        int workDone = 0;
+        switch (state)
+        {
+            case CONNECTED:
+                workDone = pingAgent.doWork() + processLingeringClose();
+                break;
+            default:
+                // no-op
+        }
+        return workDone;
     }
 
     int doSendWork() throws IOException

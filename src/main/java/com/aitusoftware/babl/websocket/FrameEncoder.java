@@ -195,9 +195,17 @@ final class FrameEncoder
         if (sendBuffer.position() != 0)
         {
             sendBuffer.flip();
-            final int written = channel.write(sendBuffer);
-            sessionStatistics.bytesWritten(written);
-            sessionContainerStatistics.bytesWritten(written);
+            int written;
+            try
+            {
+                written = channel.write(sendBuffer);
+                sessionStatistics.bytesWritten(written);
+                sessionContainerStatistics.bytesWritten(written);
+            }
+            catch (final IOException e)
+            {
+                written = -1;
+            }
 
             if (-1 == written)
             {

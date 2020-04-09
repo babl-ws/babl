@@ -131,6 +131,7 @@ public final class Client
         final int sendWork = frameEncoder.doSendWork(channel);
         if (sendWork == SendResult.NOT_CONNECTED)
         {
+            clientEventHandler.onConnectionClosed();
             closed = true;
             return 1;
         }

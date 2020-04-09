@@ -262,7 +262,7 @@ final class SessionContainer implements Agent, AutoCloseable
             while (sessionsForRemoval.hasNext())
             {
                 final long sessionId = sessionsForRemoval.nextValue();
-                sessionPool.release(notYetValidatedSessionMap.remove(sessionId));
+                removeInactiveSession(sessionId);
             }
             workCount += pollIncomingValidationResults();
         }
@@ -289,6 +289,9 @@ final class SessionContainer implements Agent, AutoCloseable
 
     private void removeInactiveSession(final long sessionId)
     {
+        notYetValidatedSessionMap.remove(sessionId);
+        sessionDataListener.receiveWorkAvailable.remove(sessionId);
+        sessionDataListener.sendWorkAvailable.remove(sessionId);
         final WebSocketSession session = activeSessionMap.remove(sessionId);
         sessionPool.release(session);
 

@@ -98,7 +98,7 @@ class DockerComposeIntegrationTest
 
             new ProcessBuilder()
                 .directory(DOCKER_DIR.toFile())
-                .inheritIO()
+                .redirectOutput(stdOut.toFile())
                 .command(DOCKER_COMPOSE_PATH, "down")
                 .start().waitFor(30, TimeUnit.SECONDS);
         }

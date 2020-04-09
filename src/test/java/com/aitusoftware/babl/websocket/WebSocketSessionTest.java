@@ -118,6 +118,7 @@ class WebSocketSessionTest
             BASE_TIME_MS + PING_INTERVAL_MS + 1 + PONG_RESPONSE_TIMEOUT_MS + 1);
         provideSocketData(handshake());
         upgradeConnection();
+        session.validated();
 
         // time = BASE_TIME_MS + PING_INTERVAL_MS + 1 <- send ping
         session.doAdminWork();

@@ -73,7 +73,7 @@ class ConnectionUpgrade implements Pooled
         final boolean decoded = keyDecoder.decode(input, this::writeUpgradeResponse);
         if (decoded)
         {
-            Logger.log(Category.CONNECTION, "Session %d key decoded", sessionId);
+            Logger.log(Category.CONNECTION, "Session %d key decoded%n", sessionId);
             final ValidationResult validationResult = validationResultPool.acquire();
             validationResult.sessionId(sessionId);
             connectionValidator.validateConnection(validationResult, keyDecoder, validationResultPublisher);

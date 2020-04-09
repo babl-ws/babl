@@ -48,6 +48,7 @@ import io.vertx.core.http.WebSocketFrame;
 class ClientAcceptanceTest
 {
     private static final SleepingMillisIdleStrategy IDLE_STRATEGY = new SleepingMillisIdleStrategy(1L);
+
     private HttpServer httpServer;
 
     @BeforeEach

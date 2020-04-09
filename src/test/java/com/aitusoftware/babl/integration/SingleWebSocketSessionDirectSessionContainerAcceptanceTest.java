@@ -21,6 +21,7 @@ import static com.aitusoftware.babl.websocket.Constants.CLOSE_REASON_PROTOCOL_ER
 import static com.google.common.truth.Truth.assertThat;
 
 import java.io.IOException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -37,12 +38,18 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import com.aitusoftware.babl.log.Logger;
+import com.aitusoftware.babl.user.ContentType;
 import com.aitusoftware.babl.user.EchoApplication;
+import com.aitusoftware.babl.websocket.Client;
+import com.aitusoftware.babl.websocket.ClientEventHandler;
 import com.aitusoftware.babl.websocket.ConnectionValidator;
 import com.aitusoftware.babl.websocket.ValidationResult;
 import com.aitusoftware.babl.websocket.ValidationResultPublisher;
 
 import org.agrona.CloseHelper;
+import org.agrona.DirectBuffer;
+import org.agrona.concurrent.UnsafeBuffer;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -63,6 +70,9 @@ import io.vertx.core.http.WebSocketFrame;
 class SingleWebSocketSessionDirectSessionContainerAcceptanceTest
 {
     private static final int MESSAGE_COUNT = 100;
+    private static final String REQUEST_URI = "/";
+    private static final String HOST = "localhost";
+
     private final EchoApplication application = new EchoApplication(false);
     private final ServerHarness harness = new ServerHarness(application);
     private final TestConnectionValidator testConnectionValidator = new TestConnectionValidator();
@@ -81,6 +91,7 @@ class SingleWebSocketSessionDirectSessionContainerAcceptanceTest
     void setUp() throws IOException
     {
         harness.serverConfig().connectionValidator(testConnectionValidator);
+        harness.serverConfig().validationTimeoutNanos(TimeUnit.MILLISECONDS.toNanos(500L));
         harness.sessionConfig().maxBufferSize(1 << 20);
         harness.start(workingDir);
         client = Vertx.vertx().createHttpClient(new HttpClientOptions());
@@ -91,6 +102,30 @@ class SingleWebSocketSessionDirectSessionContainerAcceptanceTest
     {
         CloseHelper.close(harness);
         client.close();
+    }
+
+    @Test
+    void shouldHandleUpgradeFailure() throws IOException
+    {
+        final NoOpClientEventHandler clientEventHandler = new NoOpClientEventHandler();
+        final Client client = new Client(clientEventHandler);
+
+        client.connect(new URL("http://" + HOST + ":" + harness.serverPort()));
+        assertThat(client.upgradeConnection()).isFalse();
+        final DirectBuffer payload = new UnsafeBuffer("hello".getBytes(StandardCharsets.UTF_8));
+        Awaitility.await().pollInterval(50, TimeUnit.MILLISECONDS).atMost(10, TimeUnit.SECONDS).until(() ->
+        {
+            client.offer(payload, 0, 5, ContentType.TEXT);
+            try
+            {
+                client.doWork();
+            }
+            catch (final IOException e)
+            {
+                // ignore
+            }
+            return clientEventHandler.latch.getCount() == 0;
+        });
     }
 
     @Test
@@ -141,7 +176,7 @@ class SingleWebSocketSessionDirectSessionContainerAcceptanceTest
         final CountDownLatch latch = new CountDownLatch(1);
         final List<String> messagesSent = new ArrayList<>();
         final List<String> messagesReceived = new ArrayList<>();
-        client.webSocket(harness.serverPort(), "localhost", "/some-uri",
+        client.webSocket(harness.serverPort(), HOST, REQUEST_URI,
             new Handler<AsyncResult<WebSocket>>()
             {
                 @Override
@@ -167,9 +202,9 @@ class SingleWebSocketSessionDirectSessionContainerAcceptanceTest
     void shouldPropagateUpgradeRequestHeaders() throws Exception
     {
         final WebSocketConnectOptions connectOptions = new WebSocketConnectOptions()
-            .setHost("localhost")
+            .setHost(HOST)
             .setPort(harness.serverPort())
-            .setURI("/some-uri")
+            .setURI(REQUEST_URI)
             .addHeader("custom-header-0", "value-0")
             .addHeader("X-custom-header-1", "VaLuE-1");
         final CountDownLatch latch = new CountDownLatch(1);
@@ -196,7 +231,7 @@ class SingleWebSocketSessionDirectSessionContainerAcceptanceTest
         testConnectionValidator.validationResultCode.set(ValidationResult.VALIDATION_FAILED);
 
         final CountDownLatch latch = new CountDownLatch(1);
-        client.webSocket(harness.serverPort(), "localhost", "/some-uri",
+        client.webSocket(harness.serverPort(), HOST, REQUEST_URI,
             new Handler<AsyncResult<WebSocket>>()
             {
                 @Override
@@ -240,7 +275,7 @@ class SingleWebSocketSessionDirectSessionContainerAcceptanceTest
         java.util.concurrent.TimeoutException
     {
         final CompletableFuture<WebSocket> socketFuture = new CompletableFuture<>();
-        client.webSocket(harness.serverPort(), "localhost", "/some-uri",
+        client.webSocket(harness.serverPort(), HOST, REQUEST_URI,
             new Handler<AsyncResult<WebSocket>>()
             {
                 @Override
@@ -259,7 +294,7 @@ class SingleWebSocketSessionDirectSessionContainerAcceptanceTest
         final CountDownLatch latch = new CountDownLatch(1);
         final List<String> messagesSent = new ArrayList<>();
         final List<String> messagesReceived = new ArrayList<>();
-        client.webSocket(harness.serverPort(), "localhost", "/some-uri",
+        client.webSocket(harness.serverPort(), HOST, REQUEST_URI,
             new Handler<AsyncResult<WebSocket>>()
             {
                 @Override
@@ -344,6 +379,33 @@ class SingleWebSocketSessionDirectSessionContainerAcceptanceTest
             {
                 latch.countDown();
             }
+        }
+    }
+
+    private static class NoOpClientEventHandler implements ClientEventHandler
+    {
+        private final CountDownLatch latch = new CountDownLatch(1);
+
+        @Override
+        public void onMessage(
+            final DirectBuffer buffer,
+            final int offset,
+            final int length,
+            final ContentType contentType)
+        {
+
+        }
+
+        @Override
+        public void onHeartbeatTimeout()
+        {
+
+        }
+
+        @Override
+        public void onConnectionClosed()
+        {
+            latch.countDown();
         }
     }
 }
