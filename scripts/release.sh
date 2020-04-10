@@ -15,4 +15,9 @@ VERSION=$(cat "$PROJECT_DIR/version.txt")
 git tag "v$VERSION"
 git push --tags
 
+DOCS_DIR=$(mktemp -d)
+"$PROJECT_DIR/scripts/docs-build.sh" publish $DOCS_DIR
+
+"$PROJECT_DIR/scripts/docker-build.sh"
+
 docker push "aitusoftware/babl:$VERSION"
