@@ -12,6 +12,8 @@ VERSION=$(cat "$PROJECT_DIR/version.txt")
 
 ./gradlew uploadArchives uploadShadow
 
+git add version.txt
+git commit -m "Release v$VERSION"
 git tag "v$VERSION"
 git push --tags
 
