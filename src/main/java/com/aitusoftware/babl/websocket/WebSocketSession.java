@@ -21,9 +21,11 @@ import static com.aitusoftware.babl.io.BufferUtil.increaseCapacity;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 import java.util.function.Consumer;
 
+import com.aitusoftware.babl.config.SessionConfig;
 import com.aitusoftware.babl.log.Category;
 import com.aitusoftware.babl.log.Logger;
 import com.aitusoftware.babl.monitoring.SessionContainerStatistics;
@@ -32,7 +34,6 @@ import com.aitusoftware.babl.pool.BufferPool;
 import com.aitusoftware.babl.pool.Pooled;
 import com.aitusoftware.babl.user.Application;
 import com.aitusoftware.babl.user.ContentType;
-import com.aitusoftware.babl.config.SessionConfig;
 
 import org.agrona.CloseHelper;
 import org.agrona.DirectBuffer;
@@ -56,7 +57,8 @@ public final class WebSocketSession implements Pooled, Session
     private final SessionContainerStatistics sessionContainerStatistics;
 
     private long id;
-    private SocketChannel channel;
+    private WritableByteChannel outputChannel;
+    private ReadableByteChannel inputChannel;
     private SessionStatistics sessionStatistics;
     private transient ByteBuffer handshakeSendBuffer;
     private ByteBuffer receiveBuffer;
@@ -97,8 +99,10 @@ public final class WebSocketSession implements Pooled, Session
         state = SessionState.UPGRADING;
         pingAgent.reset();
         id = -1;
-        CloseHelper.close(channel);
-        channel = null;
+        CloseHelper.close(outputChannel);
+        CloseHelper.close(inputChannel);
+        outputChannel = null;
+        inputChannel = null;
         frameDecoder.reset();
         frameEncoder.reset();
         undeliveredDisconnectReason = null;
@@ -108,8 +112,9 @@ public final class WebSocketSession implements Pooled, Session
         final long sessionId,
         final ConnectionUpgrade connectionUpgrade,
         final Consumer<ConnectionUpgrade> releaseHandler,
-        final SocketChannel channel,
-        final long connectedTimestampMs)
+        final long connectedTimestampMs,
+        final ReadableByteChannel inputChannel,
+        final WritableByteChannel outputChannel)
     {
         this.id = sessionId;
         sessionStatistics.reset(sessionId, state);
@@ -125,7 +130,8 @@ public final class WebSocketSession implements Pooled, Session
         pingAgent.init(id);
         this.frameDecoder.init(sessionStatistics);
         this.frameEncoder.init(sessionStatistics, sessionId);
-        this.channel = channel;
+        this.inputChannel = inputChannel;
+        this.outputChannel = outputChannel;
         connectionUpgrade.init(sessionId);
     }
 
@@ -195,7 +201,7 @@ public final class WebSocketSession implements Pooled, Session
             if (handshakeSendBuffer.position() != 0)
             {
                 handshakeSendBuffer.flip();
-                final int written = channel.write(handshakeSendBuffer);
+                final int written = outputChannel.write(handshakeSendBuffer);
                 if (isEndOfStream(written))
                 {
                     close(DisconnectReason.REMOTE_DISCONNECT);
@@ -233,7 +239,7 @@ public final class WebSocketSession implements Pooled, Session
                 return 1;
             }
         }
-        final int sendWork = frameEncoder.doSendWork(channel);
+        final int sendWork = frameEncoder.doSendWork(outputChannel);
         if (sendWork == SendResult.NOT_CONNECTED)
         {
             sessionClosed(DisconnectReason.REMOTE_DISCONNECT);
@@ -263,7 +269,7 @@ public final class WebSocketSession implements Pooled, Session
         {
             allocateLargerReceiveBuffer();
         }
-        final int bytesRead = channel.read(receiveBuffer);
+        final int bytesRead = inputChannel.read(receiveBuffer);
         sessionStatistics.bytesRead(bytesRead);
         sessionContainerStatistics.bytesRead(bytesRead);
         if (isEndOfStream(bytesRead))
@@ -308,11 +314,6 @@ public final class WebSocketSession implements Pooled, Session
     int receiveBufferCapacity()
     {
         return receiveBuffer.capacity();
-    }
-
-    SocketChannel channel()
-    {
-        return channel;
     }
 
     long connectedTimestampMs()
@@ -440,7 +441,8 @@ public final class WebSocketSession implements Pooled, Session
         }
         undeliveredDisconnectReason = null;
         onSessionClosed();
-        CloseHelper.quietClose(channel);
+        CloseHelper.quietClose(outputChannel);
+        CloseHelper.quietClose(inputChannel);
     }
 
     private int processLingeringClose()

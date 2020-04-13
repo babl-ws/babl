@@ -162,9 +162,7 @@ final class SessionContainer implements Agent, AutoCloseable
         if (!queuedSessions.isEmpty())
         {
             final WebSocketSession queued = queuedSessions.pollLast();
-            final long sessionId = queued.id();
-            final SocketChannel channel = queued.channel();
-            workCount += attemptSessionConnected(queued, sessionId, channel);
+            workCount += attemptSessionConnected(queued);
         }
 
         final SocketChannel newConnection = incomingConnections.poll();
@@ -177,7 +175,8 @@ final class SessionContainer implements Agent, AutoCloseable
                 return 1;
             }
             final WebSocketSession session = sessionPool.acquire();
-            session.init(sessionId, connectionUpgradePool.acquire(), this::connectionUpgraded, newConnection, timeMs);
+            session.init(sessionId, connectionUpgradePool.acquire(), this::connectionUpgraded, timeMs,
+                newConnection, newConnection);
             workCount++;
             notYetValidatedSessionMap.put(sessionId, session);
             webSocketPoller.register(session, newConnection);
@@ -254,7 +253,6 @@ final class SessionContainer implements Agent, AutoCloseable
                 final WebSocketSession session = notYetValidatedSessions.next();
                 if (session.connectedTimestampMs() < timeMs - validationTimeoutMs)
                 {
-                    CloseHelper.quietClose(session.channel());
                     invalidSessionsForRemoval.add(session.id());
                 }
             }
@@ -348,10 +346,7 @@ final class SessionContainer implements Agent, AutoCloseable
         connectionUpgradePool.release(connectionUpgrade);
     }
 
-    private int attemptSessionConnected(
-        final WebSocketSession queued,
-        final long sessionId,
-        final SocketChannel channel)
+    private int attemptSessionConnected(final WebSocketSession queued)
     {
         int workDone = 0;
         if (SendResult.OK != application.onSessionConnected(queued))

@@ -21,15 +21,15 @@ import static com.aitusoftware.babl.io.BufferUtil.increaseCapacity;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.WritableByteChannel;
 
+import com.aitusoftware.babl.config.SessionConfig;
 import com.aitusoftware.babl.log.Category;
 import com.aitusoftware.babl.log.Logger;
 import com.aitusoftware.babl.monitoring.SessionContainerStatistics;
 import com.aitusoftware.babl.monitoring.SessionStatistics;
 import com.aitusoftware.babl.pool.BufferPool;
 import com.aitusoftware.babl.user.ContentType;
-import com.aitusoftware.babl.config.SessionConfig;
 
 import org.agrona.BitUtil;
 import org.agrona.DirectBuffer;
@@ -190,7 +190,7 @@ final class FrameEncoder
         return SendResult.OK;
     }
 
-    int doSendWork(final SocketChannel channel) throws IOException
+    int doSendWork(final WritableByteChannel channel) throws IOException
     {
         if (sendBuffer.position() != 0)
         {

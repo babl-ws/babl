@@ -58,17 +58,17 @@ public class FrameDecoderBenchmark
     public void setup()
     {
         frameDecoder.init(new NoOpSessionStatistics());
-        writeWebSocketFrame(new byte[100], 100, singleFramePayload,
+        MsgUtil.writeWebSocketFrame(new byte[100], 100, singleFramePayload,
             0, 0, true, Constants.OPCODE_BINARY);
         singleFramePayload.clear();
 
-        writeWebSocketFrame(new byte[100], 100, multipleFramePayload,
+        MsgUtil.writeWebSocketFrame(new byte[100], 100, multipleFramePayload,
             0, 0, false, Constants.OPCODE_BINARY);
-        writeWebSocketFrame(new byte[100], 100, multipleFramePayload,
+        MsgUtil.writeWebSocketFrame(new byte[100], 100, multipleFramePayload,
             0, 0, false, Constants.OPCODE_CONTINUATION);
-        writeWebSocketFrame(new byte[100], 100, multipleFramePayload,
+        MsgUtil.writeWebSocketFrame(new byte[100], 100, multipleFramePayload,
             0, 0, false, Constants.OPCODE_CONTINUATION);
-        writeWebSocketFrame(new byte[100], 100, multipleFramePayload,
+        MsgUtil.writeWebSocketFrame(new byte[100], 100, multipleFramePayload,
             0, 0, true, Constants.OPCODE_CONTINUATION);
         multipleFramePayload.clear();
     }
@@ -116,66 +116,4 @@ public class FrameDecoderBenchmark
 
         }
     }
-
-    private static void writeWebSocketFrame(
-        final byte[] payload, final int lengthToWrite,
-        final ByteBuffer dst, final int maskingKey,
-        final int maskingKeyOffset, final boolean isFin,
-        final int opCode)
-    {
-        dst.order(Constants.NETWORK_BYTE_ORDER);
-        final int startPosition = dst.position();
-        int relativeOffset = startPosition;
-        final int remaining = dst.remaining();
-        final int headerLength = EncodingUtil.requestHeaderLengthByPayloadLength(payload.length);
-
-        if (lengthToWrite > remaining - headerLength)
-        {
-            throw new IllegalStateException("Message too large for buffer");
-        }
-        if (isFin)
-        {
-            dst.put(relativeOffset, (byte)(0b1000_0000 | opCode));
-        }
-        else
-        {
-            dst.put(relativeOffset, (byte)opCode);
-        }
-        relativeOffset++;
-        if (EncodingUtil.isSmallRequestMessage(headerLength))
-        {
-            dst.put(relativeOffset, (byte)(0b1000_0000 | payload.length));
-            relativeOffset++;
-        }
-        else if (EncodingUtil.isMediumRequestMessage(headerLength))
-        {
-            dst.put(relativeOffset, (byte)(0b1000_0000 | 126));
-            relativeOffset++;
-            dst.putShort(relativeOffset, (short)payload.length);
-            relativeOffset += 2;
-        }
-        else
-        {
-            dst.put(relativeOffset, (byte)(0b1000_0000 | 127));
-            relativeOffset++;
-            dst.putLong(relativeOffset, payload.length);
-            relativeOffset += 8;
-        }
-        dst.putInt(relativeOffset, maskingKey);
-        relativeOffset += 4;
-        dst.position(relativeOffset);
-        int maskingKeyIndex = maskingKeyOffset;
-        final byte[] maskingKeyBytes = new byte[4];
-        maskingKeyBytes[0] = (byte)(maskingKey >> 24);
-        maskingKeyBytes[1] = (byte)(maskingKey >> 16);
-        maskingKeyBytes[2] = (byte)(maskingKey >> 8);
-        maskingKeyBytes[3] = (byte)(maskingKey);
-        for (int i = 0; i < lengthToWrite; i++)
-        {
-            dst.put((byte)(payload[i] ^ maskingKeyBytes[maskingKeyIndex & 3]));
-            maskingKeyIndex++;
-        }
-        dst.position(startPosition + headerLength + lengthToWrite);
-    }
-
 }

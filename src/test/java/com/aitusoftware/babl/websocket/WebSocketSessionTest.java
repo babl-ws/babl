@@ -107,7 +107,7 @@ class WebSocketSessionTest
     void setUp()
     {
         given(clock.time()).willReturn(BASE_TIME_MS);
-        session.init(SESSION_ID, connectionUpgrade, cu -> {}, channel, BASE_TIME_MS);
+        session.init(SESSION_ID, connectionUpgrade, cu -> {}, BASE_TIME_MS, channel, channel);
     }
 
     @Test
