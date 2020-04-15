@@ -27,11 +27,11 @@ import com.aitusoftware.babl.config.SessionConfig;
 import com.aitusoftware.babl.monitoring.NoOpSessionContainerStatistics;
 import com.aitusoftware.babl.monitoring.NoOpSessionStatistics;
 import com.aitusoftware.babl.pool.BufferPool;
+import com.aitusoftware.babl.time.SingleThreadedCachedClock;
 import com.aitusoftware.babl.user.Application;
 import com.aitusoftware.babl.user.ContentType;
 
 import org.agrona.DirectBuffer;
-import org.agrona.concurrent.SystemEpochClock;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -56,7 +56,7 @@ public class WebSocketSessionBenchmark
     private static final NoOpSessionContainerStatistics SESSION_CONTAINER_STATISTICS =
         new NoOpSessionContainerStatistics();
     private static final NoOpSessionStatistics SESSION_STATISTICS = new NoOpSessionStatistics();
-    private static final SystemEpochClock CLOCK = new SystemEpochClock();
+    private static final SingleThreadedCachedClock CLOCK = new SingleThreadedCachedClock();
     private static final byte[] PAYLOAD = new byte[100];
     private static final int TOTAL_FRAME_LENGTH = PAYLOAD.length + 6;
 
@@ -71,12 +71,13 @@ public class WebSocketSessionBenchmark
     private final ByteBuffer singleFramePayload = ByteBuffer.allocateDirect(106);
     private final WebSocketSession session = new WebSocketSession(SESSION_DATA_LISTENER, frameDecoder, frameEncoder,
         SESSION_CONFIG, bufferPool, application, pingAgent, SESSION_STATISTICS, SESSION_CONTAINER_STATISTICS);
-    private final ReadableByteChannel dataSource = new DataSource();
-    private final WritableByteChannel dataSink = new DataSink();
+    private final DataSource dataSource = new DataSource();
+    private final DataSink dataSink = new DataSink();
 
     @Setup
     public void setup()
     {
+        CLOCK.set(System.currentTimeMillis());
         frameDecoder.init(SESSION_STATISTICS);
         MsgUtil.writeWebSocketFrame(PAYLOAD, PAYLOAD.length, singleFramePayload,
             0, 0, true, Constants.OPCODE_BINARY);
@@ -92,16 +93,19 @@ public class WebSocketSessionBenchmark
     {
         session.doSendWork();
         session.doReceiveWork();
-        return application.messageCount;
+        return application.messageCount + dataSink.totalBytes + dataSink.totalBytes;
     }
 
     private static final class DataSink implements WritableByteChannel
     {
+        private long totalBytes = 0;
+
         @Override
         public int write(final ByteBuffer src)
         {
             final int remaining = src.remaining();
             src.position(src.limit());
+            totalBytes += remaining;
             return remaining;
         }
 
@@ -119,6 +123,8 @@ public class WebSocketSessionBenchmark
 
     private final class DataSource implements ReadableByteChannel
     {
+        private long totalBytes = 0;
+
         @Override
         public int read(final ByteBuffer dst)
         {
@@ -126,6 +132,7 @@ public class WebSocketSessionBenchmark
             {
                 singleFramePayload.limit(TOTAL_FRAME_LENGTH).position(0);
                 dst.put(singleFramePayload);
+                totalBytes += TOTAL_FRAME_LENGTH;
                 return TOTAL_FRAME_LENGTH;
             }
             return 0;
@@ -170,6 +177,7 @@ public class WebSocketSessionBenchmark
             final int length)
         {
             messageCount++;
+            session.send(contentType, msg, 0, length);
             return SendResult.OK;
         }
     }

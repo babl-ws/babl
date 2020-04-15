@@ -329,6 +329,7 @@ public final class WebSocketSession implements Pooled, Session
             if (decodeResult > 0)
             {
                 pingAgent.messageReceived();
+                sessionStatistics.receiveBufferedBytes(receiveBuffer.remaining());
                 receiveBuffer.position(receiveBuffer.position() + decodeResult);
                 if (receiveBuffer.remaining() == 0)
                 {
@@ -337,29 +338,20 @@ public final class WebSocketSession implements Pooled, Session
                     sessionStatistics.receiveBufferedBytes(0);
                     break;
                 }
-                sessionStatistics.receiveBufferedBytes(receiveBuffer.remaining());
             }
             else if (decodeResult == SendResult.BACK_PRESSURE)
             {
-                pingAgent.messageReceived();
-                final int limit = receiveBuffer.limit();
-                receiveBuffer.limit(receiveBuffer.capacity()).position(limit);
-                sessionStatistics.receiveBufferedBytes(receiveBuffer.remaining());
+                rewindReceiveBuffer();
                 return;
             }
             else if (decodeResult == SendResult.NEED_MORE_DATA)
             {
-                sessionDataListener.receiveDataProcessed();
-                receiveBuffer.compact();
-                sessionStatistics.receiveBufferedBytes(receiveBuffer.remaining());
+                compactReceiveBuffer();
                 return;
             }
             else if (decodeResult == SendResult.INVALID_MESSAGE)
             {
-                sessionStatistics.invalidMessageReceived();
-                onCloseMessage(Constants.CLOSE_REASON_INVALID_DATA_SIZE);
-                receiveBuffer.clear();
-                sessionStatistics.receiveBufferedBytes(0);
+                closeSession();
                 break;
             }
             if (frameDecoder.hasQueuedMessage())
@@ -371,9 +363,7 @@ public final class WebSocketSession implements Pooled, Session
             else if (receiveBuffer.remaining() == 0 && receiveBuffer.position() != 0)
             {
                 // nothing left to do until more data arrives
-                sessionDataListener.receiveDataProcessed();
-                receiveBuffer.compact();
-                sessionStatistics.receiveBufferedBytes(receiveBuffer.remaining());
+                compactReceiveBuffer();
                 break;
             }
         }
@@ -468,6 +458,29 @@ public final class WebSocketSession implements Pooled, Session
         this.closeReason = closeReason;
         // trigger call to doSendWork()
         sessionDataListener.sendDataAvailable();
+    }
+
+    private void closeSession()
+    {
+        sessionStatistics.invalidMessageReceived();
+        onCloseMessage(Constants.CLOSE_REASON_INVALID_DATA_SIZE);
+        receiveBuffer.clear();
+        sessionStatistics.receiveBufferedBytes(0);
+    }
+
+    private void compactReceiveBuffer()
+    {
+        sessionDataListener.receiveDataProcessed();
+        receiveBuffer.compact();
+        sessionStatistics.receiveBufferedBytes(receiveBuffer.remaining());
+    }
+
+    private void rewindReceiveBuffer()
+    {
+        pingAgent.messageReceived();
+        final int limit = receiveBuffer.limit();
+        receiveBuffer.limit(receiveBuffer.capacity()).position(limit);
+        sessionStatistics.receiveBufferedBytes(receiveBuffer.remaining());
     }
 
     private static boolean isEndOfStream(final int byteCount)

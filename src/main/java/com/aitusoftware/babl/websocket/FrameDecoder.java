@@ -123,6 +123,15 @@ final class FrameDecoder
         {
             return SendResult.NEED_MORE_DATA;
         }
+        return decodeFrame(payload, session, payloadOffset, payloadLength);
+    }
+
+    private int decodeFrame(
+        final ByteBuffer payload,
+        final WebSocketSession session,
+        final int payloadOffset,
+        final int payloadLength)
+    {
         Logger.log(Category.DECODE, "Received new message (%d); data available: %d%n",
             frameHeader.opCode, payload.remaining());
         Logger.log(Category.DECODE, "Payload length: %d%n", payloadLength);
@@ -162,49 +171,15 @@ final class FrameDecoder
             final int bytesConsumed = frameLength;
             if (frameHeader.opCode == Constants.OPCODE_PING)
             {
-                if (session != null)
-                {
-                    Logger.log(Category.HEARTBEAT, "Received ping on session %d, payload: %dB%n",
-                        session.id(), dstOffset);
-                }
-                if (payloadLength > PingAgent.MAX_PING_PAYLOAD_LENGTH)
-                {
-                    sessionStatistics.invalidPingReceived();
-                }
-                else
-                {
-                    if (maskingKey != 0)
-                    {
-                        unmaskPayload(payload, 0, payload, 0, payloadLength);
-                    }
-                    pingAgent.pingReceived(payload, 0, frameHeader.maskedPayloadLength);
-                }
+                handlePing(payload, payloadLength, session);
             }
             else if (frameHeader.opCode == Constants.OPCODE_PONG)
             {
-                if (session != null)
-                {
-                    Logger.log(Category.HEARTBEAT, "Received pong on session %d, payload: %dB%n",
-                        session.id(), dstOffset);
-                }
-                if (maskingKey != 0)
-                {
-                    unmaskPayload(payload, 0, payload, 0, payloadLength);
-                }
-                pingAgent.pongReceived(payload, 0, frameHeader.maskedPayloadLength);
+                handlePong(payload, payloadLength, session);
             }
             else if (frameHeader.opCode == Constants.OPCODE_CLOSE)
             {
-                short closeReason = Constants.CLOSE_REASON_NORMAL;
-                if (frameHeader.maskedPayloadLength > 1)
-                {
-                    if (maskingKey != 0)
-                    {
-                        unmaskPayload(payload, 0, payload, 0, payloadLength);
-                    }
-                    closeReason = payload.getShort(0, NETWORK_BYTE_ORDER);
-                }
-                messageReceiver.onCloseMessage(closeReason, session);
+                handleClose(payload, payloadLength, session);
             }
             else
             {
@@ -217,17 +192,71 @@ final class FrameDecoder
         }
         else
         {
-            Logger.log(Category.DECODE, "Copying %dB to %d%n", payloadLength, dstOffset + payloadLength);
-            if (internalBufferIncreaseRequired(payloadLength))
+            return enqueueFrame(payload, payloadLength, session);
+        }
+    }
+
+    private int enqueueFrame(final MutableDirectBuffer payload, final int payloadLength, final WebSocketSession session)
+    {
+        Logger.log(Category.DECODE, "Copying %dB to %d%n", payloadLength, dstOffset + payloadLength);
+        if (internalBufferIncreaseRequired(payloadLength))
+        {
+            if (!resizeInternalBuffer(payloadLength))
             {
-                if (!resizeInternalBuffer(payloadLength))
-                {
-                    resetAfterMessageDelivery();
-                    return SendResult.INVALID_MESSAGE;
-                }
+                resetAfterMessageDelivery();
+                return SendResult.INVALID_MESSAGE;
             }
-            sessionStatistics.frameDecoded();
-            return appendToInternalBuffer(payload, 0, payloadLength, session);
+        }
+        sessionStatistics.frameDecoded();
+        return appendToInternalBuffer(payload, 0, payloadLength, session);
+    }
+
+    private void handleClose(final MutableDirectBuffer payload, final int payloadLength, final WebSocketSession session)
+    {
+        short closeReason = Constants.CLOSE_REASON_NORMAL;
+        if (frameHeader.maskedPayloadLength > 1)
+        {
+            if (maskingKey != 0)
+            {
+                unmaskPayload(payload, 0, payload, 0, payloadLength);
+            }
+            closeReason = payload.getShort(0, NETWORK_BYTE_ORDER);
+        }
+        messageReceiver.onCloseMessage(closeReason, session);
+    }
+
+    private void handlePong(final MutableDirectBuffer payload, final int payloadLength, final WebSocketSession session)
+    {
+        if (session != null)
+        {
+            Logger.log(Category.HEARTBEAT, "Received pong on session %d, payload: %dB%n",
+                session.id(), dstOffset);
+        }
+        if (maskingKey != 0)
+        {
+            unmaskPayload(payload, 0, payload, 0, payloadLength);
+        }
+        pingAgent.pongReceived(payload, 0, frameHeader.maskedPayloadLength);
+    }
+
+    private void handlePing(final MutableDirectBuffer payload, final int payloadLength, final WebSocketSession session)
+    {
+        if (session != null)
+        {
+            Logger.log(Category.HEARTBEAT, "Received ping on session %d, payload: %dB%n",
+                session.id(), dstOffset);
+        }
+        if (payloadLength > PingAgent.MAX_PING_PAYLOAD_LENGTH)
+        {
+            sessionStatistics.invalidPingReceived();
+        }
+        else
+        {
+            if (maskingKey != 0)
+            {
+                unmaskPayload(payload, 0, payload, 0, payloadLength);
+            }
+            pingAgent.pingReceived(payload, 0, frameHeader.maskedPayloadLength);
         }
     }
 
@@ -326,7 +355,7 @@ final class FrameDecoder
         {
             Logger.log(Category.DECODE, "Delivered %d%n", length);
         }
-        if (deliveryResult == SendResult.BACK_PRESSURE)
+        else if (SendResult.BACK_PRESSURE == deliveryResult)
         {
             sessionContainerStatistics.receiveBackPressure();
         }
@@ -388,12 +417,12 @@ final class FrameDecoder
             if (maskingKey != 0)
             {
                 maskingKey = maskingKey << 32 | maskingKey;
+                Logger.log(Category.DECODE, "Mask key: %d%n", maskingKey);
+                maskingKeyBytes[0] = srcBuffer.getByte(maskingKeyOffset);
+                maskingKeyBytes[1] = srcBuffer.getByte(maskingKeyOffset + 1);
+                maskingKeyBytes[2] = srcBuffer.getByte(maskingKeyOffset + 2);
+                maskingKeyBytes[3] = srcBuffer.getByte(maskingKeyOffset + 3);
             }
-            Logger.log(Category.DECODE, "Mask key: %d%n", maskingKey);
-            maskingKeyBytes[0] = srcBuffer.getByte(maskingKeyOffset);
-            maskingKeyBytes[1] = srcBuffer.getByte(maskingKeyOffset + 1);
-            maskingKeyBytes[2] = srcBuffer.getByte(maskingKeyOffset + 2);
-            maskingKeyBytes[3] = srcBuffer.getByte(maskingKeyOffset + 3);
         }
         else
         {
@@ -453,7 +482,7 @@ final class FrameDecoder
         payloadLength = -1;
         frameLength = 0;
         maskingKeyIndex = 0;
-        frameHeader.reset();
+//        frameHeader.reset();
         hasQueuedMessage = false;
         initialFrameOpCode = NO_OP_CODE;
     }

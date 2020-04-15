@@ -31,6 +31,7 @@ public enum ContentType
 
     private static final ContentType[] CONTENT_TYPE_BY_OP_CODE = new ContentType[]
     {
+        null,
         TEXT,
         BINARY
     };
@@ -58,6 +59,6 @@ public enum ContentType
      */
     public static ContentType forOpCode(final int opCode)
     {
-        return CONTENT_TYPE_BY_OP_CODE[opCode - 1];
+        return CONTENT_TYPE_BY_OP_CODE[opCode];
     }
 }
