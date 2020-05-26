@@ -26,10 +26,10 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
+import com.aitusoftware.babl.config.DeploymentMode;
 import com.aitusoftware.babl.monitoring.SessionContainerStatisticsPrinter;
 import com.aitusoftware.babl.user.EchoApplication;
 import com.aitusoftware.babl.websocket.Constants;
-import com.aitusoftware.babl.config.DeploymentMode;
 
 import org.agrona.CloseHelper;
 import org.agrona.collections.MutableInteger;
@@ -126,7 +126,9 @@ class MultipleWebSocketSessionDetachedSessionContainerAcceptanceTest
             final Path serverInstanceDir = serverBaseDir.resolve(Integer.toString(i));
             SessionContainerStatisticsPrinter.readServerStatistics(serverInstanceDir,
                 (timestamp, bytesRead, bytesWritten,
-                activeSessionCount, receiveBackPressureEvents, invalidOpCodeEvents, eventLoopDurationMs) ->
+                activeSessionCount, receiveBackPressureEvents,
+                invalidOpCodeEvents, eventLoopDurationMs,
+                proxyBackPressureEvents, proxyBackPressured) ->
                 totalSessionCount.set(totalSessionCount.get() + activeSessionCount));
         }
 

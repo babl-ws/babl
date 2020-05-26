@@ -26,7 +26,7 @@ public class NoOpSessionAdapterStatistics extends SessionAdapterStatistics
     }
 
     @Override
-    public void proxyBackPressure()
+    public void onSessionBackPressure()
     {
 
     }

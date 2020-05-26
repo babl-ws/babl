@@ -17,23 +17,8 @@
  */
 package com.aitusoftware.babl.monitoring;
 
-public class NoOpApplicationAdapterStatistics extends ApplicationAdapterStatistics
+public interface BackPressureStatus
 {
-    @Override
-    public void adapterPollLimitReached()
-    {
-
-    }
-
-    @Override
-    public void proxyBackPressure()
-    {
-
-    }
-
-    @Override
-    public void proxyBackPressured(final int isBackPressured)
-    {
-
-    }
+    int BACK_PRESSURED = 1;
+    int NOT_BACK_PRESSURED = 0;
 }

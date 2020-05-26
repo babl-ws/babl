@@ -31,15 +31,19 @@ public final class SessionContainerStatisticsPrinter
     {
         readServerStatistics(Paths.get(args[0]),
             (timestamp, bytesRead, bytesWritten, activeSessionCount,
-            receiveBackPressureEvents, invalidOpCodeEvents, maxEventLoopDurationMs) ->
+            receiveBackPressureEvents, invalidOpCodeEvents,
+            maxEventLoopDurationMs, proxyBackPressureEvents,
+            proxyBackPressured) ->
             {
                 System.out.printf("Timestamp: %s%n", Instant.ofEpochMilli(timestamp));
-                System.out.printf("Bytes Read:           %20d%n", bytesRead);
-                System.out.printf("Bytes Written:        %20d%n", bytesWritten);
-                System.out.printf("Active Sessions:      %20d%n", activeSessionCount);
-                System.out.printf("Back Pressure Events: %20d%n", receiveBackPressureEvents);
-                System.out.printf("Invalid Opcode Events:%20d%n", invalidOpCodeEvents);
-                System.out.printf("Max Event Loop Ms    :%20d%n", maxEventLoopDurationMs);
+                System.out.printf("Bytes Read:                 %20d%n", bytesRead);
+                System.out.printf("Bytes Written:              %20d%n", bytesWritten);
+                System.out.printf("Active Sessions:            %20d%n", activeSessionCount);
+                System.out.printf("Back Pressure Events:       %20d%n", receiveBackPressureEvents);
+                System.out.printf("Invalid Opcode Events:      %20d%n", invalidOpCodeEvents);
+                System.out.printf("Max Event Loop Ms    :      %20d%n", maxEventLoopDurationMs);
+                System.out.printf("Proxy Back Pressure Events: %20d%n", proxyBackPressureEvents);
+                System.out.printf("Proxy Back Pressured:       %20s%n", proxyBackPressured);
             });
     }
 
@@ -63,7 +67,9 @@ public final class SessionContainerStatisticsPrinter
                 serverStatistics.activeSessionCount(),
                 serverStatistics.receiveBackPressureEvents(),
                 serverStatistics.invalidOpCodeEvents(),
-                serverStatistics.maxEventLoopDurationMs());
+                serverStatistics.maxEventLoopDurationMs(),
+                serverStatistics.proxyBackPressureEvents(),
+                serverStatistics.isProxyBackPressured());
         }
         finally
         {
@@ -80,6 +86,8 @@ public final class SessionContainerStatisticsPrinter
             int activeSessionCount,
             long receiveBackPressureEvents,
             long invalidOpCodeEvents,
-            long maxEventLoopDurationMs);
+            long maxEventLoopDurationMs,
+            long proxyBackPressureEvents,
+            boolean proxyBackPressured);
     }
 }

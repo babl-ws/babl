@@ -103,9 +103,11 @@ public final class StatisticsMonitorMain
             final MappedApplicationAdapterStatistics applicationAdapterStatistics)
         {
             System.out.printf("Application Adapter Statistics%n");
-            System.out.printf("Proxy back-pressure events: %20d%n",
+            System.out.printf("Currently back-pressured: %s%n",
+                applicationAdapterStatistics.proxyBackPressured());
+            System.out.printf("SessionContainer proxy back-pressure events: %20d%n",
                 applicationAdapterStatistics.proxyBackPressureCount());
-            System.out.printf("Poll-limit reached count:   %20d%n",
+            System.out.printf("Poll-limit reached count:                    %20d%n",
                 applicationAdapterStatistics.pollLimitReachedCount());
         }
 
@@ -117,8 +119,8 @@ public final class StatisticsMonitorMain
             {
                 final MappedSessionAdapterStatistics stats = sessionAdapterStatistics[i];
                 System.out.printf("Session Adapter %d Statistics%n", i);
-                System.out.printf("Proxy back-pressure events: %20d%n", stats.proxyBackPressureCount());
-                System.out.printf("Poll-limit reached count:   %20d%n", stats.pollLimitReachedCount());
+                System.out.printf("Session back-pressure events: %20d%n", stats.sessionBackPressureCount());
+                System.out.printf("Poll-limit reached count:     %20d%n", stats.pollLimitReachedCount());
             }
         }
 
@@ -143,12 +145,14 @@ public final class StatisticsMonitorMain
                 final MappedSessionContainerStatistics stats = sessionContainerStatistics[i];
                 System.out.printf("Session Container %d Statistics%n", i);
                 System.out.printf("Timestamp: %s%n", Instant.ofEpochMilli(stats.timestamp()));
-                System.out.printf("Bytes Read:           %20d%n", stats.bytesRead());
-                System.out.printf("Bytes Written:        %20d%n", stats.bytesWritten());
-                System.out.printf("Active Sessions:      %20d%n", stats.activeSessionCount());
-                System.out.printf("Back Pressure Events: %20d%n", stats.receiveBackPressureEvents());
-                System.out.printf("Invalid Opcode Events:%20d%n", stats.invalidOpCodeEvents());
-                System.out.printf("Max Event Loop Ms    :%20d%n", stats.maxEventLoopDurationMs());
+                System.out.printf("Bytes Read:                 %20d%n", stats.bytesRead());
+                System.out.printf("Bytes Written:              %20d%n", stats.bytesWritten());
+                System.out.printf("Active Sessions:            %20d%n", stats.activeSessionCount());
+                System.out.printf("Back Pressure Events:       %20d%n", stats.receiveBackPressureEvents());
+                System.out.printf("Invalid Opcode Events:      %20d%n", stats.invalidOpCodeEvents());
+                System.out.printf("Max Event Loop Ms    :      %20d%n", stats.maxEventLoopDurationMs());
+                System.out.printf("Proxy Back Pressure Events: %20d%n", stats.proxyBackPressureEvents());
+                System.out.printf("Proxy Back Pressured:       %20s%n", stats.isProxyBackPressured());
             }
         }
 

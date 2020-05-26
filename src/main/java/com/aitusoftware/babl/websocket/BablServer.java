@@ -44,6 +44,7 @@ import com.aitusoftware.babl.proxy.ApplicationProxy;
 import com.aitusoftware.babl.proxy.SessionContainerAdapter;
 import com.aitusoftware.babl.user.Application;
 
+import org.agrona.ErrorHandler;
 import org.agrona.collections.Long2ObjectHashMap;
 import org.agrona.concurrent.AgentRunner;
 import org.agrona.concurrent.IdleStrategy;
@@ -121,7 +122,7 @@ public final class BablServer
             final ServerMarkFile serverMarkFile = serverMarkFiles[0];
             final DistinctErrorLog errorLog = new DistinctErrorLog(serverMarkFile.errorBuffer(),
                 new SystemEpochClock());
-            final LoggingErrorHandler errorHandler = new LoggingErrorHandler(errorLog);
+            final ErrorHandler errorHandler = new LoggingErrorHandler(errorLog);
             final MappedFile mappedFile = new MappedFile(Paths.get(sessionContainerConfig.serverDirectory(0),
                 MappedApplicationAdapterStatistics.FILE_NAME), MappedApplicationAdapterStatistics.LENGTH);
             final MappedApplicationAdapterStatistics applicationAdapterStatistics =
@@ -210,7 +211,8 @@ public final class BablServer
         final MappedSessionAdapterStatistics sessionAdapterStatistics =
             new MappedSessionAdapterStatistics(serverAdapterStatsFile);
         sessionAdapterStatistics.reset();
-        applicationProxy.init(toApplicationPublication, sessionAdapterStatistics);
+        applicationProxy.init(toApplicationPublication,
+            sessionContainers[sessionContainerId].sessionContainerStatistics());
         sessionContainerAdapter.sessionAdapterStatistics(sessionAdapterStatistics);
     }
 
@@ -239,7 +241,7 @@ public final class BablServer
         }
         final DistinctErrorLog errorLog = new DistinctErrorLog(sessionContainer.serverMarkFile().errorBuffer(),
             new SystemEpochClock());
-        final LoggingErrorHandler errorHandler = new LoggingErrorHandler(errorLog);
+        final ErrorHandler errorHandler = new LoggingErrorHandler(errorLog);
         final ConnectionPoller connectionPoller = new ConnectionPoller(serverSocketChannel,
             new Queue[] {incomingConnections}, connectorIdleStrategy, allConfig.socketConfig());
         final AgentRunner connectorAgentRunner = new AgentRunner(

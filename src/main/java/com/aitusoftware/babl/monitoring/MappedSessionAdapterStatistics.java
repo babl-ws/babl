@@ -26,8 +26,9 @@ import org.agrona.concurrent.AtomicBuffer;
 public final class MappedSessionAdapterStatistics extends SessionAdapterStatistics implements Closeable
 {
     private static final int POLL_LIMIT_REACHED_OFFSET = 0;
+    private static final int SESSION_BACK_PRESSURE_OFFSET = POLL_LIMIT_REACHED_OFFSET + BitUtil.SIZE_OF_LONG;
     private static final int PROXY_BACK_PRESSURE_OFFSET = POLL_LIMIT_REACHED_OFFSET + BitUtil.SIZE_OF_LONG;
-    public static final int LENGTH = PROXY_BACK_PRESSURE_OFFSET + BitUtil.SIZE_OF_LONG;
+    public static final int LENGTH = SESSION_BACK_PRESSURE_OFFSET + BitUtil.SIZE_OF_LONG;
     public static final String FILE_NAME = "session-adapter-stats.data";
 
     private final MappedFile mappedFile;
@@ -35,7 +36,7 @@ public final class MappedSessionAdapterStatistics extends SessionAdapterStatisti
     private final int offset;
 
     private long pollLimitReachedCount;
-    private long proxyBackPressureCount;
+    private long sessionBackPressureCount;
 
     public MappedSessionAdapterStatistics(
         final MappedFile mappedFile)
@@ -53,16 +54,16 @@ public final class MappedSessionAdapterStatistics extends SessionAdapterStatisti
     }
 
     @Override
-    public void proxyBackPressure()
+    public void onSessionBackPressure()
     {
-        proxyBackPressureCount++;
-        updateProxyBackPressureCount(proxyBackPressureCount);
+        sessionBackPressureCount++;
+        updateSessionBackPressureCount(sessionBackPressureCount);
     }
 
     public void reset()
     {
         updatePollLimitReachedCount(0);
-        updateProxyBackPressureCount(0);
+        updateSessionBackPressureCount(0);
     }
 
     public long pollLimitReachedCount()
@@ -70,14 +71,14 @@ public final class MappedSessionAdapterStatistics extends SessionAdapterStatisti
         return buffer.getLongVolatile(toOffset(POLL_LIMIT_REACHED_OFFSET));
     }
 
-    public long proxyBackPressureCount()
+    public long sessionBackPressureCount()
     {
-        return buffer.getLongVolatile(toOffset(PROXY_BACK_PRESSURE_OFFSET));
+        return buffer.getLongVolatile(toOffset(SESSION_BACK_PRESSURE_OFFSET));
     }
 
-    private void updateProxyBackPressureCount(final long proxyBackPressureCount)
+    private void updateSessionBackPressureCount(final long sessionBackPressureCount)
     {
-        buffer.putLongOrdered(toOffset(PROXY_BACK_PRESSURE_OFFSET), proxyBackPressureCount);
+        buffer.putLongOrdered(toOffset(SESSION_BACK_PRESSURE_OFFSET), sessionBackPressureCount);
     }
 
     private void updatePollLimitReachedCount(final long pollLimitReachedCount)

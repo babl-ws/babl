@@ -231,6 +231,11 @@ final class SessionContainer implements Agent, AutoCloseable
         return "babl-server";
     }
 
+    SessionContainerStatistics sessionContainerStatistics()
+    {
+        return sessionContainerStatistics;
+    }
+
     private int doAdminWork(final long timeMs)
     {
         int workCount = 0;

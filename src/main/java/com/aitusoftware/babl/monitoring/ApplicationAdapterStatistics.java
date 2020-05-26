@@ -19,7 +19,12 @@ package com.aitusoftware.babl.monitoring;
 
 public abstract class ApplicationAdapterStatistics
 {
+    public static final int BACK_PRESSURED = 1;
+    public static final int NOT_BACK_PRESSURED = 0;
+
     public abstract void adapterPollLimitReached();
 
     public abstract void proxyBackPressure();
+
+    public abstract void proxyBackPressured(int isBackPressured);
 }

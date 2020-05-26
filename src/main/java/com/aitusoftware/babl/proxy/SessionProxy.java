@@ -93,12 +93,14 @@ final class SessionProxy implements Session
                 encodedMessage.offset() + varDataEncodingOffset(), buffer, offset, length);
             bufferClaim.commit();
             Logger.log(Category.PROXY, "[%d] SessionProxy send(%d)", sessionContainerId, sessionId);
+            applicationAdapterStatistics.proxyBackPressured(ApplicationAdapterStatistics.NOT_BACK_PRESSURED);
             return SendResult.OK;
         }
         bufferClaim.abort();
         if (result == Publication.BACK_PRESSURED)
         {
             applicationAdapterStatistics.proxyBackPressure();
+            applicationAdapterStatistics.proxyBackPressured(ApplicationAdapterStatistics.BACK_PRESSURED);
         }
         return ProxyUtil.offerResultToSendResult(result);
     }

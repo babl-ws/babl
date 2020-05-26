@@ -40,6 +40,11 @@ ext {
     if (!project.hasProperty('sonatypePassword')) sonatypePassword = ''
 }
 
+compileJava {
+    sourceCompatibility = '1.8'
+    targetCompatibility = '1.8'
+}
+
 def projectPom = {
     name = fullName
     description = fullDescription

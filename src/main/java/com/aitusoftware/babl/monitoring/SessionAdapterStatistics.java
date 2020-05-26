@@ -21,5 +21,5 @@ public abstract class SessionAdapterStatistics
 {
     public abstract void adapterPollLimitReached();
 
-    public abstract void proxyBackPressure();
+    public abstract void onSessionBackPressure();
 }

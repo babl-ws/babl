@@ -32,4 +32,8 @@ public abstract class SessionContainerStatistics
     public abstract void invalidOpCode();
 
     public abstract void eventLoopDurationMs(long eventLoopDurationMs);
+
+    public abstract void onProxyBackPressure();
+
+    public abstract void proxyBackPressured(int isBackPressured);
 }

@@ -114,6 +114,7 @@ public final class SessionContainerAdapter implements ControlledFragmentHandler,
             if (sendResult == SendResult.BACK_PRESSURE)
             {
                 sendResult = backPressureStrategy.onSessionBackPressure(session);
+                sessionAdapterStatistics.onSessionBackPressure();
             }
             action = sendResultToAction(sendResult);
         }

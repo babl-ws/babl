@@ -60,4 +60,16 @@ public final class NoOpSessionContainerStatistics extends SessionContainerStatis
     {
 
     }
+
+    @Override
+    public void onProxyBackPressure()
+    {
+
+    }
+
+    @Override
+    public void proxyBackPressured(final int isBackPressured)
+    {
+
+    }
 }

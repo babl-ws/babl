@@ -26,8 +26,9 @@ import org.agrona.concurrent.AtomicBuffer;
 public final class MappedApplicationAdapterStatistics extends ApplicationAdapterStatistics implements Closeable
 {
     private static final int POLL_LIMIT_REACHED_OFFSET = 0;
-    private static final int PROXY_BACK_PRESSURE_OFFSET = POLL_LIMIT_REACHED_OFFSET + BitUtil.SIZE_OF_LONG;
-    public static final int LENGTH = PROXY_BACK_PRESSURE_OFFSET + BitUtil.SIZE_OF_LONG;
+    private static final int PROXY_BACK_PRESSURE_COUNT_OFFSET = POLL_LIMIT_REACHED_OFFSET + BitUtil.SIZE_OF_LONG;
+    private static final int PROXY_BACK_PRESSURED_OFFSET = PROXY_BACK_PRESSURE_COUNT_OFFSET + BitUtil.SIZE_OF_LONG;
+    public static final int LENGTH = PROXY_BACK_PRESSURED_OFFSET + BitUtil.SIZE_OF_INT;
     public static final String FILE_NAME = "application-adapter-stats.data";
 
     private final MappedFile mappedFile;
@@ -59,6 +60,12 @@ public final class MappedApplicationAdapterStatistics extends ApplicationAdapter
         updateProxyBackPressureCount(proxyBackPressureCount);
     }
 
+    @Override
+    public void proxyBackPressured(final int isBackPressured)
+    {
+        buffer.putIntOrdered(toOffset(PROXY_BACK_PRESSURED_OFFSET), isBackPressured);
+    }
+
     public void reset()
     {
         updatePollLimitReachedCount(0);
@@ -70,19 +77,25 @@ public final class MappedApplicationAdapterStatistics extends ApplicationAdapter
         return buffer.getLongVolatile(toOffset(POLL_LIMIT_REACHED_OFFSET));
     }
 
+    public long proxyBackPressureCount()
+    {
+        return buffer.getLongVolatile(toOffset(PROXY_BACK_PRESSURE_COUNT_OFFSET));
+    }
+
+    public boolean proxyBackPressured()
+    {
+        return ApplicationAdapterStatistics.NOT_BACK_PRESSURED !=
+            buffer.getIntVolatile(toOffset(PROXY_BACK_PRESSURED_OFFSET));
+    }
+
     private void updatePollLimitReachedCount(final long pollLimitReachedCount)
     {
         buffer.putLongOrdered(toOffset(POLL_LIMIT_REACHED_OFFSET), pollLimitReachedCount);
     }
 
-    public long proxyBackPressureCount()
-    {
-        return buffer.getLongVolatile(toOffset(PROXY_BACK_PRESSURE_OFFSET));
-    }
-
     private void updateProxyBackPressureCount(final long proxyBackPressureCount)
     {
-        buffer.putLongOrdered(toOffset(PROXY_BACK_PRESSURE_OFFSET), proxyBackPressureCount);
+        buffer.putLongOrdered(toOffset(PROXY_BACK_PRESSURE_COUNT_OFFSET), proxyBackPressureCount);
     }
 
     private int toOffset(final int delta)

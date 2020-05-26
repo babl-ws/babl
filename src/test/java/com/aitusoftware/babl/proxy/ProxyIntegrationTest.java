@@ -41,13 +41,14 @@ import com.aitusoftware.babl.codec.SessionOpenedDecoder;
 import com.aitusoftware.babl.codec.SessionOpenedEncoder;
 import com.aitusoftware.babl.codec.VarDataEncodingDecoder;
 import com.aitusoftware.babl.codec.VarDataEncodingEncoder;
+import com.aitusoftware.babl.config.PerformanceMode;
 import com.aitusoftware.babl.monitoring.NoOpApplicationAdapterStatistics;
 import com.aitusoftware.babl.monitoring.NoOpSessionAdapterStatistics;
+import com.aitusoftware.babl.monitoring.NoOpSessionContainerStatistics;
 import com.aitusoftware.babl.user.Application;
 import com.aitusoftware.babl.user.ContentType;
 import com.aitusoftware.babl.websocket.MaintainBackPressureStrategy;
 import com.aitusoftware.babl.websocket.Session;
-import com.aitusoftware.babl.config.PerformanceMode;
 
 import org.agrona.CloseHelper;
 import org.agrona.DirectBuffer;
@@ -140,7 +141,7 @@ class ProxyIntegrationTest
             new NoOpApplicationAdapterStatistics());
 
         final ApplicationProxy applicationProxy = new ApplicationProxy(SERVER_ID, new Long2ObjectHashMap<>());
-        applicationProxy.init(serverToApplicationPublication, new NoOpSessionAdapterStatistics());
+        applicationProxy.init(serverToApplicationPublication, new NoOpSessionContainerStatistics());
         applicationProxy.onSessionConnected(session);
         applicationProxy.onSessionMessage(session, CONTENT_TYPE, MESSAGE, 0, MESSAGE_LENGTH);
         while (0 != applicationAdapter.doWork() || serverToApplicationSubscription.images().get(0).position() == 0L)

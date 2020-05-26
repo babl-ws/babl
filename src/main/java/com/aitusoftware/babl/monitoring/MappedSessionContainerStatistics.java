@@ -29,7 +29,10 @@ public final class MappedSessionContainerStatistics extends SessionContainerStat
     private static final int RECEIVE_BACK_PRESSURE_EVENTS_OFFSET = ACTIVE_SESSION_COUNT_OFFSET + BitUtil.SIZE_OF_INT;
     private static final int INVALID_OPCODE_EVENTS_OFFSET = RECEIVE_BACK_PRESSURE_EVENTS_OFFSET + BitUtil.SIZE_OF_LONG;
     private static final int MAX_EVENT_LOOP_DURATION_MS_OFFSET = INVALID_OPCODE_EVENTS_OFFSET + BitUtil.SIZE_OF_LONG;
-    public static final int LENGTH = MAX_EVENT_LOOP_DURATION_MS_OFFSET + BitUtil.SIZE_OF_LONG;
+    private static final int PROXY_BACK_PRESSURE_EVENTS_OFFSET = MAX_EVENT_LOOP_DURATION_MS_OFFSET +
+        BitUtil.SIZE_OF_LONG;
+    private static final int PROXY_BACK_PRESSURED_OFFSET = PROXY_BACK_PRESSURE_EVENTS_OFFSET + BitUtil.SIZE_OF_LONG;
+    public static final int LENGTH = PROXY_BACK_PRESSURED_OFFSET + BitUtil.SIZE_OF_INT;
 
     private final AtomicBuffer buffer;
     private final int offset;
@@ -38,6 +41,7 @@ public final class MappedSessionContainerStatistics extends SessionContainerStat
     private long bytesWritten;
     private long receiveBackPressureEvents;
     private long invalidOpCodeEvents;
+    private long proxyBackPressureEvents;
 
     public MappedSessionContainerStatistics(
         final AtomicBuffer buffer,
@@ -135,6 +139,29 @@ public final class MappedSessionContainerStatistics extends SessionContainerStat
     public long invalidOpCodeEvents()
     {
         return buffer.getLongVolatile(toOffset(INVALID_OPCODE_EVENTS_OFFSET));
+    }
+
+    @Override
+    public void onProxyBackPressure()
+    {
+        proxyBackPressureEvents++;
+        buffer.putLongOrdered(toOffset(PROXY_BACK_PRESSURE_EVENTS_OFFSET), proxyBackPressureEvents);
+    }
+
+    public long proxyBackPressureEvents()
+    {
+        return buffer.getLongVolatile(toOffset(PROXY_BACK_PRESSURE_EVENTS_OFFSET));
+    }
+
+    @Override
+    public void proxyBackPressured(final int isBackPressured)
+    {
+        buffer.putIntOrdered(toOffset(PROXY_BACK_PRESSURED_OFFSET), isBackPressured);
+    }
+
+    public boolean isProxyBackPressured()
+    {
+        return BackPressureStatus.NOT_BACK_PRESSURED != buffer.getIntVolatile(toOffset(PROXY_BACK_PRESSURED_OFFSET));
     }
 
     private int toOffset(final int offset)

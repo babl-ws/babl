@@ -21,13 +21,13 @@ import static com.aitusoftware.babl.websocket.Constants.NETWORK_BYTE_ORDER;
 
 import java.nio.ByteBuffer;
 
+import com.aitusoftware.babl.config.SessionConfig;
 import com.aitusoftware.babl.log.Category;
 import com.aitusoftware.babl.log.Logger;
 import com.aitusoftware.babl.monitoring.SessionContainerStatistics;
 import com.aitusoftware.babl.monitoring.SessionStatistics;
 import com.aitusoftware.babl.pool.BufferPool;
 import com.aitusoftware.babl.user.ContentType;
-import com.aitusoftware.babl.config.SessionConfig;
 
 import org.agrona.BitUtil;
 import org.agrona.DirectBuffer;

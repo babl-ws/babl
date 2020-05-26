@@ -27,7 +27,8 @@ import com.aitusoftware.babl.codec.SessionOpenedEncoder;
 import com.aitusoftware.babl.codec.VarDataEncodingEncoder;
 import com.aitusoftware.babl.log.Category;
 import com.aitusoftware.babl.log.Logger;
-import com.aitusoftware.babl.monitoring.SessionAdapterStatistics;
+import com.aitusoftware.babl.monitoring.BackPressureStatus;
+import com.aitusoftware.babl.monitoring.SessionContainerStatistics;
 import com.aitusoftware.babl.user.Application;
 import com.aitusoftware.babl.user.ContentType;
 import com.aitusoftware.babl.websocket.DisconnectReason;
@@ -60,7 +61,7 @@ public final class ApplicationProxy implements Application
     private final MessageHeaderEncoder headerEncoder = new MessageHeaderEncoder();
 
     private Publication applicationsPublication;
-    private SessionAdapterStatistics sessionAdapterStatistics;
+    private SessionContainerStatistics sessionContainerStatistics;
 
     /**
      * Constructor.
@@ -80,14 +81,14 @@ public final class ApplicationProxy implements Application
      * Initialises the proxy with a publication.
      *
      * @param applicationsPublication  publication to the application
-     * @param sessionAdapterStatistics sink for metrics
+     * @param sessionContainerStatistics sink for metrics
      */
     public void init(
         final Publication applicationsPublication,
-        final SessionAdapterStatistics sessionAdapterStatistics)
+        final SessionContainerStatistics sessionContainerStatistics)
     {
         this.applicationsPublication = applicationsPublication;
-        this.sessionAdapterStatistics = sessionAdapterStatistics;
+        this.sessionContainerStatistics = sessionContainerStatistics;
     }
 
     /**
@@ -106,9 +107,10 @@ public final class ApplicationProxy implements Application
             bufferClaim.commit();
             Logger.log(Category.PROXY, "[%d] ApplicationProxy onSessionConnected(%d)",
                 sessionContainerId, session.id());
+            proxyNotBackPressured();
             return SendResult.OK;
         }
-        sessionAdapterStatistics.proxyBackPressure();
+        proxyBackPressured();
         return SendResult.BACK_PRESSURE;
     }
 
@@ -129,9 +131,10 @@ public final class ApplicationProxy implements Application
             sessionByIdMap.remove(session.id());
             Logger.log(Category.PROXY, "[%d] ApplicationProxy onSessionDisconnected(%d)",
                 sessionContainerId, session.id());
+            proxyNotBackPressured();
             return SendResult.OK;
         }
-        sessionAdapterStatistics.proxyBackPressure();
+        proxyBackPressured();
         return SendResult.BACK_PRESSURE;
     }
 
@@ -162,13 +165,25 @@ public final class ApplicationProxy implements Application
             bufferClaim.commit();
             Logger.log(Category.PROXY, "[%d] ApplicationProxy onSessionMessage(%d)",
                 sessionContainerId, session.id());
+            proxyNotBackPressured();
             return SendResult.OK;
         }
         bufferClaim.abort();
         if (result == Publication.BACK_PRESSURED)
         {
-            sessionAdapterStatistics.proxyBackPressure();
+            proxyBackPressured();
         }
         return ProxyUtil.offerResultToSendResult(result);
+    }
+
+    private void proxyNotBackPressured()
+    {
+        sessionContainerStatistics.proxyBackPressured(BackPressureStatus.NOT_BACK_PRESSURED);
+    }
+
+    private void proxyBackPressured()
+    {
+        sessionContainerStatistics.onProxyBackPressure();
+        sessionContainerStatistics.proxyBackPressured(BackPressureStatus.BACK_PRESSURED);
     }
 }
