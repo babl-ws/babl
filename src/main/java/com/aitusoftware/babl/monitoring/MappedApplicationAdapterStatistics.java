@@ -82,7 +82,7 @@ public final class MappedApplicationAdapterStatistics extends ApplicationAdapter
         return buffer.getLongVolatile(toOffset(PROXY_BACK_PRESSURE_COUNT_OFFSET));
     }
 
-    public boolean proxyBackPressured()
+    public boolean isProxyBackPressured()
     {
         return ApplicationAdapterStatistics.NOT_BACK_PRESSURED !=
             buffer.getIntVolatile(toOffset(PROXY_BACK_PRESSURED_OFFSET));

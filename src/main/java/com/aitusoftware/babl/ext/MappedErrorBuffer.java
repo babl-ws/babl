@@ -24,7 +24,7 @@ import java.nio.file.Path;
 import org.agrona.IoUtil;
 import org.agrona.concurrent.UnsafeBuffer;
 
-final class MappedErrorBuffer implements Closeable
+public final class MappedErrorBuffer implements Closeable
 {
     private final MappedByteBuffer mappedByteBuffer;
     private final UnsafeBuffer errorBuffer;
@@ -37,7 +37,7 @@ final class MappedErrorBuffer implements Closeable
         errorBuffer = new UnsafeBuffer(mappedByteBuffer);
     }
 
-    UnsafeBuffer errorBuffer()
+    public UnsafeBuffer errorBuffer()
     {
         return errorBuffer;
     }

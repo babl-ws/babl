@@ -51,14 +51,14 @@ final class StatisticsMonitoringAgent implements Agent
 {
     private static final long SESSION_FILE_CHECK_INTERVAL_NS = TimeUnit.SECONDS.toNanos(1);
     private static final int FORCE_IDLE = 0;
-    private final MappedApplicationAdapterStatistics applicationAdapterStatistics;
-    private final MappedSessionAdapterStatistics[] sessionAdapterStatistics;
-    private final MappedSessionContainerStatistics[] sessionContainerStatistics;
     private final Set<Path> sessionStatisticsFiles = new HashSet<>();
-    private final MappedErrorBuffer[] errorBuffers;
     private final List<Closeable> closeables = new ArrayList<>();
     private final SessionContainerConfig sessionContainerConfig;
     private final MonitoringConsumer monitoringConsumer;
+    private MappedApplicationAdapterStatistics applicationAdapterStatistics;
+    private MappedSessionAdapterStatistics[] sessionAdapterStatistics;
+    private MappedSessionContainerStatistics[] sessionContainerStatistics;
+    private MappedErrorBuffer[] errorBuffers;
     private long lastSessionFileCheckTimestamp;
 
     StatisticsMonitoringAgent(
@@ -67,48 +67,13 @@ final class StatisticsMonitoringAgent implements Agent
     {
         this.sessionContainerConfig = sessionContainerConfig;
         this.monitoringConsumer = monitoringConsumer;
-        final int instanceCount = sessionContainerConfig.sessionContainerInstanceCount();
-        if (sessionContainerConfig.deploymentMode() == DeploymentMode.DETACHED)
-        {
-            final Path primaryServerPath = Paths.get(sessionContainerConfig.serverDirectory(0));
-            applicationAdapterStatistics = new MappedApplicationAdapterStatistics(
-                new MappedFile(primaryServerPath.resolve(MappedApplicationAdapterStatistics.FILE_NAME),
-                    MappedApplicationAdapterStatistics.LENGTH));
-            sessionAdapterStatistics =
-                new MappedSessionAdapterStatistics[instanceCount];
-            for (int i = 0; i < instanceCount; i++)
-            {
-                sessionAdapterStatistics[i] = new MappedSessionAdapterStatistics(
-                    new MappedFile(primaryServerPath.resolve(MappedSessionAdapterStatistics.FILE_NAME),
-                        MappedSessionAdapterStatistics.LENGTH));
-            }
-        }
-        else
-        {
-            applicationAdapterStatistics = null;
-            sessionAdapterStatistics = null;
-        }
-        sessionContainerStatistics = new MappedSessionContainerStatistics[instanceCount];
-        errorBuffers = new MappedErrorBuffer[instanceCount];
-        for (int i = 0; i < instanceCount; i++)
-        {
-            final Path markFile = Paths.get(
-                sessionContainerConfig.serverDirectory(i)).resolve(ServerMarkFile.MARK_FILE_NAME);
-            final MappedByteBuffer buffer = IoUtil.mapExistingFile(
-                markFile.toFile(), "statistics-buffer",
-                ServerMarkFile.DATA_OFFSET, ServerMarkFile.DATA_LENGTH);
-            closeables.add(() -> IoUtil.unmap(buffer));
-            sessionContainerStatistics[i] =
-                new MappedSessionContainerStatistics(new UnsafeBuffer(buffer), 0);
-            errorBuffers[i] = new MappedErrorBuffer(markFile,
-                ServerMarkFile.ERROR_BUFFER_OFFSET, ServerMarkFile.ERROR_BUFFER_LENGTH);
-        }
     }
 
     @Override
     public int doWork()
     {
         final long currentTimeNs = System.nanoTime();
+        assignDataSources();
         if (currentTimeNs > lastSessionFileCheckTimestamp + SESSION_FILE_CHECK_INTERVAL_NS)
         {
             checkForNewSessionFiles();
@@ -164,6 +129,73 @@ final class StatisticsMonitoringAgent implements Agent
             catch (final IOException e)
             {
                 throw new UncheckedIOException(e);
+            }
+        }
+    }
+
+    private boolean requiredPathsExist()
+    {
+        boolean allExist = true;
+        final int instanceCount = sessionContainerConfig.sessionContainerInstanceCount();
+        if (sessionContainerConfig.deploymentMode() == DeploymentMode.DETACHED)
+        {
+            final Path primaryServerPath = Paths.get(sessionContainerConfig.serverDirectory(0));
+            allExist &= Files.exists(primaryServerPath.resolve(MappedApplicationAdapterStatistics.FILE_NAME));
+            for (int i = 0; i < instanceCount; i++)
+            {
+                allExist &= Files.exists(Paths.get(sessionContainerConfig.serverDirectory(i))
+                    .resolve(MappedSessionAdapterStatistics.FILE_NAME));
+            }
+        }
+        for (int i = 0; i < instanceCount; i++)
+        {
+            allExist &= Files.exists(Paths.get(
+                sessionContainerConfig.serverDirectory(i)).resolve(ServerMarkFile.MARK_FILE_NAME));
+        }
+
+        return allExist;
+    }
+
+    private void assignDataSources()
+    {
+        if (sessionContainerStatistics == null && requiredPathsExist())
+        {
+            final int instanceCount = sessionContainerConfig.sessionContainerInstanceCount();
+            if (sessionContainerConfig.deploymentMode() == DeploymentMode.DETACHED)
+            {
+                final Path primaryServerPath = Paths.get(sessionContainerConfig.serverDirectory(0));
+                applicationAdapterStatistics = new MappedApplicationAdapterStatistics(
+                    new MappedFile(primaryServerPath.resolve(MappedApplicationAdapterStatistics.FILE_NAME),
+                        MappedApplicationAdapterStatistics.LENGTH));
+                sessionAdapterStatistics =
+                    new MappedSessionAdapterStatistics[instanceCount];
+                for (int i = 0; i < instanceCount; i++)
+                {
+                    sessionAdapterStatistics[i] = new MappedSessionAdapterStatistics(
+                        new MappedFile(Paths.get(sessionContainerConfig.serverDirectory(i))
+                            .resolve(MappedSessionAdapterStatistics.FILE_NAME),
+                            MappedSessionAdapterStatistics.LENGTH));
+                }
+            }
+            else
+            {
+                applicationAdapterStatistics = null;
+                sessionAdapterStatistics = null;
+            }
+            sessionContainerStatistics = new MappedSessionContainerStatistics[instanceCount];
+            errorBuffers = new MappedErrorBuffer[instanceCount];
+            for (int i = 0; i < instanceCount; i++)
+            {
+                final Path markFile = Paths.get(
+                    sessionContainerConfig.serverDirectory(i)).resolve(ServerMarkFile.MARK_FILE_NAME);
+                final MappedByteBuffer buffer = IoUtil.mapExistingFile(
+                    markFile.toFile(), "statistics-buffer",
+                    ServerMarkFile.DATA_OFFSET, ServerMarkFile.DATA_LENGTH);
+                closeables.add(() -> IoUtil.unmap(buffer));
+                sessionContainerStatistics[i] =
+                    new MappedSessionContainerStatistics(new UnsafeBuffer(buffer), 0);
+                errorBuffers[i] = new MappedErrorBuffer(markFile,
+                    ServerMarkFile.ERROR_BUFFER_OFFSET, ServerMarkFile.ERROR_BUFFER_LENGTH);
             }
         }
     }

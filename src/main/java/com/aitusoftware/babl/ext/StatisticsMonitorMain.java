@@ -93,7 +93,7 @@ public final class StatisticsMonitorMain
         throw new IllegalArgumentException("No no-arg constructor found for class " + consumerClassName);
     }
 
-    private static final class LoggingMonitoringConsumer implements MonitoringConsumer
+    public static final class LoggingMonitoringConsumer implements MonitoringConsumer
     {
 
         private static final NoOpErrorConsumer NO_OP_ERROR_CONSUMER = new NoOpErrorConsumer();
@@ -104,7 +104,7 @@ public final class StatisticsMonitorMain
         {
             System.out.printf("Application Adapter Statistics%n");
             System.out.printf("Currently back-pressured: %s%n",
-                applicationAdapterStatistics.proxyBackPressured());
+                applicationAdapterStatistics.isProxyBackPressured());
             System.out.printf("SessionContainer proxy back-pressure events: %20d%n",
                 applicationAdapterStatistics.proxyBackPressureCount());
             System.out.printf("Poll-limit reached count:                    %20d%n",
