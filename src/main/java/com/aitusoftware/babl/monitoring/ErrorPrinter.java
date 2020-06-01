@@ -17,12 +17,11 @@
  */
 package com.aitusoftware.babl.monitoring;
 
-import java.io.File;
-import java.nio.MappedByteBuffer;
+import java.nio.file.Paths;
 import java.time.Instant;
 
-import org.agrona.IoUtil;
-import org.agrona.concurrent.UnsafeBuffer;
+import com.aitusoftware.babl.ext.MappedErrorBuffer;
+
 import org.agrona.concurrent.errors.ErrorConsumer;
 import org.agrona.concurrent.errors.ErrorLogReader;
 
@@ -30,19 +29,14 @@ public final class ErrorPrinter
 {
     public static void main(final String[] args)
     {
-        final MappedByteBuffer buffer = IoUtil.mapExistingFile(
-            new File(args[0], ServerMarkFile.MARK_FILE_NAME), "error-buffer",
-            ServerMarkFile.ERROR_BUFFER_OFFSET, ServerMarkFile.ERROR_BUFFER_LENGTH);
-        try
+        try (MappedErrorBuffer errorBuffer = new MappedErrorBuffer(
+            Paths.get(args[0], ServerMarkFile.MARK_FILE_NAME),
+            ServerMarkFile.ERROR_BUFFER_OFFSET, ServerMarkFile.ERROR_BUFFER_LENGTH))
         {
-            if (0 == ErrorLogReader.read(new UnsafeBuffer(buffer), new PrintingErrorConsumer()))
+            if (0 == ErrorLogReader.read(errorBuffer.errorBuffer(), new PrintingErrorConsumer()))
             {
                 System.out.println("No errors reported.");
             }
-        }
-        finally
-        {
-            IoUtil.unmap(buffer);
         }
     }
 

@@ -60,6 +60,7 @@ final class SessionContainer implements Agent, AutoCloseable
     private static final int INITIAL_SESSION_COUNT = 512;
 
     private final Queue<SocketChannel> incomingConnections;
+    private final int sessionContainerId;
     private final Application application;
     private final WebSocketPoller webSocketPoller;
     private final BufferPool bufferPool = new BufferPool();
@@ -108,6 +109,7 @@ final class SessionContainer implements Agent, AutoCloseable
         final Agent additionalWork,
         final Queue<SocketChannel> incomingConnections)
     {
+        this.sessionContainerId = sessionContainerId;
         this.application = application;
         this.sessionContainerConfig = sessionContainerConfig;
         this.pollModeEnabled = sessionContainerConfig.pollModeEnabled();
@@ -202,7 +204,7 @@ final class SessionContainer implements Agent, AutoCloseable
         final LoggingErrorHandler errorHandler = new LoggingErrorHandler(errorLog);
         // process additional work Agent first before the Server Agent, which will read more data from the network
         final Agent serverWork = additionalWork == null ? this : new DoubleAgent(additionalWork, this);
-        serverAgentRunner = new AgentRunner(sessionContainerConfig.serverIdleStrategySupplier().get(),
+        serverAgentRunner = new AgentRunner(sessionContainerConfig.serverIdleStrategy(sessionContainerId),
             errorHandler, null, serverWork);
         AgentRunner.startOnThread(serverAgentRunner, sessionContainerConfig.threadFactory());
     }

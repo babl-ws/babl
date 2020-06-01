@@ -18,9 +18,16 @@
 package com.aitusoftware.babl.config;
 
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.BiFunction;
+import java.util.function.Supplier;
 
 import com.aitusoftware.babl.user.Application;
+
+import org.agrona.concurrent.IdleStrategy;
 
 /**
  * Configuration for the user application.
@@ -32,6 +39,9 @@ public final class ApplicationConfig
     private Application application;
 
     private String applicationClassName = System.getProperty(Constants.APPLICATION_CLASS_NAME_PROPERTY);
+    private BiFunction<Path, IdleStrategy, IdleStrategy> applicationIdleStrategyFactory;
+    private Supplier<IdleStrategy> idleStrategySupplier =
+        () -> ConfigUtil.mapIdleStrategy(Constants.IDLE_STRATEGY_PROPERTY, Constants.IDLE_STRATEGY_DEFAULT);
 
     /**
      * Sets the application.
@@ -64,6 +74,29 @@ public final class ApplicationConfig
         return this;
     }
 
+    /**
+     * Sets the idle strategy supplier.
+     * @param applicationIdleStrategySupplier the idle strategy supplier
+     * @return this for a fluent API
+     */
+    public ApplicationConfig applicationIdleStrategySupplier(
+        final Supplier<IdleStrategy> applicationIdleStrategySupplier)
+    {
+        this.idleStrategySupplier = applicationIdleStrategySupplier;
+        return this;
+    }
+
+    /**
+     * Gets the idle strategy for the application container.
+     * @param directory the data directory
+     * @return the idle strategy
+     */
+    public IdleStrategy applicationIdleStrategy(final String directory)
+    {
+        return applicationIdleStrategyFactory.apply(Paths.get(directory), idleStrategySupplier.get());
+    }
+
+    @SuppressWarnings("unchecked")
     void conclude()
     {
         if (applicationClassName != null)
@@ -87,6 +120,11 @@ public final class ApplicationConfig
         }
 
         Objects.requireNonNull(application, "application must be set");
+        applicationIdleStrategyFactory = Optional.ofNullable(System.getProperty(
+            ApplicationConfig.Constants.IDLE_STRATEGY_FACTORY_PROPERTY))
+            .map((className) -> (BiFunction<Path, IdleStrategy, IdleStrategy>)ConfigUtil.instantiate(BiFunction.class))
+            .orElse((path, configured) -> configured);
+
     }
 
     /**
@@ -98,5 +136,20 @@ public final class ApplicationConfig
          * The system property used to set the application class name
          */
         public static final String APPLICATION_CLASS_NAME_PROPERTY = "babl.application.class.name";
+
+        /**
+         * System property used to configure a factory for the application idle strategy
+         */
+        public static final String IDLE_STRATEGY_FACTORY_PROPERTY = "babl.application.idle.strategy.factory";
+
+        /**
+         * System property used to configure the application event-loop idle strategy
+         */
+        public static final String IDLE_STRATEGY_PROPERTY = "babl.application.idle.strategy";
+
+        /**
+         * Default value for application idle strategy
+         */
+        public static final String IDLE_STRATEGY_DEFAULT = "SLEEPING";
     }
 }

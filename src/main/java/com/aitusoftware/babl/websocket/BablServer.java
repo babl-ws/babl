@@ -136,7 +136,7 @@ public final class BablServer
                 proxyConfig.applicationAdapterPollFragmentLimit(),
                 applicationAdapterStatistics);
             final AgentRunner applicationAdapterRunner = new AgentRunner(
-                sessionContainerConfig.serverIdleStrategySupplier().get(),
+                allConfig.applicationConfig().applicationIdleStrategy(sessionContainerConfig.serverDirectory(0)),
                 errorHandler, null,
                 applicationAdapter);
             AgentRunner.startOnThread(applicationAdapterRunner, sessionContainerConfig.threadFactory());

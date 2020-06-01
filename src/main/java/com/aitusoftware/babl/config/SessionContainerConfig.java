@@ -17,9 +17,12 @@
  */
 package com.aitusoftware.babl.config;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 import com.aitusoftware.babl.pool.BufferPoolPreAllocator;
@@ -70,10 +73,12 @@ public final class SessionContainerConfig
         SessionContainerConfig.Constants.VALIDATION_TIMEOUT_DEFAULT);
     private boolean autoScale = ConfigUtil.mapBoolean(Constants.AUTO_SCALE_PROPERTY,
         Constants.AUTO_SCALE_DEFAULT);
+    private BiFunction<Path, IdleStrategy, IdleStrategy> serverIdleStrategyFactory;
 
     /**
      * Validates configuration and creates the server's mark file.
      */
+    @SuppressWarnings("unchecked")
     public void conclude()
     {
         if (deploymentMode == DeploymentMode.DIRECT &&
@@ -92,6 +97,9 @@ public final class SessionContainerConfig
             sessionContainerInstanceCount =
                 SessionContainerInstanceCountCalculator.calculateSessionContainerCount(this);
         }
+        serverIdleStrategyFactory = Optional.ofNullable(System.getProperty(Constants.IDLE_STRATEGY_FACTORY_PROPERTY))
+            .map((className) -> (BiFunction<Path, IdleStrategy, IdleStrategy>)ConfigUtil.instantiate(BiFunction.class))
+            .orElse((path, configured) -> configured);
     }
 
     /**
@@ -234,6 +242,17 @@ public final class SessionContainerConfig
     {
         this.serverIdleStrategySupplier = serverIdleStrategySupplier;
         return this;
+    }
+
+    /**
+     * Returns an idle strategy for a given session container instance.
+     *
+     * @param serverId session container instance id
+     * @return the idle strategy
+     */
+    public IdleStrategy serverIdleStrategy(final int serverId)
+    {
+        return serverIdleStrategyFactory.apply(Paths.get(serverDirectory(serverId)), serverIdleStrategySupplier.get());
     }
 
     /**
@@ -588,5 +607,10 @@ public final class SessionContainerConfig
          * Default value for the server scaling mode
          */
         public static final boolean AUTO_SCALE_DEFAULT = false;
+
+        /**
+         * System property used to configure an idle strategy factory
+         */
+        public static final String IDLE_STRATEGY_FACTORY_PROPERTY = "babl.server.idle.strategy.factory";
     }
 }

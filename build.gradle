@@ -6,7 +6,7 @@ buildscript {
 }
 
 plugins {
-    id 'com.github.johnrengelman.shadow' version '5.1.0'
+    id 'com.github.johnrengelman.shadow' version '5.2.0'
     id 'java'
     id 'application'
     id 'net.minecrell.licenser' version '0.4.1'
@@ -74,10 +74,7 @@ def projectPom = {
     }
 }
 
-configurations {
-    codegen
-    jmh
-}
+
 
 signing {
     required { gradle.taskGraph.hasTask('uploadArchives') }
@@ -117,6 +114,11 @@ uploadShadow {
 
 shadowJar {
     mainClassName = 'com.aitusoftware.babl.websocket.ServerLauncher'
+}
+
+configurations {
+    codegen
+    jmh
 }
 
 File generatedSrcDir = file("${buildDir}/generated-sources/java")

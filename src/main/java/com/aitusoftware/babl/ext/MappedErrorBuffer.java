@@ -29,7 +29,7 @@ public final class MappedErrorBuffer implements Closeable
     private final MappedByteBuffer mappedByteBuffer;
     private final UnsafeBuffer errorBuffer;
 
-    MappedErrorBuffer(final Path filePath, final int offset, final int length)
+    public MappedErrorBuffer(final Path filePath, final int offset, final int length)
     {
         mappedByteBuffer = IoUtil.mapExistingFile(
             filePath.toFile(), "error-buffer",

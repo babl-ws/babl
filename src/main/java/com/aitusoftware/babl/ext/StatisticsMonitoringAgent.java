@@ -184,6 +184,7 @@ final class StatisticsMonitoringAgent implements Agent
             }
             sessionContainerStatistics = new MappedSessionContainerStatistics[instanceCount];
             errorBuffers = new MappedErrorBuffer[instanceCount];
+
             for (int i = 0; i < instanceCount; i++)
             {
                 final Path markFile = Paths.get(
