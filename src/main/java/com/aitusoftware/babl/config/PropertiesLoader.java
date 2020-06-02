@@ -33,6 +33,8 @@ import java.util.function.LongConsumer;
 import java.util.function.Supplier;
 
 import com.aitusoftware.babl.config.SessionContainerConfig.Constants;
+import com.aitusoftware.babl.log.Category;
+import com.aitusoftware.babl.log.Logger;
 import com.aitusoftware.babl.websocket.ConnectionValidator;
 
 import org.agrona.SystemUtil;
@@ -53,6 +55,8 @@ public final class PropertiesLoader
         final Path propertyFile)
     {
         final AllConfig allConfig = new AllConfig();
+        SystemUtil.loadPropertiesFile(propertyFile.toFile().getAbsolutePath());
+        Logger.log(Category.CONFIG, "Loaded config from %s%n", propertyFile.toAbsolutePath().toString());
         load(propertyFile, allConfig.applicationConfig(), allConfig.sessionContainerConfig(),
             allConfig.sessionConfig(), allConfig.socketConfig(), allConfig.proxyConfig());
         return allConfig;
@@ -171,7 +175,12 @@ public final class PropertiesLoader
         final String propertyValue = properties.getProperty(propertyName);
         if (propertyValue != null)
         {
+            Logger.log(Category.CONFIG, "Config property %s was set to %s%n", propertyName, propertyValue);
             receiver.accept(propertyValue);
+        }
+        else
+        {
+            Logger.log(Category.CONFIG, "Config property %s was not set%n", propertyName);
         }
     }
 
@@ -183,7 +192,12 @@ public final class PropertiesLoader
         final String propertyValue = properties.getProperty(propertyName);
         if (propertyValue != null)
         {
+            Logger.log(Category.CONFIG, "Config property %s was set to %s%n", propertyName, propertyValue);
             receiver.accept(Integer.parseInt(propertyValue));
+        }
+        else
+        {
+            Logger.log(Category.CONFIG, "Config property %s was not set%n", propertyName);
         }
     }
 
@@ -195,7 +209,12 @@ public final class PropertiesLoader
         final String propertyValue = properties.getProperty(propertyName);
         if (propertyValue != null)
         {
+            Logger.log(Category.CONFIG, "Config property %s was set to %s%n", propertyName, propertyValue);
             receiver.accept(Long.parseLong(propertyValue));
+        }
+        else
+        {
+            Logger.log(Category.CONFIG, "Config property %s was not set%n", propertyName);
         }
     }
 
@@ -208,7 +227,12 @@ public final class PropertiesLoader
         final String propertyValue = properties.getProperty(propertyName);
         if (propertyValue != null)
         {
+            Logger.log(Category.CONFIG, "Config property %s was set to %s%n", propertyName, propertyValue);
             receiver.accept(mapper.apply(propertyValue));
+        }
+        else
+        {
+            Logger.log(Category.CONFIG, "Config property %s was not set%n", propertyName);
         }
     }
 }

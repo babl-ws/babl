@@ -19,7 +19,6 @@ package com.aitusoftware.babl.config;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Optional;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
@@ -97,9 +96,16 @@ public final class SessionContainerConfig
             sessionContainerInstanceCount =
                 SessionContainerInstanceCountCalculator.calculateSessionContainerCount(this);
         }
-        serverIdleStrategyFactory = Optional.ofNullable(System.getProperty(Constants.IDLE_STRATEGY_FACTORY_PROPERTY))
-            .map((className) -> (BiFunction<Path, IdleStrategy, IdleStrategy>)ConfigUtil.instantiate(BiFunction.class))
-            .orElse((path, configured) -> configured);
+        if (System.getProperty(Constants.IDLE_STRATEGY_FACTORY_PROPERTY) != null)
+        {
+            serverIdleStrategyFactory =
+                (BiFunction<Path, IdleStrategy, IdleStrategy>)ConfigUtil.instantiate(BiFunction.class)
+                    .apply(System.getProperty(Constants.IDLE_STRATEGY_FACTORY_PROPERTY));
+        }
+        else
+        {
+            serverIdleStrategyFactory = (path, configured) -> configured;
+        }
     }
 
     /**

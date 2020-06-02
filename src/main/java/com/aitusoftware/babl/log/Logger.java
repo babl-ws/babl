@@ -66,7 +66,7 @@ public final class Logger
         }
     }
 
-    public static void log(final Category category, final String format, final String arg0)
+    public static void log(final Category category, final String format, final CharSequence arg0)
     {
         if (shouldIgnore(category))
         {
@@ -74,6 +74,17 @@ public final class Logger
         }
         printMessagePrefix(category);
         System.out.printf(format, arg0);
+    }
+
+    public static void log(
+        final Category category, final String format, final CharSequence arg0, final CharSequence arg1)
+    {
+        if (shouldIgnore(category))
+        {
+            return;
+        }
+        printMessagePrefix(category);
+        System.out.printf(format, arg0, arg1);
     }
 
     public static void log(final Category category, final String format, final long arg0)

@@ -21,7 +21,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
@@ -120,11 +119,17 @@ public final class ApplicationConfig
         }
 
         Objects.requireNonNull(application, "application must be set");
-        applicationIdleStrategyFactory = Optional.ofNullable(System.getProperty(
-            ApplicationConfig.Constants.IDLE_STRATEGY_FACTORY_PROPERTY))
-            .map((className) -> (BiFunction<Path, IdleStrategy, IdleStrategy>)ConfigUtil.instantiate(BiFunction.class))
-            .orElse((path, configured) -> configured);
 
+        if (System.getProperty(ApplicationConfig.Constants.IDLE_STRATEGY_FACTORY_PROPERTY) != null)
+        {
+            applicationIdleStrategyFactory =
+                (BiFunction<Path, IdleStrategy, IdleStrategy>)ConfigUtil.instantiate(BiFunction.class)
+                    .apply(System.getProperty(Constants.IDLE_STRATEGY_FACTORY_PROPERTY));
+        }
+        else
+        {
+            applicationIdleStrategyFactory = (path, configured) -> configured;
+        }
     }
 
     /**

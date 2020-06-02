@@ -23,5 +23,6 @@ public enum Category
     ENCODE,
     CONNECTION,
     HEARTBEAT,
-    PROXY
+    PROXY,
+    CONFIG
 }
