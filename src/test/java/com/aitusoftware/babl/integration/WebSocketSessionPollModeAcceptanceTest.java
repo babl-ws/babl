@@ -111,7 +111,7 @@ class WebSocketSessionPollModeAcceptanceTest
 
         for (final ClientData clientData : clientDataList)
         {
-            assertThat(clientData.latch.await(5, TimeUnit.SECONDS)).isTrue();
+            assertThat(clientData.latch.await(10, TimeUnit.SECONDS)).isTrue();
             assertThat(clientData.messagesReceived).isEqualTo(clientData.messagesSent);
             CloseHelper.close(clientData);
         }
