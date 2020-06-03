@@ -21,8 +21,8 @@ import static com.google.common.truth.Truth.assertThat;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -76,8 +76,8 @@ class BackPressureDirectSessionContainerAcceptanceTest
     void shouldHandleSingleClient() throws InterruptedException
     {
         final CountDownLatch latch = new CountDownLatch(1);
-        final List<String> messagesSent = new ArrayList<>();
-        final List<String> messagesReceived = new ArrayList<>();
+        final List<String> messagesSent = new CopyOnWriteArrayList<>();
+        final List<String> messagesReceived = new CopyOnWriteArrayList<>();
         client.webSocket(harness.serverPort(), "localhost", "/some-uri",
             new Handler<AsyncResult<WebSocket>>()
             {
@@ -95,7 +95,12 @@ class BackPressureDirectSessionContainerAcceptanceTest
                 }
             });
 
-        assertThat(latch.await(5, TimeUnit.SECONDS)).isTrue();
+        assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
+        if (!messagesSent.equals(messagesReceived))
+        {
+            System.out.println(messagesSent);
+            System.out.println(messagesReceived);
+        }
         assertThat(messagesSent).isEqualTo(messagesReceived);
     }
 
@@ -123,6 +128,10 @@ class BackPressureDirectSessionContainerAcceptanceTest
             if (event.isFinal())
             {
                 messagesReceived.add(current.toString());
+                if (current.toString().indexOf("payload") < 0)
+                {
+                    System.out.println("Unexpected: " + current.toString());
+                }
                 current.setLength(0);
             }
             if (messagesReceived.size() == expectedMessageCount)
