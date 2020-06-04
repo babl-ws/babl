@@ -26,6 +26,7 @@ import java.nio.channels.SocketChannel;
 import java.util.Queue;
 
 import com.aitusoftware.babl.config.SocketConfig;
+import com.aitusoftware.babl.websocket.routing.ConnectionRouter;
 
 import org.agrona.CloseHelper;
 import org.agrona.concurrent.Agent;
@@ -41,26 +42,29 @@ public final class ConnectionPoller extends TransportPoller implements Agent
     private final Queue<SocketChannel>[] toServerChannels;
     private final IdleStrategy idleStrategy;
     private final SocketConfig socketConfig;
+    private final ConnectionRouter connectionRouter;
     private int serverIndex = 0;
 
     /**
      * Constructor.
-     *
      * @param serverSocket     the server socket to select on
      * @param toServerChannels thread-safe queues that will be polled by session container instances
      * @param idleStrategy     idle strategy to use when queue is full
      * @param socketConfig     configuration to apply to opened sockets
+     * @param connectionRouter indicates what server instance the new connection should be dispatched to
      */
     public ConnectionPoller(
         final ServerSocketChannel serverSocket,
         final Queue<SocketChannel>[] toServerChannels,
         final IdleStrategy idleStrategy,
-        final SocketConfig socketConfig)
+        final SocketConfig socketConfig,
+        final ConnectionRouter connectionRouter)
     {
         this.serverSocket = serverSocket;
         this.toServerChannels = toServerChannels;
         this.idleStrategy = idleStrategy;
         this.socketConfig = socketConfig;
+        this.connectionRouter = connectionRouter;
     }
 
     /**

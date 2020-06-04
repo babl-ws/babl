@@ -43,6 +43,7 @@ import com.aitusoftware.babl.proxy.ApplicationAdapter;
 import com.aitusoftware.babl.proxy.ApplicationProxy;
 import com.aitusoftware.babl.proxy.SessionContainerAdapter;
 import com.aitusoftware.babl.user.Application;
+import com.aitusoftware.babl.websocket.routing.RoundRobinConnectionRouter;
 
 import org.agrona.ErrorHandler;
 import org.agrona.collections.Long2ObjectHashMap;
@@ -155,7 +156,8 @@ public final class BablServer
             }
             final IdleStrategy connectorIdleStrategy = sessionContainerConfig.connectorIdleStrategySupplier().get();
             final ConnectionPoller connectionPoller = new ConnectionPoller(serverSocketChannel,
-                toServerChannels, connectorIdleStrategy, allConfig.socketConfig());
+                toServerChannels, connectorIdleStrategy, allConfig.socketConfig(),
+                new RoundRobinConnectionRouter(toServerChannels.length));
             final AgentRunner connectorAgentRunner = new AgentRunner(connectorIdleStrategy, errorHandler,
                 null, connectionPoller);
             AgentRunner.startOnThread(connectorAgentRunner, sessionContainerConfig.threadFactory());
@@ -243,7 +245,8 @@ public final class BablServer
             new SystemEpochClock());
         final ErrorHandler errorHandler = new LoggingErrorHandler(errorLog);
         final ConnectionPoller connectionPoller = new ConnectionPoller(serverSocketChannel,
-            new Queue[] {incomingConnections}, connectorIdleStrategy, allConfig.socketConfig());
+            new Queue[] {incomingConnections}, connectorIdleStrategy, allConfig.socketConfig(),
+            new RoundRobinConnectionRouter(1));
         final AgentRunner connectorAgentRunner = new AgentRunner(
             connectorIdleStrategy, errorHandler,
             null, connectionPoller);
