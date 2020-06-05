@@ -72,8 +72,11 @@ public final class Logger
         {
             return;
         }
-        printMessagePrefix(category);
-        System.out.printf(format, arg0);
+        synchronized (Logger.class)
+        {
+            printMessagePrefix(category);
+            System.out.printf(format, arg0);
+        }
     }
 
     public static void log(
@@ -83,8 +86,11 @@ public final class Logger
         {
             return;
         }
-        printMessagePrefix(category);
-        System.out.printf(format, arg0, arg1);
+        synchronized (Logger.class)
+        {
+            printMessagePrefix(category);
+            System.out.printf(format, arg0, arg1);
+        }
     }
 
     public static void log(final Category category, final String format, final long arg0)
@@ -93,8 +99,11 @@ public final class Logger
         {
             return;
         }
-        printMessagePrefix(category);
-        System.out.printf(format, arg0);
+        synchronized (Logger.class)
+        {
+            printMessagePrefix(category);
+            System.out.printf(format, arg0);
+        }
     }
 
     public static void log(final Category category, final String format, final long arg0, final CharSequence arg1)
@@ -103,8 +112,11 @@ public final class Logger
         {
             return;
         }
-        printMessagePrefix(category);
-        System.out.printf(format, arg0, arg1);
+        synchronized (Logger.class)
+        {
+            printMessagePrefix(category);
+            System.out.printf(format, arg0, arg1);
+        }
     }
 
     public static void log(final Category category, final String format, final long arg0, final long arg1)
@@ -113,8 +125,11 @@ public final class Logger
         {
             return;
         }
-        printMessagePrefix(category);
-        System.out.printf(format, arg0, arg1);
+        synchronized (Logger.class)
+        {
+            printMessagePrefix(category);
+            System.out.printf(format, arg0, arg1);
+        }
     }
 
     private static void printMessagePrefix(final Category category)
