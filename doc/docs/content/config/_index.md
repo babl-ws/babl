@@ -63,6 +63,12 @@ Configures the operation of the server as a whole.
 | **Property** | `babl.server.session.poll.limit` |
 | **API** | `SessionContainerConfig.sessionPollLimit` |
 |  |  |
+|  | **Active Session Limit (`int`)** |
+| **Description** | Sets the maximum number of sessions for a given container |
+| **Default** | `1000` |
+| **Property** | `babl.server.active.session.limit` |
+| **API** | `SessionContainerConfig.activeSessionLimit` |
+|  |  |
 |  | **Connection Validator (`String`)** |
 | **Description** | Fully-qualified classname of an implementation of `ConnectionValidator` |
 | **Default** | `AlwaysValidConnectionValidator` |

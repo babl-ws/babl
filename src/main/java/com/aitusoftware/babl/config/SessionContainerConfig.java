@@ -72,6 +72,8 @@ public final class SessionContainerConfig
         SessionContainerConfig.Constants.VALIDATION_TIMEOUT_DEFAULT);
     private boolean autoScale = ConfigUtil.mapBoolean(Constants.AUTO_SCALE_PROPERTY,
         Constants.AUTO_SCALE_DEFAULT);
+    private int activeSessionLimit = Integer.getInteger(Constants.ACTIVE_SESSION_LIMIT_PROPERTY,
+        Constants.ACTIVE_SESSION_LIMIT_DEFAULT);
     private BiFunction<Path, IdleStrategy, IdleStrategy> serverIdleStrategyFactory;
 
     /**
@@ -469,6 +471,26 @@ public final class SessionContainerConfig
     }
 
     /**
+     * Returns the active session limit.
+     * @return the active session limit
+     */
+    public int activeSessionLimit()
+    {
+        return activeSessionLimit;
+    }
+
+    /**
+     * Sets the active session limit
+     * @param activeSessionLimit the active session limit
+     * @return this for a fluent API
+     */
+    public SessionContainerConfig activeSessionLimit(final int activeSessionLimit)
+    {
+        this.activeSessionLimit = activeSessionLimit;
+        return this;
+    }
+
+    /**
      * Constants used in configuration.
      */
     public static final class Constants
@@ -618,5 +640,15 @@ public final class SessionContainerConfig
          * System property used to configure an idle strategy factory
          */
         public static final String IDLE_STRATEGY_FACTORY_PROPERTY = "babl.server.idle.strategy.factory";
+
+        /**
+         * System property used to configure the active session limit
+         */
+        public static final String ACTIVE_SESSION_LIMIT_PROPERTY = "babl.server.active.session.limit";
+
+        /**
+         * Default value for the active session limit
+         */
+        public static final int ACTIVE_SESSION_LIMIT_DEFAULT = 1000;
     }
 }

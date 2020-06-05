@@ -88,6 +88,7 @@ final class SessionContainer implements Agent, AutoCloseable
         new ManyToOneConcurrentArrayQueue<>(64);
     private final long validationTimeoutMs;
     private final Consumer<ValidationResult> validationResultHandler = new ValidationResultHandler();
+    private final int activeSessionLimit;
     private long lastServiceTimeMs;
     private AgentRunner serverAgentRunner;
 
@@ -134,6 +135,7 @@ final class SessionContainer implements Agent, AutoCloseable
         connectionUpgradePool = new ObjectPool<>(() -> new ConnectionUpgrade(validationResultPool, connectionValidator,
             this::connectionValidationResult), 64);
         validationTimeoutMs = TimeUnit.NANOSECONDS.toMillis(sessionContainerConfig.validationTimeoutNanos());
+        activeSessionLimit = sessionContainerConfig.activeSessionLimit();
     }
 
     /**
@@ -171,7 +173,7 @@ final class SessionContainer implements Agent, AutoCloseable
         if (newConnection != null)
         {
             final long sessionId = sessionIdGenerator.nextSessionId();
-            if (activeSessionMap.containsKey(sessionId))
+            if (activeSessionMap.containsKey(sessionId) || activeSessionMap.size() >= activeSessionLimit)
             {
                 CloseHelper.quietClose(newConnection);
                 return 1;
