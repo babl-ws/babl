@@ -61,7 +61,7 @@ final class VertxServer implements AutoCloseable
                 latch.countDown();
             }
         });
-        assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
+        assertThat(latch.await(20, TimeUnit.SECONDS)).isTrue();
     }
 
     int actualPort()

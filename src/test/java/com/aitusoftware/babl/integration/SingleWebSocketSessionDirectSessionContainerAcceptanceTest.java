@@ -145,7 +145,7 @@ class SingleWebSocketSessionDirectSessionContainerAcceptanceTest
 
         webSocket.close(CLOSE_REASON_PROTOCOL_ERROR, "test");
 
-        latch.await(10, TimeUnit.SECONDS);
+        latch.await(20, TimeUnit.SECONDS);
 
         assertThat(webSocket.closeStatusCode()).isEqualTo(CLOSE_REASON_PROTOCOL_ERROR);
     }
@@ -193,7 +193,7 @@ class SingleWebSocketSessionDirectSessionContainerAcceptanceTest
                 }
             });
 
-        assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
+        assertThat(latch.await(20, TimeUnit.SECONDS)).isTrue();
         System.out.println(messagesReceived);
         assertThat(messagesReceived).isEqualTo(messagesSent);
     }
@@ -219,7 +219,7 @@ class SingleWebSocketSessionDirectSessionContainerAcceptanceTest
                     socket.writeTextMessage("payload");
                 }
             });
-        assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
+        assertThat(latch.await(20, TimeUnit.SECONDS)).isTrue();
         final Map<String, String> sessionHttpHeaders = testConnectionValidator.capturedHttpHeaders.get(2L);
         assertThat(sessionHttpHeaders).containsEntry("custom-header-0", "value-0");
         assertThat(sessionHttpHeaders).containsEntry("x-custom-header-1", "VaLuE-1");
@@ -242,7 +242,7 @@ class SingleWebSocketSessionDirectSessionContainerAcceptanceTest
                     socket.writeTextMessage("payload");
                 }
             });
-        assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
+        assertThat(latch.await(20, TimeUnit.SECONDS)).isTrue();
     }
 
     private static final class TestConnectionValidator implements ConnectionValidator
@@ -314,7 +314,7 @@ class SingleWebSocketSessionDirectSessionContainerAcceptanceTest
                 }
             });
 
-        assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
+        assertThat(latch.await(20, TimeUnit.SECONDS)).isTrue();
         final String expected = messagesSent.get(0);
         final String actual = messagesReceived.get(0);
         for (int i = 0; i < actual.length(); i++)

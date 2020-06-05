@@ -133,7 +133,7 @@ class SoakTest
 
         for (final ClientData clientData : clientDataList)
         {
-            assertThat(clientData.latch.await(10, TimeUnit.SECONDS)).isTrue();
+            assertThat(clientData.latch.await(20, TimeUnit.SECONDS)).isTrue();
             assertThat(clientData.messagesReceived).isEqualTo(clientData.messagesSent);
         }
 
