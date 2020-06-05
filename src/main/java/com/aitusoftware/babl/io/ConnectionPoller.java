@@ -43,7 +43,6 @@ public final class ConnectionPoller extends TransportPoller implements Agent
     private final IdleStrategy idleStrategy;
     private final SocketConfig socketConfig;
     private final ConnectionRouter connectionRouter;
-    private int serverIndex = 0;
 
     /**
      * Constructor.
@@ -98,14 +97,15 @@ public final class ConnectionPoller extends TransportPoller implements Agent
                 try
                 {
                     final SocketChannel channel = ((ServerSocketChannel)selectionKey.channel()).accept();
+                    final int serverIndex = connectionRouter.allocateServer(channel);
+                    if (ConnectionRouter.REJECT_CONNECTION == serverIndex)
+                    {
+                        CloseHelper.close(channel);
+                        return 1;
+                    }
                     channel.configureBlocking(false);
                     socketConfig.configureChannel(channel);
                     final Queue<SocketChannel> toServerChannel = toServerChannels[serverIndex];
-                    serverIndex++;
-                    if (serverIndex == toServerChannels.length)
-                    {
-                        serverIndex = 0;
-                    }
                     while (!toServerChannel.offer(channel))
                     {
                         idleStrategy.idle();

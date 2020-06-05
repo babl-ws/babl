@@ -21,5 +21,7 @@ import java.nio.channels.SocketChannel;
 
 public interface ConnectionRouter
 {
+    int REJECT_CONNECTION = -1;
+
     int allocateServer(SocketChannel socketChannel);
 }

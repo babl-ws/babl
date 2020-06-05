@@ -65,6 +65,12 @@ final class LatencyTestHarness
         this.payloadSize = payloadSize;
     }
 
+    public static void main(final String[] args) throws Exception
+    {
+        new LatencyTestHarness(16, 2, 160000, 4000, 10, 1000, 200)
+            .runLatencyTest(new InetSocketAddress("localhost", 8080));
+    }
+
     Histogram runLatencyTest(final InetSocketAddress serverAddress)
         throws InterruptedException, IOException, TimeoutException, ExecutionException
     {
