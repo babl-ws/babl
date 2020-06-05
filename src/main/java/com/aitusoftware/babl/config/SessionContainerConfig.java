@@ -22,12 +22,15 @@ import java.nio.file.Paths;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import com.aitusoftware.babl.pool.BufferPoolPreAllocator;
 import com.aitusoftware.babl.pool.NoOpBufferPoolPreAllocator;
 import com.aitusoftware.babl.websocket.AlwaysValidConnectionValidator;
 import com.aitusoftware.babl.websocket.ConnectionValidator;
+import com.aitusoftware.babl.websocket.routing.ConnectionRouter;
+import com.aitusoftware.babl.websocket.routing.RoundRobinConnectionRouter;
 
 import org.agrona.SystemUtil;
 import org.agrona.concurrent.IdleStrategy;
@@ -75,6 +78,8 @@ public final class SessionContainerConfig
     private int activeSessionLimit = Integer.getInteger(Constants.ACTIVE_SESSION_LIMIT_PROPERTY,
         Constants.ACTIVE_SESSION_LIMIT_DEFAULT);
     private BiFunction<Path, IdleStrategy, IdleStrategy> serverIdleStrategyFactory;
+    private ConnectionRouter connectionRouter;
+
 
     /**
      * Validates configuration and creates the server's mark file.
@@ -107,6 +112,23 @@ public final class SessionContainerConfig
         else
         {
             serverIdleStrategyFactory = (path, configured) -> configured;
+        }
+        if (System.getProperty(Constants.CONNECTION_ROUTER_FACTORY_PROPERTY) != null)
+        {
+            final Function<SessionContainerConfig, ConnectionRouter> connectionRouterFactory =
+                (Function<SessionContainerConfig, ConnectionRouter>)ConfigUtil.instantiate(Function.class)
+                .apply(System.getProperty(Constants.CONNECTION_ROUTER_FACTORY_PROPERTY));
+            if (connectionRouter == null)
+            {
+                connectionRouter = connectionRouterFactory.apply(this);
+            }
+        }
+        else
+        {
+            if (connectionRouter == null)
+            {
+                connectionRouter = new RoundRobinConnectionRouter(sessionContainerInstanceCount);
+            }
         }
     }
 
@@ -491,6 +513,26 @@ public final class SessionContainerConfig
     }
 
     /**
+     * Returns the connection router.
+     * @return the connection router
+     */
+    public ConnectionRouter connectionRouter()
+    {
+        return connectionRouter;
+    }
+
+    /**
+     * Sets the connection router.
+     * @param connectionRouter the connection router
+     * @return this for a fluent API
+     */
+    public SessionContainerConfig connectionRouter(final ConnectionRouter connectionRouter)
+    {
+        this.connectionRouter = connectionRouter;
+        return this;
+    }
+
+    /**
      * Constants used in configuration.
      */
     public static final class Constants
@@ -640,6 +682,11 @@ public final class SessionContainerConfig
          * System property used to configure an idle strategy factory
          */
         public static final String IDLE_STRATEGY_FACTORY_PROPERTY = "babl.server.idle.strategy.factory";
+
+        /**
+         * System property used to configure a connection router factory
+         */
+        public static final String CONNECTION_ROUTER_FACTORY_PROPERTY = "babl.server.connection.router.factory";
 
         /**
          * System property used to configure the active session limit
