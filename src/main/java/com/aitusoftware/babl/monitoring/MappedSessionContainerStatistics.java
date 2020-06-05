@@ -17,8 +17,13 @@
  */
 package com.aitusoftware.babl.monitoring;
 
+import java.nio.MappedByteBuffer;
+import java.nio.file.Path;
+
 import org.agrona.BitUtil;
+import org.agrona.IoUtil;
 import org.agrona.concurrent.AtomicBuffer;
+import org.agrona.concurrent.UnsafeBuffer;
 
 public final class MappedSessionContainerStatistics extends SessionContainerStatistics
 {
@@ -42,6 +47,18 @@ public final class MappedSessionContainerStatistics extends SessionContainerStat
     private long receiveBackPressureEvents;
     private long invalidOpCodeEvents;
     private long proxyBackPressureEvents;
+
+    public MappedSessionContainerStatistics(
+        final Path markFile)
+    {
+        final MappedByteBuffer buffer = IoUtil.mapExistingFile(
+            markFile.toFile(), "statistics-buffer",
+            ServerMarkFile.DATA_OFFSET, ServerMarkFile.DATA_LENGTH);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> IoUtil.unmap(buffer)));
+        this.buffer = new UnsafeBuffer(buffer);
+        this.offset = 0;
+        eventLoopDurationMs(0L);
+    }
 
     public MappedSessionContainerStatistics(
         final AtomicBuffer buffer,
