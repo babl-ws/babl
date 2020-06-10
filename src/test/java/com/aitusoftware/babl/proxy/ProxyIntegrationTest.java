@@ -59,6 +59,7 @@ import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -171,11 +172,16 @@ class ProxyIntegrationTest
         sessionProxy.set(SESSION_ID, SERVER_ID);
 
         sessionProxy.send(CONTENT_TYPE, MESSAGE, 0, MESSAGE_LENGTH);
-
+        final long deadlineMs = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(20);
         while (0 != sessionContainerAdapter.doWork() ||
+            applicationToServerSubscription.images().isEmpty() ||
             applicationToServerSubscription.images().get(0).position() == 0L)
         {
             idle();
+            if (System.currentTimeMillis() > deadlineMs)
+            {
+                Assertions.fail("Failed to find image within timeout");
+            }
         }
 
         verify(session).send(eq(CONTENT_TYPE), any(), anyInt(), eq(MESSAGE_LENGTH));
