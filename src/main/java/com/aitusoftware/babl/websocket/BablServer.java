@@ -123,7 +123,7 @@ public final class BablServer
             }
             final ServerMarkFile serverMarkFile = serverMarkFiles[0];
             final DistinctErrorLog errorLog = new DistinctErrorLog(serverMarkFile.errorBuffer(),
-                new SystemEpochClock());
+                SystemEpochClock.INSTANCE);
             final ErrorHandler errorHandler = new LoggingErrorHandler(errorLog);
             final MappedFile mappedFile = new MappedFile(Paths.get(sessionContainerConfig.serverDirectory(0),
                 MappedApplicationAdapterStatistics.FILE_NAME), MappedApplicationAdapterStatistics.LENGTH);
