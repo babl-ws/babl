@@ -169,6 +169,7 @@ final class SessionContainer implements Agent, AutoCloseable
             workCount += attemptSessionConnected(queued);
         }
 
+        workCount += pollIncomingValidationResults();
         final SocketChannel newConnection = incomingConnections.poll();
         if (newConnection != null)
         {
@@ -262,6 +263,7 @@ final class SessionContainer implements Agent, AutoCloseable
                 final WebSocketSession session = notYetValidatedSessions.next();
                 if (session.connectedTimestampMs() < timeMs - validationTimeoutMs)
                 {
+                    Logger.log(Category.CONNECTION, "Session %d invalidated%n", session.id());
                     invalidSessionsForRemoval.add(session.id());
                 }
             }
@@ -271,7 +273,6 @@ final class SessionContainer implements Agent, AutoCloseable
                 final long sessionId = sessionsForRemoval.nextValue();
                 removeInactiveSession(sessionId);
             }
-            workCount += pollIncomingValidationResults();
         }
         return workCount;
     }
@@ -371,7 +372,7 @@ final class SessionContainer implements Agent, AutoCloseable
 
     private int pollIncomingValidationResults()
     {
-        return incomingValidationResults.drain(validationResultHandler, 8);
+        return incomingValidationResults.drain(validationResultHandler, incomingValidationResults.capacity());
     }
 
     private void onIncomingValidationResult(final ValidationResult validationResult)
@@ -391,6 +392,10 @@ final class SessionContainer implements Agent, AutoCloseable
             {
                 session.onCloseMessage(validationResult.resultCode());
             }
+        }
+        else
+        {
+            Logger.log(Category.CONNECTION, "Received validation result for unknown session%n", 0L);
         }
     }
 

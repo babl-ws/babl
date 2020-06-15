@@ -27,10 +27,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
+import com.aitusoftware.babl.config.DeploymentMode;
 import com.aitusoftware.babl.log.Logger;
 import com.aitusoftware.babl.user.EchoApplication;
 import com.aitusoftware.babl.websocket.Constants;
-import com.aitusoftware.babl.config.DeploymentMode;
 
 import org.agrona.CloseHelper;
 import org.junit.jupiter.api.AfterEach;
@@ -50,7 +50,7 @@ import io.vertx.core.http.WebSocket;
 @Disabled
 class SoakTest
 {
-    private static final int ACTIVE_CLIENT_COUNT = 37;
+    private static final int ACTIVE_CLIENT_COUNT = 370;
     private static final int MESSAGE_COUNT = 100;
 
     private final EchoApplication application = new EchoApplication(false);
@@ -61,7 +61,7 @@ class SoakTest
     private Path serverBaseDir;
 
     @BeforeAll
-    static void enableLogging()
+    static void configureLogging()
     {
         System.setProperty(Logger.DEBUG_ENABLED_PROPERTY, "false");
     }
@@ -70,14 +70,13 @@ class SoakTest
     void setUp() throws IOException
     {
         harness.serverConfig().deploymentMode(DeploymentMode.DETACHED);
-        harness.serverConfig().sessionContainerInstanceCount(3);
+        harness.serverConfig().sessionContainerInstanceCount(1);
         harness.proxyConfig()
             .launchMediaDriver(true)
             .mediaDriverDir(workingDir.resolve("driver").toString());
         serverBaseDir = workingDir.resolve("server");
 
         harness.start(serverBaseDir);
-        client = Vertx.vertx().createHttpClient(new HttpClientOptions().setMaxPoolSize(50));
     }
 
     @AfterEach
@@ -90,15 +89,16 @@ class SoakTest
     @Test
     void longRunningTest() throws Exception
     {
-        for (int i = 0; i < 300; i++)
+        for (int i = 0; i < 30; i++)
         {
             shouldHandleMultipleSessions(i + 1);
             LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1L));
         }
     }
 
-    void shouldHandleMultipleSessions(final int iteration) throws Exception
+    private void shouldHandleMultipleSessions(final int iteration) throws Exception
     {
+        assignClient();
         final List<WebSocket> clientSockets = new ArrayList<>();
         for (int i = 0; i < ACTIVE_CLIENT_COUNT; i++)
         {
@@ -109,13 +109,19 @@ class SoakTest
                     @Override
                     public void handle(final AsyncResult<WebSocket> event)
                     {
-                        final WebSocket socket = event.result();
-                        webSocketFuture.complete(socket);
+                        if (event.succeeded())
+                        {
+                            final WebSocket socket = event.result();
+                            webSocketFuture.complete(socket);
+                        }
+                        else
+                        {
+                            webSocketFuture.completeExceptionally(event.cause());
+                        }
                     }
                 });
-            clientSockets.add(webSocketFuture.get(5, TimeUnit.SECONDS));
+            clientSockets.add(webSocketFuture.get(35, TimeUnit.SECONDS));
         }
-
 
         final List<ClientData> clientDataList = new ArrayList<>(ACTIVE_CLIENT_COUNT);
         for (final WebSocket clientSocket : clientSockets)
@@ -133,7 +139,7 @@ class SoakTest
 
         for (final ClientData clientData : clientDataList)
         {
-            assertThat(clientData.latch.await(20, TimeUnit.SECONDS)).isTrue();
+            assertThat(clientData.latch.await(50, TimeUnit.SECONDS)).isTrue();
             assertThat(clientData.messagesReceived).isEqualTo(clientData.messagesSent);
         }
 
@@ -143,5 +149,14 @@ class SoakTest
         }
 
         assertThat(application.getSessionOpenedCount()).isEqualTo(ACTIVE_CLIENT_COUNT * iteration);
+    }
+
+    private void assignClient()
+    {
+        if (client != null)
+        {
+            client.close();
+        }
+        client = Vertx.vertx().createHttpClient(new HttpClientOptions().setMaxPoolSize(ACTIVE_CLIENT_COUNT));
     }
 }

@@ -216,7 +216,10 @@ public final class WebSocketSession implements Pooled, Session
                 else
                 {
                     handshakeSendBuffer.clear();
-                    sessionDataListener.sendDataProcessed();
+                    if (state != SessionState.CLOSING)
+                    {
+                        sessionDataListener.sendDataProcessed();
+                    }
                 }
                 return 1;
             }

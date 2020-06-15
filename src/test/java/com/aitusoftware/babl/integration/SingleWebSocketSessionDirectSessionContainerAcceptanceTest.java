@@ -237,9 +237,13 @@ class SingleWebSocketSessionDirectSessionContainerAcceptanceTest
                 @Override
                 public void handle(final AsyncResult<WebSocket> event)
                 {
-                    final WebSocket socket = event.result();
-                    socket.frameHandler(new ExpectCloseHandler(latch, ValidationResult.VALIDATION_FAILED));
-                    socket.writeTextMessage("payload");
+                    if (event.succeeded())
+                    {
+                        final WebSocket socket = event.result();
+
+                        socket.frameHandler(new ExpectCloseHandler(latch, ValidationResult.VALIDATION_FAILED));
+                        socket.writeTextMessage("payload");
+                    }
                 }
             });
         assertThat(latch.await(20, TimeUnit.SECONDS)).isTrue();
