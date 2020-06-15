@@ -48,11 +48,13 @@ public final class ContextConfiguration
                 mediaDriverContext
                     .clientLivenessTimeoutNs(TimeUnit.SECONDS.toNanos(2L))
                     .threadingMode(ThreadingMode.SHARED)
+                    .termBufferSparseFile(false)
                     .sharedIdleStrategy(backOff());
                 break;
             case HIGH:
                 mediaDriverContext
                     .threadingMode(ThreadingMode.SHARED)
+                    .termBufferSparseFile(false)
                     .sharedIdleStrategy(busySpin());
                 break;
             default:
@@ -77,11 +79,13 @@ public final class ContextConfiguration
                 aeronClientContext
                     .driverTimeoutMs(TimeUnit.SECONDS.toNanos(2L))
                     .keepAliveIntervalNs(TimeUnit.SECONDS.toNanos(9L))
+                    .preTouchMappedMemory(true)
                     .awaitingIdleStrategy(backOff())
                     .idleStrategy(backOff());
                 break;
             case HIGH:
                 aeronClientContext
+                    .preTouchMappedMemory(true)
                     .awaitingIdleStrategy(backOff())
                     .idleStrategy(backOff());
                 break;

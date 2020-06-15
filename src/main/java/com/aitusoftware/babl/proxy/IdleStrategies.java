@@ -40,7 +40,7 @@ final class IdleStrategies
 
     static IdleStrategy backOff()
     {
-        return new BackoffIdleStrategy(0, 1, 100, TimeUnit.MILLISECONDS.toNanos(1));
+        return new BackoffIdleStrategy(0, 10, 10, TimeUnit.MICROSECONDS.toNanos(100));
     }
 
     static IdleStrategy busySpin()
