@@ -273,6 +273,7 @@ final class SessionContainer implements Agent, AutoCloseable
                 final long sessionId = sessionsForRemoval.nextValue();
                 removeInactiveSession(sessionId);
             }
+            workCount += connectionValidator.doWork();
         }
         return workCount;
     }

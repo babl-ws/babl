@@ -42,4 +42,14 @@ public interface ConnectionValidator
         ValidationResult validationResult,
         Consumer<BiConsumer<CharSequence, CharSequence>> headerProvider,
         ValidationResultPublisher validationResultPublisher);
+
+    /**
+     * Can optionally do some work on the event-loop thread.
+     *
+     * @return amount of work done
+     */
+    default int doWork()
+    {
+        return 0;
+    }
 }

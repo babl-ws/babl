@@ -29,6 +29,7 @@ public final class AlwaysValidConnectionValidator implements ConnectionValidator
 {
     private final LongArrayQueue pendingValidations = new LongArrayQueue(128, Long.MIN_VALUE);
     private final ValidationResult reusableResult = new ValidationResult();
+    private ValidationResultPublisher validationResultPublisher;
 
     {
         reusableResult.validationSuccess();
@@ -43,6 +44,10 @@ public final class AlwaysValidConnectionValidator implements ConnectionValidator
         final Consumer<BiConsumer<CharSequence, CharSequence>> headerProvider,
         final ValidationResultPublisher validationResultPublisher)
     {
+        if (this.validationResultPublisher == null)
+        {
+            this.validationResultPublisher = validationResultPublisher;
+        }
         validationResult.validationSuccess();
         if (!validationResultPublisher.publishResult(validationResult))
         {
@@ -50,19 +55,33 @@ public final class AlwaysValidConnectionValidator implements ConnectionValidator
         }
         else
         {
-            for (int i = 0; i < pendingValidations.size(); i++)
+            publishPendingValidations(validationResultPublisher);
+        }
+    }
+
+    @Override
+    public int doWork()
+    {
+        return publishPendingValidations(validationResultPublisher);
+    }
+
+    private int publishPendingValidations(final ValidationResultPublisher validationResultPublisher)
+    {
+        int workDone = 0;
+        for (int i = 0; i < pendingValidations.size(); i++)
+        {
+            final long pendingSessionId = pendingValidations.peekLong();
+            reusableResult.sessionId(pendingSessionId);
+            if (validationResultPublisher.publishResult(reusableResult))
             {
-                final long pendingSessionId = pendingValidations.peekLong();
-                reusableResult.sessionId(pendingSessionId);
-                if (validationResultPublisher.publishResult(reusableResult))
-                {
-                    pendingValidations.pollLong();
-                }
-                else
-                {
-                    break;
-                }
+                pendingValidations.pollLong();
+                workDone++;
+            }
+            else
+            {
+                break;
             }
         }
+        return workDone;
     }
 }
