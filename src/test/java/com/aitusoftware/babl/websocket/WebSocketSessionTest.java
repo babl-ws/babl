@@ -143,7 +143,7 @@ class WebSocketSessionTest
         final ByteBuffer captureBuffer = ByteBuffer.allocate(INITIAL_SOCKET_BUFFER_CAPACITY);
         doAnswer(invocation ->
         {
-            final ByteBuffer content = invocation.getArgumentAt(0, ByteBuffer.class);
+            final ByteBuffer content = invocation.getArgument(0);
             captureBuffer.put(content);
             captureBuffer.flip();
             return captureBuffer.remaining();
@@ -375,7 +375,7 @@ class WebSocketSessionTest
             @Override
             public Integer answer(final InvocationOnMock invocation)
             {
-                final ByteBuffer buffer = invocation.getArgumentAt(0, ByteBuffer.class);
+                final ByteBuffer buffer = invocation.getArgument(0);
 
                 socketReads[position++].accept(buffer);
                 return 42;
@@ -387,7 +387,7 @@ class WebSocketSessionTest
     {
         doAnswer((Answer<Boolean>)invocation ->
         {
-            final ByteBuffer receiveBuffer = invocation.getArgumentAt(0, ByteBuffer.class);
+            final ByteBuffer receiveBuffer = invocation.getArgument(0);
             receiveBuffer.position(receiveBuffer.limit());
             return true;
         }).when(connectionUpgrade).handleUpgrade(any(), any());

@@ -143,7 +143,7 @@ dependencies {
     jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.23'
     jmhImplementation 'org.openjdk.jmh:jmh-core:1.23'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.2'
-    testImplementation 'org.mockito:mockito-all:1.10.19'
+    testImplementation 'org.mockito:mockito-core:3.3.3'
     testImplementation 'com.google.truth:truth:1.0.1'
     testImplementation 'io.vertx:vertx-core:3.8.5'
     testImplementation 'io.vertx:vertx-web:3.8.5'

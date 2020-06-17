@@ -55,14 +55,12 @@ import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.collections.Long2ObjectHashMap;
 import org.agrona.concurrent.UnsafeBuffer;
-import org.hamcrest.Description;
-import org.hamcrest.Matcher;
-import org.hamcrest.TypeSafeMatcher;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.ArgumentMatcher;
 
 import io.aeron.Aeron;
 import io.aeron.CommonContext;
@@ -230,12 +228,12 @@ class ProxyIntegrationTest
         LockSupport.parkNanos(TimeUnit.MICROSECONDS.toNanos(1L));
     }
 
-    private static Matcher<Session> sessionWithId(final long expectedId)
+    private static ArgumentMatcher<Session> sessionWithId(final long expectedId)
     {
         return new SessionMatcher(expectedId);
     }
 
-    private static class SessionMatcher extends TypeSafeMatcher<Session>
+    private static class SessionMatcher implements ArgumentMatcher<Session>
     {
         private final long expectedId;
 
@@ -245,15 +243,9 @@ class ProxyIntegrationTest
         }
 
         @Override
-        protected boolean matchesSafely(final Session item)
+        public boolean matches(final Session argument)
         {
-            return item.id() == expectedId;
-        }
-
-        @Override
-        public void describeTo(final Description description)
-        {
-            description.appendText("a session with id: " + expectedId);
+            return argument.id() == expectedId;
         }
     }
 }
