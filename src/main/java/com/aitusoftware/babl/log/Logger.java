@@ -17,6 +17,11 @@
  */
 package com.aitusoftware.babl.log;
 
+import java.io.IOException;
+import java.io.PrintStream;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -28,8 +33,10 @@ import java.util.List;
 public final class Logger
 {
     public static final String DEBUG_ENABLED_PROPERTY = "babl.debug.enabled";
+    public static final String DEBUG_FILE_PROPERTY = "babl.debug.file";
     private static final boolean LOGGING_ENABLED;
     private static final EnumSet<Category> ENABLED_CATEGORIES;
+    private static final PrintStream OUTPUT_STREAM;
 
     static
     {
@@ -64,6 +71,23 @@ public final class Logger
             ENABLED_CATEGORIES = parsedCategories.isEmpty() ?
                 EnumSet.noneOf(Category.class) : EnumSet.copyOf(parsedCategories);
         }
+        final String debugFile = System.getProperty(DEBUG_FILE_PROPERTY);
+        if (debugFile != null)
+        {
+            try
+            {
+                Files.createDirectories(Paths.get(debugFile).getParent());
+                OUTPUT_STREAM = new PrintStream(debugFile);
+            }
+            catch (final IOException e)
+            {
+                throw new UncheckedIOException(e);
+            }
+        }
+        else
+        {
+            OUTPUT_STREAM = System.out;
+        }
     }
 
     public static void log(final Category category, final String format, final CharSequence arg0)
@@ -75,7 +99,7 @@ public final class Logger
         synchronized (Logger.class)
         {
             printMessagePrefix(category);
-            System.out.printf(format, arg0);
+            OUTPUT_STREAM.printf(format, arg0);
         }
     }
 
@@ -89,7 +113,7 @@ public final class Logger
         synchronized (Logger.class)
         {
             printMessagePrefix(category);
-            System.out.printf(format, arg0, arg1);
+            OUTPUT_STREAM.printf(format, arg0, arg1);
         }
     }
 
@@ -102,7 +126,7 @@ public final class Logger
         synchronized (Logger.class)
         {
             printMessagePrefix(category);
-            System.out.printf(format, arg0);
+            OUTPUT_STREAM.printf(format, arg0);
         }
     }
 
@@ -115,7 +139,7 @@ public final class Logger
         synchronized (Logger.class)
         {
             printMessagePrefix(category);
-            System.out.printf(format, arg0, arg1);
+            OUTPUT_STREAM.printf(format, arg0, arg1);
         }
     }
 
@@ -128,15 +152,15 @@ public final class Logger
         synchronized (Logger.class)
         {
             printMessagePrefix(category);
-            System.out.printf(format, arg0, arg1);
+            OUTPUT_STREAM.printf(format, arg0, arg1);
         }
     }
 
     private static void printMessagePrefix(final Category category)
     {
-        System.out.print(LocalDateTime.now() + " ");
-        System.out.printf("[%s] ", Thread.currentThread().getName());
-        System.out.print(category + ": ");
+        OUTPUT_STREAM.print(LocalDateTime.now() + " ");
+        OUTPUT_STREAM.printf("[%s] ", Thread.currentThread().getName());
+        OUTPUT_STREAM.print(category + ": ");
     }
 
     private static boolean shouldIgnore(final Category category)
