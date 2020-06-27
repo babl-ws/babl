@@ -696,6 +696,6 @@ public final class SessionContainerConfig
         /**
          * Default value for the active session limit
          */
-        public static final int ACTIVE_SESSION_LIMIT_DEFAULT = 1000;
+        public static final int ACTIVE_SESSION_LIMIT_DEFAULT = 10_000;
     }
 }

@@ -50,7 +50,7 @@ import io.vertx.core.http.WebSocket;
 @Disabled
 class SoakTest
 {
-    private static final int ACTIVE_CLIENT_COUNT = 370;
+    private static final int ACTIVE_CLIENT_COUNT = 1200;
     private static final int MESSAGE_COUNT = 100;
 
     private final EchoApplication application = new EchoApplication(false);
@@ -71,6 +71,7 @@ class SoakTest
     {
         harness.serverConfig().deploymentMode(DeploymentMode.DETACHED);
         harness.serverConfig().sessionContainerInstanceCount(1);
+        harness.serverConfig().activeSessionLimit(2000);
         harness.proxyConfig()
             .launchMediaDriver(true)
             .mediaDriverDir(workingDir.resolve("driver").toString());
@@ -89,7 +90,7 @@ class SoakTest
     @Test
     void longRunningTest() throws Exception
     {
-        for (int i = 0; i < 30; i++)
+        for (int i = 0; i < 3; i++)
         {
             shouldHandleMultipleSessions(i + 1);
             LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1L));

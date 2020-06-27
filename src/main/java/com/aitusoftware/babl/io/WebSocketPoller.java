@@ -62,7 +62,15 @@ public final class WebSocketPoller extends TransportPoller implements Agent
             final int processedSessions = Math.min(sessionPollLimit, selectedKeySet.size());
             for (int i = 0; i < processedSessions; i++)
             {
-                readyToReadListener.accept((WebSocketSession)keys[i].attachment());
+                final WebSocketSession session = (WebSocketSession)keys[i].attachment();
+                if (session.isClosed())
+                {
+                    keys[i].cancel();
+                }
+                else
+                {
+                    readyToReadListener.accept(session);
+                }
             }
             selectedKeySet.reset(processedSessions);
             return 1;

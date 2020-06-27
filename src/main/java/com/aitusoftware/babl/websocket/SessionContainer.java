@@ -170,24 +170,7 @@ final class SessionContainer implements Agent, AutoCloseable
         }
 
         workCount += pollIncomingValidationResults();
-        final SocketChannel newConnection = incomingConnections.poll();
-        if (newConnection != null)
-        {
-            final long sessionId = sessionIdGenerator.nextSessionId();
-            if (activeSessionMap.containsKey(sessionId) || activeSessionMap.size() >= activeSessionLimit)
-            {
-                CloseHelper.quietClose(newConnection);
-                return 1;
-            }
-            final WebSocketSession session = sessionPool.acquire();
-            session.init(sessionId, connectionUpgradePool.acquire(), this::connectionUpgraded, timeMs,
-                newConnection, newConnection);
-            workCount++;
-            notYetValidatedSessionMap.put(sessionId, session);
-            webSocketPoller.register(session, newConnection);
-            activeSessionMap.put(sessionId, session);
-            sessionContainerStatistics.activeSessionCount(activeSessionMap.size());
-        }
+        workCount += pollIncomingConnections(timeMs);
         workCount += sendData();
         workCount += receiveData();
         workCount += removeInactiveSessions();
@@ -301,10 +284,34 @@ final class SessionContainer implements Agent, AutoCloseable
         notYetValidatedSessionMap.remove(sessionId);
         sessionDataListener.receiveWorkAvailable.remove(sessionId);
         sessionDataListener.sendWorkAvailable.remove(sessionId);
+
         final WebSocketSession session = activeSessionMap.remove(sessionId);
         sessionPool.release(session);
-
         sessionContainerStatistics.activeSessionCount(activeSessionMap.size());
+    }
+
+    private int pollIncomingConnections(final long timeMs)
+    {
+        int connectionWorkDone = 0;
+        final SocketChannel newConnection = incomingConnections.poll();
+        if (newConnection != null)
+        {
+            final long sessionId = sessionIdGenerator.nextSessionId();
+            if (activeSessionMap.containsKey(sessionId) || activeSessionMap.size() >= activeSessionLimit)
+            {
+                CloseHelper.quietClose(newConnection);
+                return 0;
+            }
+            final WebSocketSession session = sessionPool.acquire();
+            session.init(sessionId, connectionUpgradePool.acquire(), this::connectionUpgraded, timeMs,
+                newConnection, newConnection);
+            connectionWorkDone++;
+            notYetValidatedSessionMap.put(sessionId, session);
+            webSocketPoller.register(session, newConnection);
+            activeSessionMap.put(sessionId, session);
+            sessionContainerStatistics.activeSessionCount(activeSessionMap.size());
+        }
+        return connectionWorkDone;
     }
 
     private int sendData() throws IOException

@@ -43,6 +43,7 @@ import org.agrona.DirectBuffer;
  */
 public final class WebSocketSession implements Pooled, Session
 {
+    private static final int NULL_SESSION_ID = -1;
     private static final int MAX_FRAMES = 4;
     private static final int UPGRADE_SEND_BUFFER_SIZE = 1024;
     private static final short NULL_CLOSE_REASON = Short.MIN_VALUE;
@@ -63,7 +64,7 @@ public final class WebSocketSession implements Pooled, Session
     private transient ByteBuffer handshakeSendBuffer;
     private ByteBuffer receiveBuffer;
     private SessionState state = SessionState.UPGRADING;
-    private boolean closed;
+    private boolean closed = true;
     private short closeReason = NULL_CLOSE_REASON;
     private ConnectionUpgrade connectionUpgrade;
     private Consumer<ConnectionUpgrade> connectionUpgradeReleaseHandler;
@@ -95,10 +96,9 @@ public final class WebSocketSession implements Pooled, Session
     @Override
     public void reset()
     {
-        closed = false;
         state = SessionState.UPGRADING;
         pingAgent.reset();
-        id = -1;
+        id = NULL_SESSION_ID;
         CloseHelper.close(outputChannel);
         CloseHelper.close(inputChannel);
         outputChannel = null;
@@ -133,6 +133,7 @@ public final class WebSocketSession implements Pooled, Session
         this.inputChannel = inputChannel;
         this.outputChannel = outputChannel;
         connectionUpgrade.init(sessionId);
+        closed = false;
     }
 
     /**
@@ -168,6 +169,15 @@ public final class WebSocketSession implements Pooled, Session
     {
         sessionClosing(Constants.CLOSE_REASON_NORMAL);
         return SendResult.OK;
+    }
+
+    /**
+     * Indicates whether the session is closed.
+     * @return whether the session is closed
+     */
+    public boolean isClosed()
+    {
+        return closed;
     }
 
     void onCloseMessage(final short closeReason)
@@ -272,10 +282,18 @@ public final class WebSocketSession implements Pooled, Session
         {
             allocateLargerReceiveBuffer();
         }
-        final int bytesRead = inputChannel.read(receiveBuffer);
-        sessionStatistics.bytesRead(bytesRead);
-        sessionContainerStatistics.bytesRead(bytesRead);
-        if (isEndOfStream(bytesRead))
+        try
+        {
+            final int bytesRead = inputChannel.read(receiveBuffer);
+            sessionStatistics.bytesRead(bytesRead);
+            sessionContainerStatistics.bytesRead(bytesRead);
+            if (isEndOfStream(bytesRead))
+            {
+                sessionClosed(DisconnectReason.REMOTE_DISCONNECT);
+                return 1;
+            }
+        }
+        catch (final IOException e)
         {
             sessionClosed(DisconnectReason.REMOTE_DISCONNECT);
             return 1;
