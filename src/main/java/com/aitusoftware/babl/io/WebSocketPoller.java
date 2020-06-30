@@ -63,14 +63,7 @@ public final class WebSocketPoller extends TransportPoller implements Agent
             {
                 final SelectionKey key = keys[i];
                 final WebSocketSession session = (WebSocketSession)key.attachment();
-                if (session.isClosed())
-                {
-                    key.cancel();
-                }
-                else
-                {
-                    readyToReadListener.accept(session);
-                }
+                readyToReadListener.accept(session);
             }
             selectedKeySet.reset();
             return 1;
@@ -88,7 +81,8 @@ public final class WebSocketPoller extends TransportPoller implements Agent
     {
         try
         {
-            channel.register(selector, SelectionKey.OP_READ, session);
+            final SelectionKey selectionKey = channel.register(selector, SelectionKey.OP_READ, session);
+            session.selectionKey(selectionKey);
         }
         catch (final ClosedChannelException e)
         {

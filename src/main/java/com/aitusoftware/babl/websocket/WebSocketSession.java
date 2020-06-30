@@ -22,6 +22,7 @@ import static com.aitusoftware.babl.io.BufferUtil.increaseCapacity;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.WritableByteChannel;
 import java.util.function.Consumer;
 
@@ -70,6 +71,7 @@ public final class WebSocketSession implements Pooled, Session
     private Consumer<ConnectionUpgrade> connectionUpgradeReleaseHandler;
     private DisconnectReason undeliveredDisconnectReason;
     private long connectedTimestampMs;
+    private SelectionKey selectionKey;
 
     WebSocketSession(
         final SessionDataListener sessionDataListener,
@@ -106,6 +108,7 @@ public final class WebSocketSession implements Pooled, Session
         frameDecoder.reset();
         frameEncoder.reset();
         undeliveredDisconnectReason = null;
+        selectionKey = null;
     }
 
     void init(
@@ -342,6 +345,11 @@ public final class WebSocketSession implements Pooled, Session
         return connectedTimestampMs;
     }
 
+    public void selectionKey(final SelectionKey selectionKey)
+    {
+        this.selectionKey = selectionKey;
+    }
+
     private void processReceivedMessages()
     {
         for (int i = 0; i < MAX_FRAMES; i++)
@@ -466,9 +474,10 @@ public final class WebSocketSession implements Pooled, Session
         return 0;
     }
 
-    private void onSessionClosed()
+    void onSessionClosed()
     {
         sessionDataListener.sessionClosed();
+        selectionKey.cancel();
         closed = true;
         setState(SessionState.DISCONNECTED);
     }

@@ -34,6 +34,7 @@ import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -96,6 +97,7 @@ class WebSocketSessionTest
         frameEncoder,
         sessionConfig, bufferPool, application, pingAgent, sessionStatistics, sessionContainerStatistics);
     private final UnsafeBuffer applicationBuffer = new UnsafeBuffer(new byte[512]);
+    private SelectionKey selectionKey;
 
     @BeforeAll
     static void enableLogging()
@@ -108,6 +110,15 @@ class WebSocketSessionTest
     {
         given(clock.time()).willReturn(BASE_TIME_MS);
         session.init(SESSION_ID, connectionUpgrade, cu -> {}, BASE_TIME_MS, channel, channel);
+        selectionKey = Mockito.mock(SelectionKey.class);
+        session.selectionKey(selectionKey);
+    }
+
+    @Test
+    void shouldCancelSelectionKeyOnClose()
+    {
+        session.onSessionClosed();
+        verify(selectionKey).cancel();
     }
 
     @Test
