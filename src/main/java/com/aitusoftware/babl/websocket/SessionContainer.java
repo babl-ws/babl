@@ -437,46 +437,6 @@ final class SessionContainer implements Agent, AutoCloseable
         }
     }
 
-    private static final class DoubleAgent implements Agent
-    {
-        private final Agent one;
-        private final Agent two;
-        private final String roleName;
-
-        DoubleAgent(final Agent one, final Agent two)
-        {
-            this.one = one;
-            this.two = two;
-            this.roleName = "[" + one.roleName() + "," + two.roleName() + "]";
-        }
-
-        @Override
-        public int doWork() throws Exception
-        {
-            return one.doWork() + two.doWork();
-        }
-
-        @Override
-        public String roleName()
-        {
-            return roleName;
-        }
-
-        @Override
-        public void onStart()
-        {
-            one.onStart();
-            two.onStart();
-        }
-
-        @Override
-        public void onClose()
-        {
-            one.onClose();
-            two.onClose();
-        }
-    }
-
     private final class ValidationResultHandler implements Consumer<ValidationResult>
     {
         @Override

@@ -87,7 +87,6 @@ public final class AllConfig
             {
                 throw new IllegalStateException("Server instance count must be greater than zero");
             }
-            proxyConfig.conclude();
             if (proxyConfig.launchMediaDriver())
             {
                 final Path serverDir = Paths.get(sessionContainerConfig.serverDirectory(0));
@@ -100,6 +99,7 @@ public final class AllConfig
                             mediaDriverDir, serverDir));
                 }
             }
+            proxyConfig.conclude();
         }
     }
 }

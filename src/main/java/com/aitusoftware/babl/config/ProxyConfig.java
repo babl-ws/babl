@@ -22,9 +22,11 @@ import java.nio.file.Paths;
 import com.aitusoftware.babl.proxy.ContextConfiguration;
 
 import org.agrona.CloseHelper;
+import org.agrona.concurrent.AgentInvoker;
 
 import io.aeron.Aeron;
 import io.aeron.driver.MediaDriver;
+import io.aeron.driver.ThreadingMode;
 
 /**
  * Configuration for IPC proxies.
@@ -52,6 +54,7 @@ public final class ProxyConfig implements AutoCloseable
 
     private MediaDriver.Context mediaDriverContext = new MediaDriver.Context();
     private MediaDriver mediaDriver;
+    private AgentInvoker mediaDriverInvoker;
     private Aeron.Context aeronClientContext = new Aeron.Context();
     private Aeron aeron;
 
@@ -242,16 +245,27 @@ public final class ProxyConfig implements AutoCloseable
         return aeronClientContext;
     }
 
+    /**
+     * Returns the Aeron MediaDriver AgentInvoker.
+     * @return the Aeron MediaDriver AgentInvoker.
+     */
+    public AgentInvoker mediaDriverInvoker()
+    {
+        return mediaDriverInvoker;
+    }
+
     void conclude()
     {
         mediaDriverContext.aeronDirectoryName(mediaDriverDir);
         aeronClientContext.aeronDirectoryName(mediaDriverDir);
         ContextConfiguration.applySettings(performanceMode, mediaDriverContext);
         ContextConfiguration.applySettings(performanceMode, aeronClientContext);
-
+        mediaDriverContext.threadingMode(ThreadingMode.INVOKER);
         if (launchMediaDriver)
         {
             mediaDriver = MediaDriver.launch(mediaDriverContext);
+            mediaDriverInvoker = mediaDriver.sharedAgentInvoker();
+            aeronClientContext.driverAgentInvoker(mediaDriverInvoker);
         }
         aeron = Aeron.connect(aeronClientContext);
     }
