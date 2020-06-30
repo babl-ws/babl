@@ -119,7 +119,7 @@ public final class ApplicationAdapter implements Agent, ControlledFragmentHandle
                 setSessionProxy(sessionMessageDecoder.sessionId(), sessionMessageDecoder.containerId());
                 final ContentType contentType = CONTENT_TYPES[sessionMessageDecoder.contentType()];
                 final VarDataEncodingDecoder decodedMessage = sessionMessageDecoder.message();
-                Logger.log(Category.PROXY, "[%d] ApplicationAdapter onSessionMessage(%d)%n",
+                Logger.log(Category.PROXY, "[%d] ApplicationAdapter onSessionMessage(sessionId: %d)%n",
                     sessionMessageDecoder.containerId(), sessionMessageDecoder.sessionId());
                 applicationResult = application.onSessionMessage(
                     sessionProxy, contentType, decodedMessage.buffer(),
@@ -130,7 +130,7 @@ public final class ApplicationAdapter implements Agent, ControlledFragmentHandle
                 sessionOpenDecoder.wrap(buffer, offset + MessageHeaderDecoder.ENCODED_LENGTH,
                     messageHeaderDecoder.blockLength(), messageHeaderDecoder.version());
                 setSessionProxy(sessionOpenDecoder.sessionId(), sessionOpenDecoder.containerId());
-                Logger.log(Category.PROXY, "[%d] ApplicationAdapter onSessionConnected(%d)%n",
+                Logger.log(Category.PROXY, "[%d] ApplicationAdapter onSessionConnected(sessionId: %d)%n",
                     sessionOpenDecoder.containerId(), sessionOpenDecoder.sessionId());
                 applicationResult = application.onSessionConnected(sessionProxy);
                 action = sendResultToAction(applicationResult);
@@ -139,7 +139,7 @@ public final class ApplicationAdapter implements Agent, ControlledFragmentHandle
                 sessionCloseDecoder.wrap(buffer, offset + MessageHeaderDecoder.ENCODED_LENGTH,
                     messageHeaderDecoder.blockLength(), messageHeaderDecoder.version());
                 setSessionProxy(sessionCloseDecoder.sessionId(), sessionCloseDecoder.containerId());
-                Logger.log(Category.PROXY, "[%d] ApplicationAdapter onSessionDisconnected(%d)%n",
+                Logger.log(Category.PROXY, "[%d] ApplicationAdapter onSessionDisconnected(sessionId: %d)%n",
                     sessionCloseDecoder.containerId(), sessionCloseDecoder.sessionId());
                 applicationResult = application.onSessionDisconnected(sessionProxy,
                     DISCONNECT_REASONS[sessionCloseDecoder.closeReason()]);

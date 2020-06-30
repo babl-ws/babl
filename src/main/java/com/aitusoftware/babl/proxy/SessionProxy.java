@@ -92,7 +92,8 @@ final class SessionProxy implements Session
             encodedMessage.buffer().putBytes(
                 encodedMessage.offset() + varDataEncodingOffset(), buffer, offset, length);
             bufferClaim.commit();
-            Logger.log(Category.PROXY, "[%d] SessionProxy send(%d)", sessionContainerId, sessionId);
+            Logger.log(Category.PROXY, "[%d] SessionProxy send(sessionId: %d)%n",
+                sessionContainerId, sessionId);
             applicationAdapterStatistics.proxyBackPressured(ApplicationAdapterStatistics.NOT_BACK_PRESSURED);
             return SendResult.OK;
         }
@@ -118,7 +119,7 @@ final class SessionProxy implements Session
             closeSessionEncoder.containerId(sessionContainerId);
             closeSessionEncoder.closeReason(disconnectReason.ordinal());
             bufferClaim.commit();
-            Logger.log(Category.PROXY, "[%d] SessionProxy close(%d)", sessionContainerId, sessionId);
+            Logger.log(Category.PROXY, "[%d] SessionProxy close(sessionId: %d)", sessionContainerId, sessionId);
             return SendResult.OK;
         }
         bufferClaim.abort();

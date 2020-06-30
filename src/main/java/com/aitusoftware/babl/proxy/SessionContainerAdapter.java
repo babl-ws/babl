@@ -106,7 +106,7 @@ public final class SessionContainerAdapter implements ControlledFragmentHandler,
             final long sessionId = applicationMessageDecoder.sessionId();
             final ContentType contentType = CONTENT_TYPES[applicationMessageDecoder.contentType()];
             final VarDataEncodingDecoder decodedMessage = applicationMessageDecoder.message();
-            Logger.log(Category.PROXY, "[%d] SessionContainerAdapter send(%d)%n",
+            Logger.log(Category.PROXY, "[%d] SessionContainerAdapter send(sessionId: %d)%n",
                 sessionContainerId, sessionId);
             final Session session = sessionByIdMap.get(sessionId);
             if (session != null)
@@ -131,7 +131,7 @@ public final class SessionContainerAdapter implements ControlledFragmentHandler,
             }
             final long sessionId = closeSessionDecoder.sessionId();
             final DisconnectReason disconnectReason = DISCONNECT_REASONS[closeSessionDecoder.closeReason()];
-            Logger.log(Category.PROXY, "[%d] SessionContainerAdapter close(%d)%n",
+            Logger.log(Category.PROXY, "[%d] SessionContainerAdapter close(sessionId: %d)%n",
                 sessionContainerId, sessionId);
             final Session session = sessionByIdMap.get(sessionId);
             session.close(disconnectReason);

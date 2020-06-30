@@ -105,7 +105,7 @@ public final class ApplicationProxy implements Application
             sessionOpenEncoder.sessionId(session.id());
             sessionOpenEncoder.containerId(sessionContainerId);
             bufferClaim.commit();
-            Logger.log(Category.PROXY, "[%d] ApplicationProxy onSessionConnected(%d)%n",
+            Logger.log(Category.PROXY, "[%d] ApplicationProxy onSessionConnected(sessionId: %d)%n",
                 sessionContainerId, session.id());
             proxyNotBackPressured();
             return SendResult.OK;
@@ -129,7 +129,7 @@ public final class ApplicationProxy implements Application
             sessionCloseEncoder.closeReason(reason.ordinal());
             bufferClaim.commit();
             sessionByIdMap.remove(session.id());
-            Logger.log(Category.PROXY, "[%d] ApplicationProxy onSessionDisconnected(%d)%n",
+            Logger.log(Category.PROXY, "[%d] ApplicationProxy onSessionDisconnected(sessionId: %d)%n",
                 sessionContainerId, session.id());
             proxyNotBackPressured();
             return SendResult.OK;
@@ -163,7 +163,7 @@ public final class ApplicationProxy implements Application
             encodedMessage.buffer().putBytes(
                 encodedMessage.offset() + varDataEncodingOffset(), msg, offset, length);
             bufferClaim.commit();
-            Logger.log(Category.PROXY, "[%d] ApplicationProxy onSessionMessage(%d)%n",
+            Logger.log(Category.PROXY, "[%d] ApplicationProxy onSessionMessage(sessionId: %d)%n",
                 sessionContainerId, session.id());
             proxyNotBackPressured();
             return SendResult.OK;
