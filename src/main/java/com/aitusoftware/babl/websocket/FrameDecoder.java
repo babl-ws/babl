@@ -62,6 +62,7 @@ final class FrameDecoder
     private int maskingKeyIndex = 0;
     private int initialFrameOpCode = NO_OP_CODE;
     private boolean hasQueuedMessage;
+    private long sessionId;
 
     FrameDecoder(
         final MessageReceiver messageReceiver,
@@ -166,7 +167,7 @@ final class FrameDecoder
     {
         if (isSingleCompleteMessage())
         {
-            Logger.log(Category.DECODE, "Received complete frame of %dB%n", payloadLength, 0);
+            Logger.log(Category.DECODE, "Received complete frame of %dB%n", payloadLength);
 
             final int bytesConsumed = frameLength;
             if (frameHeader.opCode == Constants.OPCODE_PING)
@@ -353,7 +354,7 @@ final class FrameDecoder
         final int deliveryResult = messageReceiver.onMessage(session, contentType, msg, offset, length);
         if (SendResult.OK == deliveryResult)
         {
-            Logger.log(Category.DECODE, "Delivered %d%n", length);
+            Logger.log(Category.DECODE, "Delivered %d to session %d%n", length, sessionId);
         }
         else if (SendResult.BACK_PRESSURE == deliveryResult)
         {
@@ -498,9 +499,10 @@ final class FrameDecoder
         bufferPool.release(dstBuffer.byteBuffer());
     }
 
-    void init(final SessionStatistics sessionStatistics)
+    void init(final SessionStatistics sessionStatistics, final long sessionId)
     {
         this.sessionStatistics = sessionStatistics;
+        this.sessionId = sessionId;
         dstBuffer.wrap(bufferPool.acquire(sessionConfig.sessionDecodeBufferSize()));
     }
 

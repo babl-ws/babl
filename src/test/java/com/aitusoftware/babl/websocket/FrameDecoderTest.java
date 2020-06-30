@@ -63,7 +63,7 @@ class FrameDecoderTest
     @BeforeEach
     void setUp()
     {
-        frameDecoder.init(new NoOpSessionStatistics());
+        frameDecoder.init(new NoOpSessionStatistics(), 0L);
         Arrays.fill(payload, DATUM);
     }
 

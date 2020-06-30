@@ -57,7 +57,7 @@ public class FrameDecoderBenchmark
     @Setup
     public void setup()
     {
-        frameDecoder.init(new NoOpSessionStatistics());
+        frameDecoder.init(new NoOpSessionStatistics(), 0L);
         MsgUtil.writeWebSocketFrame(new byte[100], 100, singleFramePayload,
             0, 0, true, Constants.OPCODE_BINARY);
         singleFramePayload.clear();

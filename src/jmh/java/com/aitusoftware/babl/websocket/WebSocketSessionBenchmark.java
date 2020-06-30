@@ -78,7 +78,7 @@ public class WebSocketSessionBenchmark
     public void setup()
     {
         CLOCK.set(System.currentTimeMillis());
-        frameDecoder.init(SESSION_STATISTICS);
+        frameDecoder.init(SESSION_STATISTICS, 0L);
         MsgUtil.writeWebSocketFrame(PAYLOAD, PAYLOAD.length, singleFramePayload,
             0, 0, true, Constants.OPCODE_BINARY);
         singleFramePayload.clear();

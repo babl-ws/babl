@@ -26,13 +26,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
+import com.aitusoftware.babl.config.SessionConfig;
+import com.aitusoftware.babl.config.SocketConfig;
 import com.aitusoftware.babl.monitoring.NoOpSessionContainerStatistics;
 import com.aitusoftware.babl.monitoring.NoOpSessionStatistics;
 import com.aitusoftware.babl.monitoring.SessionStatistics;
 import com.aitusoftware.babl.pool.BufferPool;
 import com.aitusoftware.babl.user.ContentType;
-import com.aitusoftware.babl.config.SessionConfig;
-import com.aitusoftware.babl.config.SocketConfig;
 
 import org.agrona.DirectBuffer;
 import org.agrona.concurrent.SystemEpochClock;
@@ -68,7 +68,7 @@ public final class Client
             sessionConfig, bufferPool, pingAgent, false,
             serverStatistics);
         receiveBuffer = ByteBuffer.allocateDirect(sessionConfig.receiveBufferSize());
-        this.frameDecoder.init(sessionStatistics);
+        this.frameDecoder.init(sessionStatistics, 0L);
         this.frameEncoder.init(sessionStatistics, 0L);
     }
 

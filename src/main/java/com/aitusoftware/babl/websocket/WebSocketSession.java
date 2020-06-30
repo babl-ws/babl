@@ -128,7 +128,7 @@ public final class WebSocketSession implements Pooled, Session
         }
         receiveBuffer = bufferPool.acquire(sessionConfig.receiveBufferSize());
         pingAgent.init(id);
-        this.frameDecoder.init(sessionStatistics);
+        this.frameDecoder.init(sessionStatistics, sessionId);
         this.frameEncoder.init(sessionStatistics, sessionId);
         this.inputChannel = inputChannel;
         this.outputChannel = outputChannel;
