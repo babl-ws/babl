@@ -37,7 +37,7 @@ import com.aitusoftware.babl.config.SessionContainerConfig;
 import com.aitusoftware.babl.io.ConnectionPoller;
 import com.aitusoftware.babl.monitoring.MappedApplicationAdapterStatistics;
 import com.aitusoftware.babl.monitoring.MappedFile;
-import com.aitusoftware.babl.monitoring.MappedSessionAdapterStatistics;
+import com.aitusoftware.babl.monitoring.MappedSessionContainerAdapterStatistics;
 import com.aitusoftware.babl.monitoring.ServerMarkFile;
 import com.aitusoftware.babl.proxy.ApplicationAdapter;
 import com.aitusoftware.babl.proxy.ApplicationProxy;
@@ -139,7 +139,7 @@ public final class BablServer
                 toApplicationSubscription,
                 toServerPublications,
                 proxyConfig.applicationAdapterPollFragmentLimit(),
-                applicationAdapterStatistics);
+                applicationAdapterStatistics, SystemEpochClock.INSTANCE);
             final AgentRunner applicationAdapterRunner = new AgentRunner(
                 allConfig.applicationConfig().applicationIdleStrategy(sessionContainerConfig.serverDirectory(0)),
                 errorHandler, null,
@@ -212,10 +212,10 @@ public final class BablServer
         serverMarkFiles[sessionContainerId] = sessionContainers[sessionContainerId].serverMarkFile();
         final MappedFile serverAdapterStatsFile = new MappedFile(
             Paths.get(sessionContainerConfig.serverDirectory(sessionContainerId),
-            MappedSessionAdapterStatistics.FILE_NAME), MappedSessionAdapterStatistics.LENGTH);
+            MappedSessionContainerAdapterStatistics.FILE_NAME), MappedSessionContainerAdapterStatistics.LENGTH);
         dependencies.add(serverAdapterStatsFile);
-        final MappedSessionAdapterStatistics sessionAdapterStatistics =
-            new MappedSessionAdapterStatistics(serverAdapterStatsFile);
+        final MappedSessionContainerAdapterStatistics sessionAdapterStatistics =
+            new MappedSessionContainerAdapterStatistics(serverAdapterStatsFile);
         sessionAdapterStatistics.reset();
         applicationProxy.init(toApplicationPublication,
             sessionContainers[sessionContainerId].sessionContainerStatistics());

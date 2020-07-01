@@ -17,7 +17,7 @@
  */
 package com.aitusoftware.babl.monitoring;
 
-public abstract class SessionAdapterStatistics
+public abstract class SessionContainerAdapterStatistics
 {
     public abstract void adapterPollLimitReached();
 

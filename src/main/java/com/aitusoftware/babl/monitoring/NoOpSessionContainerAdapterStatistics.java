@@ -17,7 +17,7 @@
  */
 package com.aitusoftware.babl.monitoring;
 
-public class NoOpSessionAdapterStatistics extends SessionAdapterStatistics
+public class NoOpSessionContainerAdapterStatistics extends SessionContainerAdapterStatistics
 {
     @Override
     public void adapterPollLimitReached()

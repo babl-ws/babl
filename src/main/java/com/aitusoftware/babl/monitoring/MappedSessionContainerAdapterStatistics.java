@@ -23,11 +23,11 @@ import org.agrona.BitUtil;
 import org.agrona.CloseHelper;
 import org.agrona.concurrent.AtomicBuffer;
 
-public final class MappedSessionAdapterStatistics extends SessionAdapterStatistics implements Closeable
+public final class MappedSessionContainerAdapterStatistics
+    extends SessionContainerAdapterStatistics implements Closeable
 {
     private static final int POLL_LIMIT_REACHED_OFFSET = 0;
     private static final int SESSION_BACK_PRESSURE_OFFSET = POLL_LIMIT_REACHED_OFFSET + BitUtil.SIZE_OF_LONG;
-    private static final int PROXY_BACK_PRESSURE_OFFSET = POLL_LIMIT_REACHED_OFFSET + BitUtil.SIZE_OF_LONG;
     public static final int LENGTH = SESSION_BACK_PRESSURE_OFFSET + BitUtil.SIZE_OF_LONG;
     public static final String FILE_NAME = "session-adapter-stats.data";
 
@@ -38,7 +38,7 @@ public final class MappedSessionAdapterStatistics extends SessionAdapterStatisti
     private long pollLimitReachedCount;
     private long sessionBackPressureCount;
 
-    public MappedSessionAdapterStatistics(
+    public MappedSessionContainerAdapterStatistics(
         final MappedFile mappedFile)
     {
         this.mappedFile = mappedFile;

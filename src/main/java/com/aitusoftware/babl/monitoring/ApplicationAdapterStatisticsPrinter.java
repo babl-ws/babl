@@ -21,7 +21,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.function.Consumer;
 
-public final class AdapterStatisticsPrinter
+public final class ApplicationAdapterStatisticsPrinter
 {
     public static void main(final String[] args)
     {
@@ -30,6 +30,7 @@ public final class AdapterStatisticsPrinter
             System.out.printf("%s%n", args[0]);
             System.out.printf("Poll Limit Reached: %d%n", stats.pollLimitReachedCount());
             System.out.printf("Proxy Back-Pressure Count: %d%n", stats.proxyBackPressureCount());
+            System.out.printf("Max event-loop duration: %d%n", stats.eventLoopDurationMs());
         });
     }
 

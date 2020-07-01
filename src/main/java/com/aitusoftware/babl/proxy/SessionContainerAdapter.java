@@ -26,7 +26,7 @@ import com.aitusoftware.babl.codec.MessageHeaderDecoder;
 import com.aitusoftware.babl.codec.VarDataEncodingDecoder;
 import com.aitusoftware.babl.log.Category;
 import com.aitusoftware.babl.log.Logger;
-import com.aitusoftware.babl.monitoring.SessionAdapterStatistics;
+import com.aitusoftware.babl.monitoring.SessionContainerAdapterStatistics;
 import com.aitusoftware.babl.user.ContentType;
 import com.aitusoftware.babl.websocket.BackPressureStrategy;
 import com.aitusoftware.babl.websocket.DisconnectReason;
@@ -57,7 +57,7 @@ public final class SessionContainerAdapter implements ControlledFragmentHandler,
     private final int sessionAdapterPollFragmentLimit;
     private final BackPressureStrategy backPressureStrategy;
     private final String agentName;
-    private SessionAdapterStatistics sessionAdapterStatistics;
+    private SessionContainerAdapterStatistics sessionContainerAdapterStatistics;
 
     /**
      * Constructor.
@@ -116,7 +116,7 @@ public final class SessionContainerAdapter implements ControlledFragmentHandler,
                 if (sendResult == SendResult.BACK_PRESSURE)
                 {
                     sendResult = backPressureStrategy.onSessionBackPressure(session);
-                    sessionAdapterStatistics.onSessionBackPressure();
+                    sessionContainerAdapterStatistics.onSessionBackPressure();
                 }
                 action = sendResultToAction(sendResult);
             }
@@ -149,7 +149,7 @@ public final class SessionContainerAdapter implements ControlledFragmentHandler,
         final int workDone = fromApplicationSubscription.controlledPoll(this, sessionAdapterPollFragmentLimit);
         if (workDone == sessionAdapterPollFragmentLimit)
         {
-            sessionAdapterStatistics.adapterPollLimitReached();
+            sessionContainerAdapterStatistics.adapterPollLimitReached();
         }
         return workDone;
     }
@@ -168,8 +168,8 @@ public final class SessionContainerAdapter implements ControlledFragmentHandler,
      *
      * @param statistics metrics sink
      */
-    public void sessionAdapterStatistics(final SessionAdapterStatistics statistics)
+    public void sessionAdapterStatistics(final SessionContainerAdapterStatistics statistics)
     {
-        this.sessionAdapterStatistics = statistics;
+        this.sessionContainerAdapterStatistics = statistics;
     }
 }

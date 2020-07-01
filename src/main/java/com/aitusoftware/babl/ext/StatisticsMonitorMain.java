@@ -26,7 +26,7 @@ import java.time.Instant;
 import com.aitusoftware.babl.config.PropertiesLoader;
 import com.aitusoftware.babl.config.SessionContainerConfig;
 import com.aitusoftware.babl.monitoring.MappedApplicationAdapterStatistics;
-import com.aitusoftware.babl.monitoring.MappedSessionAdapterStatistics;
+import com.aitusoftware.babl.monitoring.MappedSessionContainerAdapterStatistics;
 import com.aitusoftware.babl.monitoring.MappedSessionContainerStatistics;
 import com.aitusoftware.babl.monitoring.MappedSessionStatistics;
 
@@ -109,15 +109,17 @@ public final class StatisticsMonitorMain
                 applicationAdapterStatistics.proxyBackPressureCount());
             System.out.printf("Poll-limit reached count:                    %20d%n",
                 applicationAdapterStatistics.pollLimitReachedCount());
+            System.out.printf("Max Event Loop Ms:                           %20d%n",
+                applicationAdapterStatistics.eventLoopDurationMs());
         }
 
         @Override
         public void sessionAdapterStatistics(
-            final MappedSessionAdapterStatistics[] sessionAdapterStatistics)
+            final MappedSessionContainerAdapterStatistics[] sessionAdapterStatistics)
         {
             for (int i = 0; i < sessionAdapterStatistics.length; i++)
             {
-                final MappedSessionAdapterStatistics stats = sessionAdapterStatistics[i];
+                final MappedSessionContainerAdapterStatistics stats = sessionAdapterStatistics[i];
                 System.out.printf("Session Adapter %d Statistics%n", i);
                 System.out.printf("Session back-pressure events: %20d%n", stats.sessionBackPressureCount());
                 System.out.printf("Poll-limit reached count:     %20d%n", stats.pollLimitReachedCount());

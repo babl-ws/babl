@@ -26,6 +26,12 @@ public class NoOpApplicationAdapterStatistics extends ApplicationAdapterStatisti
     }
 
     @Override
+    public void eventLoopDurationMs(final long eventLoopDurationMs)
+    {
+
+    }
+
+    @Override
     public void proxyBackPressure()
     {
 

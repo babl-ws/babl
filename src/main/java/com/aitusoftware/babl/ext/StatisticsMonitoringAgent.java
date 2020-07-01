@@ -36,7 +36,7 @@ import com.aitusoftware.babl.config.DeploymentMode;
 import com.aitusoftware.babl.config.SessionContainerConfig;
 import com.aitusoftware.babl.monitoring.MappedApplicationAdapterStatistics;
 import com.aitusoftware.babl.monitoring.MappedFile;
-import com.aitusoftware.babl.monitoring.MappedSessionAdapterStatistics;
+import com.aitusoftware.babl.monitoring.MappedSessionContainerAdapterStatistics;
 import com.aitusoftware.babl.monitoring.MappedSessionContainerStatistics;
 import com.aitusoftware.babl.monitoring.ServerMarkFile;
 import com.aitusoftware.babl.monitoring.SessionStatisticsFile;
@@ -56,7 +56,7 @@ final class StatisticsMonitoringAgent implements Agent
     private final SessionContainerConfig sessionContainerConfig;
     private final MonitoringConsumer monitoringConsumer;
     private MappedApplicationAdapterStatistics applicationAdapterStatistics;
-    private MappedSessionAdapterStatistics[] sessionAdapterStatistics;
+    private MappedSessionContainerAdapterStatistics[] sessionContainerAdapterStatistics;
     private MappedSessionContainerStatistics[] sessionContainerStatistics;
     private MappedErrorBuffer[] errorBuffers;
     private long lastSessionFileCheckTimestamp;
@@ -83,9 +83,9 @@ final class StatisticsMonitoringAgent implements Agent
         {
             monitoringConsumer.applicationAdapterStatistics(applicationAdapterStatistics);
         }
-        if (sessionAdapterStatistics != null)
+        if (sessionContainerAdapterStatistics != null)
         {
-            monitoringConsumer.sessionAdapterStatistics(sessionAdapterStatistics);
+            monitoringConsumer.sessionAdapterStatistics(sessionContainerAdapterStatistics);
         }
         monitoringConsumer.sessionContainerStatistics(sessionContainerStatistics);
         monitoringConsumer.errorBuffers(errorBuffers);
@@ -108,9 +108,9 @@ final class StatisticsMonitoringAgent implements Agent
     public void onClose()
     {
         closeables.addAll(Arrays.asList(errorBuffers));
-        if (sessionAdapterStatistics != null)
+        if (sessionContainerAdapterStatistics != null)
         {
-            closeables.addAll(Arrays.asList(sessionAdapterStatistics));
+            closeables.addAll(Arrays.asList(sessionContainerAdapterStatistics));
         }
         closeables.add(applicationAdapterStatistics);
         CloseHelper.closeAll(closeables);
@@ -144,7 +144,7 @@ final class StatisticsMonitoringAgent implements Agent
             for (int i = 0; i < instanceCount; i++)
             {
                 allExist &= Files.exists(Paths.get(sessionContainerConfig.serverDirectory(i))
-                    .resolve(MappedSessionAdapterStatistics.FILE_NAME));
+                    .resolve(MappedSessionContainerAdapterStatistics.FILE_NAME));
             }
         }
         for (int i = 0; i < instanceCount; i++)
@@ -167,20 +167,20 @@ final class StatisticsMonitoringAgent implements Agent
                 applicationAdapterStatistics = new MappedApplicationAdapterStatistics(
                     new MappedFile(primaryServerPath.resolve(MappedApplicationAdapterStatistics.FILE_NAME),
                         MappedApplicationAdapterStatistics.LENGTH));
-                sessionAdapterStatistics =
-                    new MappedSessionAdapterStatistics[instanceCount];
+                sessionContainerAdapterStatistics =
+                    new MappedSessionContainerAdapterStatistics[instanceCount];
                 for (int i = 0; i < instanceCount; i++)
                 {
-                    sessionAdapterStatistics[i] = new MappedSessionAdapterStatistics(
+                    sessionContainerAdapterStatistics[i] = new MappedSessionContainerAdapterStatistics(
                         new MappedFile(Paths.get(sessionContainerConfig.serverDirectory(i))
-                            .resolve(MappedSessionAdapterStatistics.FILE_NAME),
-                            MappedSessionAdapterStatistics.LENGTH));
+                            .resolve(MappedSessionContainerAdapterStatistics.FILE_NAME),
+                            MappedSessionContainerAdapterStatistics.LENGTH));
                 }
             }
             else
             {
                 applicationAdapterStatistics = null;
-                sessionAdapterStatistics = null;
+                sessionContainerAdapterStatistics = null;
             }
             sessionContainerStatistics = new MappedSessionContainerStatistics[instanceCount];
             errorBuffers = new MappedErrorBuffer[instanceCount];

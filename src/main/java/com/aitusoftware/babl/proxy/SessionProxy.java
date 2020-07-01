@@ -27,6 +27,7 @@ import com.aitusoftware.babl.codec.VarDataEncodingEncoder;
 import com.aitusoftware.babl.log.Category;
 import com.aitusoftware.babl.log.Logger;
 import com.aitusoftware.babl.monitoring.ApplicationAdapterStatistics;
+import com.aitusoftware.babl.monitoring.BackPressureStatus;
 import com.aitusoftware.babl.user.ContentType;
 import com.aitusoftware.babl.websocket.DisconnectReason;
 import com.aitusoftware.babl.websocket.SendResult;
@@ -94,14 +95,14 @@ final class SessionProxy implements Session
             bufferClaim.commit();
             Logger.log(Category.PROXY, "[%d] SessionProxy send(sessionId: %d)%n",
                 sessionContainerId, sessionId);
-            applicationAdapterStatistics.proxyBackPressured(ApplicationAdapterStatistics.NOT_BACK_PRESSURED);
+            applicationAdapterStatistics.proxyBackPressured(BackPressureStatus.NOT_BACK_PRESSURED);
             return SendResult.OK;
         }
         bufferClaim.abort();
         if (result == Publication.BACK_PRESSURED)
         {
             applicationAdapterStatistics.proxyBackPressure();
-            applicationAdapterStatistics.proxyBackPressured(ApplicationAdapterStatistics.BACK_PRESSURED);
+            applicationAdapterStatistics.proxyBackPressured(BackPressureStatus.BACK_PRESSURED);
         }
         return ProxyUtil.offerResultToSendResult(result);
     }

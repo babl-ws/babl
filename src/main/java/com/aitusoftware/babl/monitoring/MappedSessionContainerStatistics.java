@@ -17,13 +17,8 @@
  */
 package com.aitusoftware.babl.monitoring;
 
-import java.nio.MappedByteBuffer;
-import java.nio.file.Path;
-
 import org.agrona.BitUtil;
-import org.agrona.IoUtil;
 import org.agrona.concurrent.AtomicBuffer;
-import org.agrona.concurrent.UnsafeBuffer;
 
 public final class MappedSessionContainerStatistics extends SessionContainerStatistics
 {
@@ -49,24 +44,13 @@ public final class MappedSessionContainerStatistics extends SessionContainerStat
     private long proxyBackPressureEvents;
 
     public MappedSessionContainerStatistics(
-        final Path markFile)
-    {
-        final MappedByteBuffer buffer = IoUtil.mapExistingFile(
-            markFile.toFile(), "statistics-buffer",
-            ServerMarkFile.DATA_OFFSET, ServerMarkFile.DATA_LENGTH);
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> IoUtil.unmap(buffer)));
-        this.buffer = new UnsafeBuffer(buffer);
-        this.offset = 0;
-        eventLoopDurationMs(0L);
-    }
-
-    public MappedSessionContainerStatistics(
         final AtomicBuffer buffer,
         final int offset)
     {
         this.buffer = buffer;
         this.offset = offset;
-        eventLoopDurationMs(0L);
+        bytesRead = bytesRead();
+        bytesWritten = bytesWritten();
     }
 
     @Override
@@ -83,9 +67,7 @@ public final class MappedSessionContainerStatistics extends SessionContainerStat
     @Override
     public void eventLoopDurationMs(final long eventLoopDurationMs)
     {
-        final long currentMax = buffer.getLong(toOffset(MAX_EVENT_LOOP_DURATION_MS_OFFSET));
-        buffer.putLongOrdered(toOffset(MAX_EVENT_LOOP_DURATION_MS_OFFSET),
-            Math.max(eventLoopDurationMs, currentMax));
+        buffer.putLongOrdered(toOffset(MAX_EVENT_LOOP_DURATION_MS_OFFSET), eventLoopDurationMs);
     }
 
     public long maxEventLoopDurationMs()

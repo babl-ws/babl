@@ -30,10 +30,11 @@ import com.aitusoftware.babl.config.DeploymentMode;
 import com.aitusoftware.babl.config.ProxyConfig;
 import com.aitusoftware.babl.config.SessionConfig;
 import com.aitusoftware.babl.config.SessionContainerConfig;
-import com.aitusoftware.babl.monitoring.AdapterStatisticsPrinter;
+import com.aitusoftware.babl.monitoring.ApplicationAdapterStatisticsPrinter;
 import com.aitusoftware.babl.monitoring.ErrorPrinter;
 import com.aitusoftware.babl.monitoring.MappedApplicationAdapterStatistics;
-import com.aitusoftware.babl.monitoring.MappedSessionAdapterStatistics;
+import com.aitusoftware.babl.monitoring.MappedSessionContainerAdapterStatistics;
+import com.aitusoftware.babl.monitoring.SessionContainerAdapterStatisticsPrinter;
 import com.aitusoftware.babl.monitoring.SessionContainerStatisticsPrinter;
 import com.aitusoftware.babl.performance.PortProbe;
 import com.aitusoftware.babl.user.Application;
@@ -120,9 +121,10 @@ public final class ServerHarness implements AutoCloseable
                 final String[] args = {sessionContainerConfig.serverDirectory(i)};
                 ErrorPrinter.main(args);
                 SessionContainerStatisticsPrinter.main(args);
-                printAdapterStatistics(Paths.get(args[0]).resolve(MappedSessionAdapterStatistics.FILE_NAME));
+                printSessionContainerAdapterStatistics(Paths.get(args[0]).resolve(
+                    MappedSessionContainerAdapterStatistics.FILE_NAME));
             }
-            printAdapterStatistics(
+            printApplicationAdapterStatistics(
                 Paths.get(sessionContainerConfig.serverDirectory(0))
                 .resolve(MappedApplicationAdapterStatistics.FILE_NAME));
         }
@@ -134,13 +136,24 @@ public final class ServerHarness implements AutoCloseable
         return sessionContainerConfig.listenPort();
     }
 
-    private void printAdapterStatistics(final Path dir)
+    private void printApplicationAdapterStatistics(final Path adapterStatsFile)
     {
         if (sessionContainerConfig.deploymentMode() == DeploymentMode.DETACHED)
         {
-            AdapterStatisticsPrinter.main(new String[]
+            ApplicationAdapterStatisticsPrinter.main(new String[]
             {
-                dir.toString()
+                adapterStatsFile.toString()
+            });
+        }
+    }
+
+    private void printSessionContainerAdapterStatistics(final Path adapterStatsFile)
+    {
+        if (sessionContainerConfig.deploymentMode() == DeploymentMode.DETACHED)
+        {
+            SessionContainerAdapterStatisticsPrinter.main(new String[]
+            {
+                adapterStatsFile.toString()
             });
         }
     }

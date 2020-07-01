@@ -43,7 +43,7 @@ import com.aitusoftware.babl.codec.VarDataEncodingDecoder;
 import com.aitusoftware.babl.codec.VarDataEncodingEncoder;
 import com.aitusoftware.babl.config.PerformanceMode;
 import com.aitusoftware.babl.monitoring.NoOpApplicationAdapterStatistics;
-import com.aitusoftware.babl.monitoring.NoOpSessionAdapterStatistics;
+import com.aitusoftware.babl.monitoring.NoOpSessionContainerAdapterStatistics;
 import com.aitusoftware.babl.monitoring.NoOpSessionContainerStatistics;
 import com.aitusoftware.babl.user.Application;
 import com.aitusoftware.babl.user.ContentType;
@@ -54,6 +54,7 @@ import org.agrona.CloseHelper;
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.collections.Long2ObjectHashMap;
+import org.agrona.concurrent.SystemEpochClock;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -137,7 +138,7 @@ class ProxyIntegrationTest
         final ApplicationAdapter applicationAdapter =
             new ApplicationAdapter(5, application, serverToApplicationSubscription,
             new Publication[] {applicationToServerPublication}, POLL_FRAGMENT_LIMIT,
-            new NoOpApplicationAdapterStatistics());
+            new NoOpApplicationAdapterStatistics(), SystemEpochClock.INSTANCE);
 
         final ApplicationProxy applicationProxy = new ApplicationProxy(SERVER_ID, new Long2ObjectHashMap<>());
         applicationProxy.init(serverToApplicationPublication, new NoOpSessionContainerStatistics());
@@ -163,7 +164,7 @@ class ProxyIntegrationTest
         final SessionContainerAdapter sessionContainerAdapter = new SessionContainerAdapter(
             0, sessionByIdMap, applicationToServerSubscription, POLL_FRAGMENT_LIMIT,
             new MaintainBackPressureStrategy());
-        sessionContainerAdapter.sessionAdapterStatistics(new NoOpSessionAdapterStatistics());
+        sessionContainerAdapter.sessionAdapterStatistics(new NoOpSessionContainerAdapterStatistics());
 
         final SessionProxy sessionProxy = new SessionProxy(
             new Publication[] {applicationToServerPublication}, new NoOpApplicationAdapterStatistics());

@@ -20,7 +20,7 @@ package com.aitusoftware.babl.ext;
 import java.nio.file.Path;
 
 import com.aitusoftware.babl.monitoring.MappedApplicationAdapterStatistics;
-import com.aitusoftware.babl.monitoring.MappedSessionAdapterStatistics;
+import com.aitusoftware.babl.monitoring.MappedSessionContainerAdapterStatistics;
 import com.aitusoftware.babl.monitoring.MappedSessionContainerStatistics;
 import com.aitusoftware.babl.monitoring.MappedSessionStatistics;
 
@@ -31,7 +31,7 @@ public interface MonitoringConsumer
 {
     void applicationAdapterStatistics(MappedApplicationAdapterStatistics applicationAdapterStatistics);
 
-    void sessionAdapterStatistics(MappedSessionAdapterStatistics[] sessionAdapterStatistics);
+    void sessionAdapterStatistics(MappedSessionContainerAdapterStatistics[] sessionAdapterStatistics);
 
     void errorBuffers(MappedErrorBuffer[] errorBuffers);
 

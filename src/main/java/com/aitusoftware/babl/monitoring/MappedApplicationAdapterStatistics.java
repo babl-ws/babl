@@ -28,7 +28,8 @@ public final class MappedApplicationAdapterStatistics extends ApplicationAdapter
     private static final int POLL_LIMIT_REACHED_OFFSET = 0;
     private static final int PROXY_BACK_PRESSURE_COUNT_OFFSET = POLL_LIMIT_REACHED_OFFSET + BitUtil.SIZE_OF_LONG;
     private static final int PROXY_BACK_PRESSURED_OFFSET = PROXY_BACK_PRESSURE_COUNT_OFFSET + BitUtil.SIZE_OF_LONG;
-    public static final int LENGTH = PROXY_BACK_PRESSURED_OFFSET + BitUtil.SIZE_OF_INT;
+    private static final int EVENT_LOOP_DURATION_OFFSET = PROXY_BACK_PRESSURED_OFFSET + BitUtil.SIZE_OF_INT;
+    public static final int LENGTH = EVENT_LOOP_DURATION_OFFSET + BitUtil.SIZE_OF_LONG;
     public static final String FILE_NAME = "application-adapter-stats.data";
 
     private final MappedFile mappedFile;
@@ -54,6 +55,12 @@ public final class MappedApplicationAdapterStatistics extends ApplicationAdapter
     }
 
     @Override
+    public void eventLoopDurationMs(final long eventLoopDurationMs)
+    {
+        buffer.putLongOrdered(toOffset(EVENT_LOOP_DURATION_OFFSET), eventLoopDurationMs);
+    }
+
+    @Override
     public void proxyBackPressure()
     {
         proxyBackPressureCount++;
@@ -72,6 +79,11 @@ public final class MappedApplicationAdapterStatistics extends ApplicationAdapter
         updateProxyBackPressureCount(0);
     }
 
+    public long eventLoopDurationMs()
+    {
+        return buffer.getLongVolatile(toOffset(EVENT_LOOP_DURATION_OFFSET));
+    }
+
     public long pollLimitReachedCount()
     {
         return buffer.getLongVolatile(toOffset(POLL_LIMIT_REACHED_OFFSET));
@@ -84,7 +96,7 @@ public final class MappedApplicationAdapterStatistics extends ApplicationAdapter
 
     public boolean isProxyBackPressured()
     {
-        return ApplicationAdapterStatistics.NOT_BACK_PRESSURED !=
+        return BackPressureStatus.NOT_BACK_PRESSURED !=
             buffer.getIntVolatile(toOffset(PROXY_BACK_PRESSURED_OFFSET));
     }
 

@@ -28,12 +28,14 @@ import com.aitusoftware.babl.codec.VarDataEncodingDecoder;
 import com.aitusoftware.babl.log.Category;
 import com.aitusoftware.babl.log.Logger;
 import com.aitusoftware.babl.monitoring.ApplicationAdapterStatistics;
+import com.aitusoftware.babl.monitoring.EventLoopDurationReporter;
 import com.aitusoftware.babl.user.Application;
 import com.aitusoftware.babl.user.ContentType;
 import com.aitusoftware.babl.websocket.DisconnectReason;
 
 import org.agrona.DirectBuffer;
 import org.agrona.concurrent.Agent;
+import org.agrona.concurrent.EpochClock;
 
 import io.aeron.Publication;
 import io.aeron.Subscription;
@@ -57,6 +59,7 @@ public final class ApplicationAdapter implements Agent, ControlledFragmentHandle
     private final SessionProxy sessionProxy;
     private final int applicationAdapterPollFragmentLimit;
     private final ApplicationAdapterStatistics applicationAdapterStatistics;
+    private final EventLoopDurationReporter eventLoopDurationReporter;
 
     /**
      * Constructor.
@@ -67,6 +70,7 @@ public final class ApplicationAdapter implements Agent, ControlledFragmentHandle
      * @param toServerPublications                IPC publications back to session containers
      * @param applicationAdapterPollFragmentLimit maximum number of messages to process per invocation of the event-loop
      * @param applicationAdapterStatistics        sink for metrics
+     * @param clock                               clock for timing events
      */
     public ApplicationAdapter(
         final int instanceId,
@@ -74,7 +78,8 @@ public final class ApplicationAdapter implements Agent, ControlledFragmentHandle
         final Subscription fromServerSubscription,
         final Publication[] toServerPublications,
         final int applicationAdapterPollFragmentLimit,
-        final ApplicationAdapterStatistics applicationAdapterStatistics)
+        final ApplicationAdapterStatistics applicationAdapterStatistics,
+        final EpochClock clock)
     {
         agentName = "babl-application-container-" + instanceId;
         this.application = application;
@@ -82,6 +87,8 @@ public final class ApplicationAdapter implements Agent, ControlledFragmentHandle
         sessionProxy = new SessionProxy(toServerPublications, applicationAdapterStatistics);
         this.applicationAdapterPollFragmentLimit = applicationAdapterPollFragmentLimit;
         this.applicationAdapterStatistics = applicationAdapterStatistics;
+        this.eventLoopDurationReporter = new EventLoopDurationReporter(
+            clock, applicationAdapterStatistics::eventLoopDurationMs);
     }
 
     /**
@@ -90,11 +97,13 @@ public final class ApplicationAdapter implements Agent, ControlledFragmentHandle
     @Override
     public int doWork()
     {
+        eventLoopDurationReporter.eventLoopStart();
         final int workDone = fromServerSubscription.controlledPoll(this, applicationAdapterPollFragmentLimit);
         if (workDone == applicationAdapterPollFragmentLimit)
         {
             applicationAdapterStatistics.adapterPollLimitReached();
         }
+        eventLoopDurationReporter.eventLoopComplete();
         return workDone;
     }
 

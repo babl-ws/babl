@@ -34,6 +34,7 @@ import com.aitusoftware.babl.config.SessionContainerConfig;
 import com.aitusoftware.babl.io.WebSocketPoller;
 import com.aitusoftware.babl.log.Category;
 import com.aitusoftware.babl.log.Logger;
+import com.aitusoftware.babl.monitoring.EventLoopDurationReporter;
 import com.aitusoftware.babl.monitoring.MappedSessionContainerStatistics;
 import com.aitusoftware.babl.monitoring.ServerMarkFile;
 import com.aitusoftware.babl.monitoring.SessionContainerStatistics;
@@ -86,8 +87,9 @@ final class SessionContainer implements Agent, AutoCloseable
     private final ObjectPool<ValidationResult> validationResultPool = new ObjectPool<>(ValidationResult::new, 64);
     private final ManyToOneConcurrentArrayQueue<ValidationResult> incomingValidationResults =
         new ManyToOneConcurrentArrayQueue<>(64);
-    private final long validationTimeoutMs;
     private final Consumer<ValidationResult> validationResultHandler = new ValidationResultHandler();
+    private final EventLoopDurationReporter eventLoopDurationReporter;
+    private final long validationTimeoutMs;
     private final int activeSessionLimit;
     private long lastServiceTimeMs;
     private AgentRunner serverAgentRunner;
@@ -136,6 +138,8 @@ final class SessionContainer implements Agent, AutoCloseable
             this::connectionValidationResult), 64);
         validationTimeoutMs = TimeUnit.NANOSECONDS.toMillis(sessionContainerConfig.validationTimeoutNanos());
         activeSessionLimit = sessionContainerConfig.activeSessionLimit();
+        eventLoopDurationReporter = new EventLoopDurationReporter(
+            clock, sessionContainerStatistics::eventLoopDurationMs);
     }
 
     /**
@@ -161,6 +165,7 @@ final class SessionContainer implements Agent, AutoCloseable
     public int doWork() throws Exception
     {
         final long timeMs = clock.time();
+        eventLoopDurationReporter.eventLoopStart();
         sharedClock.set(timeMs);
         int workCount = 0;
         if (!queuedSessions.isEmpty())
@@ -175,8 +180,7 @@ final class SessionContainer implements Agent, AutoCloseable
         workCount += receiveData();
         workCount += removeInactiveSessions();
         workCount += doAdminWork(timeMs);
-        final long eventLoopDurationMs = clock.time() - timeMs;
-        sessionContainerStatistics.eventLoopDurationMs(eventLoopDurationMs);
+        eventLoopDurationReporter.eventLoopComplete();
         return workCount;
     }
 
