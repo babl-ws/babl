@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 
 import com.aitusoftware.babl.config.AllConfig;
 import com.aitusoftware.babl.config.DeploymentMode;
+import com.aitusoftware.babl.config.PerformanceMode;
 import com.aitusoftware.babl.config.ProxyConfig;
 import com.aitusoftware.babl.config.SessionConfig;
 import com.aitusoftware.babl.config.SessionContainerConfig;
@@ -68,6 +69,8 @@ public final class ServerHarness implements AutoCloseable
     public void start(final Path serverDir) throws IOException
     {
         allConfig.applicationConfig().application(application);
+        allConfig.proxyConfig().performanceMode(PerformanceMode.LOW);
+        allConfig.applicationConfig().applicationIdleStrategySupplier(() -> new SleepingMillisIdleStrategy(1));
         this.serverDir = serverDir;
         sessionContainerConfig
             .listenPort(findFreePort())

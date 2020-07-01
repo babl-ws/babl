@@ -292,7 +292,7 @@ public final class ProxyConfig implements AutoCloseable
         /**
          * Default value for the performance mode
          */
-        public static final PerformanceMode PERFORMANCE_MODE_DEFAULT = PerformanceMode.LOW;
+        public static final PerformanceMode PERFORMANCE_MODE_DEFAULT = PerformanceMode.HIGH;
 
         /**
          * System property that will be used to set the back-pressure policy

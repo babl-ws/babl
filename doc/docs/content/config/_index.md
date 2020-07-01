@@ -83,7 +83,7 @@ Configures the operation of the server as a whole.
 |  |  |
 |  | **Server Idle Strategy (`String`)** |
 | **Description** | Sets the idling strategy used in the Server event-loop. One of `BUSY_SPIN,YIELDING,BACK_OFF,SLEEPING`. |
-| **Default** | `SLEEPING` |
+| **Default** | `BUSY_SPIN` |
 | **Property** | `babl.server.idle.strategy` |
 | **API** | `SessionContainerConfig.serverIdleStrategy` |
 
@@ -211,7 +211,7 @@ Only used when server deployment mode is `DETACHED`.
 |  |  |
 |  | **Performance Mode (`String`)** |
 | **Description** | Configures the performance level of the launched MediaDriver |
-| **Default** | `PerformanceMode.LOW` |
+| **Default** | `PerformanceMode.HIGH` |
 | **Property** | `babl.proxy.performance.mode` |
 | **API** | `ProxyConfig.performanceMode` |
 

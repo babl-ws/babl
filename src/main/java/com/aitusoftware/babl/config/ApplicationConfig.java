@@ -155,6 +155,6 @@ public final class ApplicationConfig
         /**
          * Default value for application idle strategy
          */
-        public static final String IDLE_STRATEGY_DEFAULT = "SLEEPING";
+        public static final String IDLE_STRATEGY_DEFAULT = "BUSY_SPIN";
     }
 }

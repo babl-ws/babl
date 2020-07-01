@@ -666,7 +666,7 @@ public final class SessionContainerConfig
         /**
          * Default value for server idle strategy
          */
-        public static final String IDLE_STRATEGY_DEFAULT = "SLEEPING";
+        public static final String IDLE_STRATEGY_DEFAULT = "BUSY_SPIN";
 
         /**
          * System property used to configure the server scaling mode
