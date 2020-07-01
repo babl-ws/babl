@@ -33,8 +33,8 @@ import io.aeron.driver.ThreadingMode;
  */
 public final class ProxyConfig implements AutoCloseable
 {
-    private PerformanceMode performanceMode = ConfigUtil.mapEnum(
-        PerformanceMode::valueOf, Constants.PERFORMANCE_MODE_PROPERTY, Constants.PERFORMANCE_MODE_DEFAULT);
+    private final PerformanceConfig performanceConfig;
+
     private String mediaDriverDir = System.getProperty(
         Constants.MEDIA_DRIVER_DIRECTORY_PROPERTY, Constants.MEDIA_DRIVER_DIRECTORY_DEFAULT);
     private int applicationStreamBaseId = Integer.getInteger(
@@ -58,6 +58,11 @@ public final class ProxyConfig implements AutoCloseable
     private Aeron.Context aeronClientContext = new Aeron.Context();
     private Aeron aeron;
 
+    ProxyConfig(final PerformanceConfig performanceConfig)
+    {
+        this.performanceConfig = performanceConfig;
+    }
+
     /**
      * Returns the Aeron client instance.
      * @return the Aeron client instance
@@ -65,26 +70,6 @@ public final class ProxyConfig implements AutoCloseable
     public Aeron aeron()
     {
         return aeron;
-    }
-
-    /**
-     * Returns the performance mode.
-     * @return the performance mode.
-     */
-    public PerformanceMode performanceMode()
-    {
-        return performanceMode;
-    }
-
-    /**
-     * Sets the performance mode.
-     * @param performanceMode the performance mode
-     * @return this for a fluent API
-     */
-    public ProxyConfig performanceMode(final PerformanceMode performanceMode)
-    {
-        this.performanceMode = performanceMode;
-        return this;
     }
 
     /**
@@ -258,8 +243,8 @@ public final class ProxyConfig implements AutoCloseable
     {
         mediaDriverContext.aeronDirectoryName(mediaDriverDir);
         aeronClientContext.aeronDirectoryName(mediaDriverDir);
-        ContextConfiguration.applySettings(performanceMode, mediaDriverContext);
-        ContextConfiguration.applySettings(performanceMode, aeronClientContext);
+        ContextConfiguration.applySettings(performanceConfig.performanceMode(), mediaDriverContext);
+        ContextConfiguration.applySettings(performanceConfig.performanceMode(), aeronClientContext);
         mediaDriverContext.threadingMode(ThreadingMode.INVOKER);
         if (launchMediaDriver)
         {
@@ -284,16 +269,6 @@ public final class ProxyConfig implements AutoCloseable
      */
     public static final class Constants
     {
-        /**
-         * System property that will be used to set the performance mode
-         */
-        public static final String PERFORMANCE_MODE_PROPERTY = "babl.proxy.performance.mode";
-
-        /**
-         * Default value for the performance mode
-         */
-        public static final PerformanceMode PERFORMANCE_MODE_DEFAULT = PerformanceMode.HIGH;
-
         /**
          * System property that will be used to set the back-pressure policy
          */

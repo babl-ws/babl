@@ -23,13 +23,14 @@ import java.nio.file.Paths;
 /**
  * Aggregator for per-component configuration.
  */
-public final class AllConfig
+public final class BablConfig
 {
-    private final ApplicationConfig applicationConfig = new ApplicationConfig();
-    private final SessionContainerConfig sessionContainerConfig = new SessionContainerConfig();
+    private final PerformanceConfig performanceConfig = new PerformanceConfig();
+    private final ApplicationConfig applicationConfig = new ApplicationConfig(performanceConfig);
+    private final SessionContainerConfig sessionContainerConfig = new SessionContainerConfig(performanceConfig);
     private final SessionConfig sessionConfig = new SessionConfig();
     private final SocketConfig socketConfig = new SocketConfig();
-    private final ProxyConfig proxyConfig = new ProxyConfig();
+    private final ProxyConfig proxyConfig = new ProxyConfig(performanceConfig);
 
     /**
      * Returns the configuration for the {@code Application}.
@@ -68,12 +69,21 @@ public final class AllConfig
     }
 
     /**
-     * Returns the configuration for network proxys.
+     * Returns the configuration for network proxies.
      * @return proxy configuration
      */
     public ProxyConfig proxyConfig()
     {
         return proxyConfig;
+    }
+
+    /**
+     * Returns the configuration for performance.
+     * @return performance configuration
+     */
+    public PerformanceConfig performanceConfig()
+    {
+        return performanceConfig;
     }
 
     public void conclude()

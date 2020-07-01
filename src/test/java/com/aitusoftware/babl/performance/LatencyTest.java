@@ -109,11 +109,11 @@ class LatencyTest
         final Path driverDir = Paths.get("/dev/shm/babl");
         Files.createDirectories(driverDir);
         proxyConfig
-            .performanceMode(PerformanceMode.HIGH)
             .launchMediaDriver(true)
             .mediaDriverDir(driverDir.toString());
-
+        harness.performanceConfig().performanceMode(PerformanceMode.HIGH);
         final Path serverDir = workingDir.resolve("server");
+
         harness.start(serverDir);
         testHarness.runLatencyTest(new InetSocketAddress("localhost", harness.serverPort()));
     }

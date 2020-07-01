@@ -25,8 +25,9 @@ import java.nio.file.Paths;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
-import com.aitusoftware.babl.config.AllConfig;
+import com.aitusoftware.babl.config.BablConfig;
 import com.aitusoftware.babl.config.DeploymentMode;
+import com.aitusoftware.babl.config.PerformanceConfig;
 import com.aitusoftware.babl.config.PerformanceMode;
 import com.aitusoftware.babl.config.ProxyConfig;
 import com.aitusoftware.babl.config.SessionConfig;
@@ -49,13 +50,14 @@ import org.agrona.concurrent.SleepingMillisIdleStrategy;
 public final class ServerHarness implements AutoCloseable
 {
     private static final IdleStrategy IDLE_STRATEGY = new SleepingMillisIdleStrategy(1L);
-    private final AllConfig allConfig = new AllConfig();
-    private final SessionContainerConfig sessionContainerConfig = allConfig.sessionContainerConfig()
+    private final BablConfig bablConfig = new BablConfig();
+    private final SessionContainerConfig sessionContainerConfig = bablConfig.sessionContainerConfig()
         .serverIdleStrategySupplier(() -> IDLE_STRATEGY);
-    private final SessionConfig sessionConfig = allConfig.sessionConfig()
+    private final SessionConfig sessionConfig = bablConfig.sessionConfig()
         .sendBufferSize(131072).maxSessionDecodeBufferSize(131072)
         .pingIntervalNanos(TimeUnit.SECONDS.toNanos(2L));
-    private final ProxyConfig proxyConfig = allConfig.proxyConfig();
+    private final ProxyConfig proxyConfig = bablConfig.proxyConfig();
+    private final PerformanceConfig performanceConfig = bablConfig.performanceConfig();
     private final Application application;
 
     private SessionContainers sessionContainers;
@@ -68,15 +70,14 @@ public final class ServerHarness implements AutoCloseable
 
     public void start(final Path serverDir) throws IOException
     {
-        allConfig.applicationConfig().application(application);
-        allConfig.proxyConfig().performanceMode(PerformanceMode.LOW);
-        allConfig.applicationConfig().applicationIdleStrategySupplier(() -> new SleepingMillisIdleStrategy(1));
+        bablConfig.applicationConfig().application(application);
+        bablConfig.performanceConfig().performanceMode(PerformanceMode.LOW);
         this.serverDir = serverDir;
         sessionContainerConfig
             .listenPort(findFreePort())
             .serverDirectory(serverDir.toString())
             .sessionMonitoringFileEntryCount(32);
-        sessionContainers = BablServer.launch(allConfig);
+        sessionContainers = BablServer.launch(bablConfig);
         sessionContainers.start();
         PortProbe.ensurePortOpen(sessionContainerConfig.listenPort());
     }
@@ -112,6 +113,11 @@ public final class ServerHarness implements AutoCloseable
     public ProxyConfig proxyConfig()
     {
         return proxyConfig;
+    }
+
+    public PerformanceConfig performanceConfig()
+    {
+        return performanceConfig;
     }
 
     @Override

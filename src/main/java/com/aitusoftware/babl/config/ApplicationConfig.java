@@ -35,12 +35,17 @@ import org.agrona.concurrent.IdleStrategy;
  */
 public final class ApplicationConfig
 {
+    private final PerformanceConfig performanceConfig;
     private Application application;
 
     private String applicationClassName = System.getProperty(Constants.APPLICATION_CLASS_NAME_PROPERTY);
     private BiFunction<Path, IdleStrategy, IdleStrategy> applicationIdleStrategyFactory;
-    private Supplier<IdleStrategy> idleStrategySupplier =
-        () -> ConfigUtil.mapIdleStrategy(Constants.IDLE_STRATEGY_PROPERTY, Constants.IDLE_STRATEGY_DEFAULT);
+    private Supplier<IdleStrategy> idleStrategySupplier;
+
+    ApplicationConfig(final PerformanceConfig performanceConfig)
+    {
+        this.performanceConfig = performanceConfig;
+    }
 
     /**
      * Sets the application.
@@ -120,6 +125,11 @@ public final class ApplicationConfig
 
         Objects.requireNonNull(application, "application must be set");
 
+        if (idleStrategySupplier == null)
+        {
+            idleStrategySupplier =
+                () -> ConfigUtil.mapIdleStrategy(Constants.IDLE_STRATEGY_PROPERTY, performanceConfig.performanceMode());
+        }
         if (System.getProperty(ApplicationConfig.Constants.IDLE_STRATEGY_FACTORY_PROPERTY) != null)
         {
             applicationIdleStrategyFactory =

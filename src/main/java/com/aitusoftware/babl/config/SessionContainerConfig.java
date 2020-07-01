@@ -41,6 +41,7 @@ import org.agrona.concurrent.SleepingMillisIdleStrategy;
  */
 public final class SessionContainerConfig
 {
+    private final PerformanceConfig performanceConfig;
     private boolean pollModeEnabled = ConfigUtil.mapBoolean(
         Constants.POLL_MODE_ENABLED_PROPERTY, Constants.POLL_MODE_ENABLED_DEFAULT);
     private int pollModeSessionLimit = Integer.getInteger(
@@ -51,8 +52,7 @@ public final class SessionContainerConfig
         Constants.CONNECTION_BACKLOG_PROPERTY, Constants.CONNECTION_BACKLOG_DEFAULT);
     private String bindAddress = System.getProperty(Constants.BIND_ADDRESS_PROPERTY, Constants.BIND_ADDRESS_DEFAULT);
 
-    private Supplier<IdleStrategy> serverIdleStrategySupplier =
-        () -> ConfigUtil.mapIdleStrategy(Constants.IDLE_STRATEGY_PROPERTY, Constants.IDLE_STRATEGY_DEFAULT);
+    private Supplier<IdleStrategy> serverIdleStrategySupplier;
     private Supplier<IdleStrategy> connectorIdleStrategySupplier =
         () -> new SleepingMillisIdleStrategy(1L);
 
@@ -80,6 +80,11 @@ public final class SessionContainerConfig
     private BiFunction<Path, IdleStrategy, IdleStrategy> serverIdleStrategyFactory;
     private ConnectionRouter connectionRouter;
 
+    SessionContainerConfig(final PerformanceConfig performanceConfig)
+    {
+        this.performanceConfig = performanceConfig;
+    }
+
 
     /**
      * Validates configuration and creates the server's mark file.
@@ -102,6 +107,11 @@ public final class SessionContainerConfig
         {
             sessionContainerInstanceCount =
                 SessionContainerInstanceCountCalculator.calculateSessionContainerCount(this);
+        }
+        if (serverIdleStrategySupplier == null)
+        {
+            serverIdleStrategySupplier =
+                () -> ConfigUtil.mapIdleStrategy(Constants.IDLE_STRATEGY_PROPERTY, performanceConfig.performanceMode());
         }
         if (System.getProperty(Constants.IDLE_STRATEGY_FACTORY_PROPERTY) != null)
         {

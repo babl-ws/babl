@@ -28,7 +28,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Queue;
 
-import com.aitusoftware.babl.config.AllConfig;
+import com.aitusoftware.babl.config.BablConfig;
 import com.aitusoftware.babl.config.BackPressurePolicy;
 import com.aitusoftware.babl.config.DeploymentMode;
 import com.aitusoftware.babl.config.PropertiesLoader;
@@ -73,17 +73,17 @@ public final class BablServer
      */
     public static void main(final String[] args)
     {
-        final AllConfig allConfig;
+        final BablConfig bablConfig;
         if (args.length > 0)
         {
             SystemUtil.loadPropertiesFile(args[0]);
-            allConfig = PropertiesLoader.configure(Paths.get(args[0]));
+            bablConfig = PropertiesLoader.configure(Paths.get(args[0]));
         }
         else
         {
-            allConfig = new AllConfig();
+            bablConfig = new BablConfig();
         }
-        try (SessionContainers sessionContainers = launch(allConfig))
+        try (SessionContainers sessionContainers = launch(bablConfig))
         {
             sessionContainers.start();
             new ShutdownSignalBarrier().await();
@@ -91,17 +91,17 @@ public final class BablServer
     }
 
     @SuppressWarnings("unchecked")
-    public static SessionContainers launch(final AllConfig allConfig)
+    public static SessionContainers launch(final BablConfig bablConfig)
     {
-        allConfig.conclude();
-        final SessionContainerConfig sessionContainerConfig = allConfig.sessionContainerConfig();
+        bablConfig.conclude();
+        final SessionContainerConfig sessionContainerConfig = bablConfig.sessionContainerConfig();
         if (sessionContainerConfig.deploymentMode() == DeploymentMode.DETACHED)
         {
-            final ProxyConfig proxyConfig = allConfig.proxyConfig();
+            final ProxyConfig proxyConfig = bablConfig.proxyConfig();
             final AgentInvoker mediaDriverInvoker = proxyConfig.mediaDriverInvoker();
             mediaDriverInvoker.invoke();
             final int applicationStreamId = proxyConfig.applicationStreamBaseId();
-            final Application application = allConfig.applicationConfig().application();
+            final Application application = bablConfig.applicationConfig().application();
             final Aeron aeron = proxyConfig.aeron();
             final Publication toApplicationPublication =
                 sessionContainerConfig.sessionContainerInstanceCount() == 1 ?
@@ -120,7 +120,7 @@ public final class BablServer
             for (int i = 0; i < instanceCount; i++)
             {
                 initialiseServerInstance(
-                    allConfig, sessionContainerConfig, proxyConfig, aeron, toApplicationPublication,
+                    bablConfig, sessionContainerConfig, proxyConfig, aeron, toApplicationPublication,
                     toServerPublications, sessionContainers, serverMarkFiles, toServerChannels, backPressureStrategy,
                     dependencies, i);
             }
@@ -141,7 +141,7 @@ public final class BablServer
                 proxyConfig.applicationAdapterPollFragmentLimit(),
                 applicationAdapterStatistics, SystemEpochClock.INSTANCE);
             final AgentRunner applicationAdapterRunner = new AgentRunner(
-                allConfig.applicationConfig().applicationIdleStrategy(sessionContainerConfig.serverDirectory(0)),
+                bablConfig.applicationConfig().applicationIdleStrategy(sessionContainerConfig.serverDirectory(0)),
                 errorHandler, null,
                 new DoubleAgent(applicationAdapter, mediaDriverInvoker.agent()));
             AgentRunner.startOnThread(applicationAdapterRunner, sessionContainerConfig.threadFactory());
@@ -160,25 +160,25 @@ public final class BablServer
             }
             final IdleStrategy connectorIdleStrategy = sessionContainerConfig.connectorIdleStrategySupplier().get();
             final ConnectionPoller connectionPoller = new ConnectionPoller(serverSocketChannel,
-                toServerChannels, connectorIdleStrategy, allConfig.socketConfig(),
+                toServerChannels, connectorIdleStrategy, bablConfig.socketConfig(),
                 sessionContainerConfig.connectionRouter());
             final AgentRunner connectorAgentRunner = new AgentRunner(connectorIdleStrategy, errorHandler,
                 null, connectionPoller);
             AgentRunner.startOnThread(connectorAgentRunner, sessionContainerConfig.threadFactory());
-            dependencies.add(allConfig.proxyConfig());
+            dependencies.add(bablConfig.proxyConfig());
             dependencies.add(applicationAdapterRunner);
             dependencies.add(connectorAgentRunner);
             return new SessionContainers(sessionContainers,
-                Arrays.asList(applicationAdapterRunner, connectorAgentRunner, allConfig.proxyConfig()));
+                Arrays.asList(applicationAdapterRunner, connectorAgentRunner, bablConfig.proxyConfig()));
         }
         else
         {
-            return launchDirectServer(allConfig, sessionContainerConfig);
+            return launchDirectServer(bablConfig, sessionContainerConfig);
         }
     }
 
     private static void initialiseServerInstance(
-        final AllConfig allConfig,
+        final BablConfig bablConfig,
         final SessionContainerConfig sessionContainerConfig,
         final ProxyConfig proxyConfig,
         final Aeron aeron,
@@ -203,7 +203,7 @@ public final class BablServer
             proxyConfig.serverAdapterPollFragmentLimit(), backPressureStrategy);
         sessionContainers[sessionContainerId] = new SessionContainer(
             sessionContainerId,
-            applicationProxy, allConfig.sessionConfig(),
+            applicationProxy, bablConfig.sessionConfig(),
             sessionContainerConfig,
             sessionContainerAdapter,
             toServerChannels[sessionContainerId]);
@@ -224,13 +224,13 @@ public final class BablServer
 
     @SuppressWarnings("unchecked")
     private static SessionContainers launchDirectServer(
-        final AllConfig allConfig, final SessionContainerConfig sessionContainerConfig)
+        final BablConfig bablConfig, final SessionContainerConfig sessionContainerConfig)
     {
-        final Application application = allConfig.applicationConfig().application();
+        final Application application = bablConfig.applicationConfig().application();
         final IdleStrategy connectorIdleStrategy = sessionContainerConfig.connectorIdleStrategySupplier().get();
         final Queue<SocketChannel> incomingConnections = new OneToOneConcurrentArrayQueue<>(16);
         final SessionContainer sessionContainer = new SessionContainer(
-            application, allConfig.sessionConfig(),
+            application, bablConfig.sessionConfig(),
             sessionContainerConfig, incomingConnections);
         final ServerSocketChannel serverSocketChannel;
         try
@@ -249,7 +249,7 @@ public final class BablServer
             new SystemEpochClock());
         final ErrorHandler errorHandler = new LoggingErrorHandler(errorLog);
         final ConnectionPoller connectionPoller = new ConnectionPoller(serverSocketChannel,
-            new Queue[] {incomingConnections}, connectorIdleStrategy, allConfig.socketConfig(),
+            new Queue[] {incomingConnections}, connectorIdleStrategy, bablConfig.socketConfig(),
             sessionContainerConfig.connectionRouter());
         final AgentRunner connectorAgentRunner = new AgentRunner(
             connectorIdleStrategy, errorHandler,

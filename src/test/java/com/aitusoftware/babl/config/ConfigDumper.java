@@ -28,7 +28,7 @@ public final class ConfigDumper
 {
     public static void main(final String[] args) throws Exception
     {
-        final Field[] fields = AllConfig.class.getDeclaredFields();
+        final Field[] fields = BablConfig.class.getDeclaredFields();
         for (final Field field : fields)
         {
             field.setAccessible(true);

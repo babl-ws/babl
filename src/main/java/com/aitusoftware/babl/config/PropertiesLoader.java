@@ -51,15 +51,16 @@ public final class PropertiesLoader
      * @param propertyFile the path to a {@code properties} file
      * @return the aggregate config
      */
-    public static AllConfig configure(
+    public static BablConfig configure(
         final Path propertyFile)
     {
-        final AllConfig allConfig = new AllConfig();
+        final BablConfig bablConfig = new BablConfig();
         SystemUtil.loadPropertiesFile(propertyFile.toFile().getAbsolutePath());
         Logger.log(Category.CONFIG, "Loaded config from %s%n", propertyFile.toAbsolutePath().toString());
-        load(propertyFile, allConfig.applicationConfig(), allConfig.sessionContainerConfig(),
-            allConfig.sessionConfig(), allConfig.socketConfig(), allConfig.proxyConfig());
-        return allConfig;
+        load(propertyFile, bablConfig.applicationConfig(), bablConfig.sessionContainerConfig(),
+            bablConfig.sessionConfig(), bablConfig.socketConfig(), bablConfig.proxyConfig(),
+            bablConfig.performanceConfig());
+        return bablConfig;
     }
 
     private static void load(
@@ -68,13 +69,15 @@ public final class PropertiesLoader
         final SessionContainerConfig sessionContainerConfig,
         final SessionConfig sessionConfig,
         final SocketConfig socketConfig,
-        final ProxyConfig proxyConfig)
+        final ProxyConfig proxyConfig,
+        final PerformanceConfig performanceConfig)
     {
         try (InputStream inputStream = findConfigFile(propertyFile))
         {
             final Properties properties = new Properties();
             properties.load(inputStream);
-            load(properties, applicationConfig, sessionContainerConfig, sessionConfig, socketConfig, proxyConfig);
+            load(properties, applicationConfig, sessionContainerConfig,
+                sessionConfig, socketConfig, proxyConfig, performanceConfig);
         }
         catch (final IOException e)
         {
@@ -99,7 +102,8 @@ public final class PropertiesLoader
         final SessionContainerConfig sessionContainerConfig,
         final SessionConfig sessionConfig,
         final SocketConfig socketConfig,
-        final ProxyConfig proxyConfig)
+        final ProxyConfig proxyConfig,
+        final PerformanceConfig performanceConfig)
     {
         map(Constants.BIND_ADDRESS_PROPERTY, sessionContainerConfig::bindAddress, properties);
         map(Constants.SERVER_DIRECTORY_PROPERTY, sessionContainerConfig::serverDirectory, properties);
@@ -149,6 +153,9 @@ public final class PropertiesLoader
         map(ApplicationConfig.Constants.APPLICATION_CLASS_NAME_PROPERTY,
             applicationConfig::applicationClassName, properties);
 
+        mapType(PerformanceConfig.Constants.PERFORMANCE_MODE_PROPERTY,
+            performanceConfig::performanceMode, PerformanceMode::valueOf, properties);
+
         mapInt(ProxyConfig.Constants.APPLICATION_STREAM_BASE_ID_PROPERTY,
             proxyConfig::applicationStreamBaseId, properties);
         mapInt(ProxyConfig.Constants.SERVER_STREAM_BASE_ID_PROPERTY,
@@ -157,8 +164,6 @@ public final class PropertiesLoader
             proxyConfig::launchMediaDriver, Boolean::parseBoolean, properties);
         map(ProxyConfig.Constants.MEDIA_DRIVER_DIRECTORY_PROPERTY,
             proxyConfig::mediaDriverDir, properties);
-        mapType(ProxyConfig.Constants.PERFORMANCE_MODE_PROPERTY,
-            proxyConfig::performanceMode, PerformanceMode::valueOf, properties);
         mapType(ProxyConfig.Constants.BACK_PRESSURE_POLICY_PROPERTY,
             proxyConfig::backPressurePolicy, BackPressurePolicy::valueOf, properties);
         mapInt(ProxyConfig.Constants.APPLICATION_ADAPTER_POLL_FRAGMENT_LIMIT_PROPERTY,

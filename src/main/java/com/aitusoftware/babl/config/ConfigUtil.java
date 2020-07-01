@@ -43,9 +43,25 @@ final class ConfigUtil
         return Optional.ofNullable(System.getProperty(property)).map(instantiate(cls)).orElse(defaultValue);
     }
 
-    static IdleStrategy mapIdleStrategy(final String property, final String defaultValue)
+    static IdleStrategy mapIdleStrategy(
+        final String property,
+        final PerformanceMode performanceMode)
     {
-        final String value = System.getProperty(property, defaultValue);
+        final String value = System.getProperty(property);
+        if (value == null)
+        {
+            switch (performanceMode)
+            {
+                case HIGH:
+                    return BusySpinIdleStrategy.INSTANCE;
+                case MEDIUM:
+                    return YieldingIdleStrategy.INSTANCE;
+                case LOW:
+                    return new SleepingMillisIdleStrategy(1L);
+                default:
+                    throw new IllegalArgumentException(performanceMode.name());
+            }
+        }
         return idleStrategyByName(value);
     }
 
