@@ -23,6 +23,8 @@ import java.util.Arrays;
 import java.util.Deque;
 import java.util.function.IntFunction;
 
+import org.agrona.BitUtil;
+import org.agrona.BufferUtil;
 import org.agrona.concurrent.UnsafeBuffer;
 
 /**
@@ -33,7 +35,7 @@ public final class BufferPool implements AutoCloseable
     private static final int POOL_COUNT = 31;
     private static final byte ZERO = (byte)0;
 
-    private final IntFunction<ByteBuffer> bufferFactory = ByteBuffer::allocateDirect;
+    private final IntFunction<ByteBuffer> bufferFactory = BufferPool::bufferFactory;
     @SuppressWarnings("unchecked")
     private final Deque<ByteBuffer>[] buffersBySize = new Deque[POOL_COUNT];
     private final UnsafeBuffer bufferWrapper = new UnsafeBuffer();
@@ -113,6 +115,11 @@ public final class BufferPool implements AutoCloseable
     private Deque<ByteBuffer> bufferPool(final int size)
     {
         return buffersBySize[poolIndex(size)];
+    }
+
+    private static ByteBuffer bufferFactory(final int capacity)
+    {
+        return BufferUtil.allocateDirectAligned(capacity, BitUtil.CACHE_LINE_LENGTH);
     }
 
     private static int poolIndex(final int size)
