@@ -212,8 +212,8 @@ Only used when server deployment mode is `DETACHED`.
 |  | **Performance Mode (`String`)** |
 | **Description** | Configures the performance level of the launched MediaDriver |
 | **Default** | `PerformanceMode.HIGH` |
-| **Property** | `babl.proxy.performance.mode` |
-| **API** | `ProxyConfig.performanceMode` |
+| **Property** | `babl.performance.mode` |
+| **API** | `PerformanceConfig.performanceMode` |
 
 ## JVM Settings
 
