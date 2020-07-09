@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
 import com.aitusoftware.babl.monitoring.MappedApplicationAdapterStatistics;
+import com.aitusoftware.babl.monitoring.MappedConnectorStatistics;
 import com.aitusoftware.babl.monitoring.MappedSessionContainerAdapterStatistics;
 import com.aitusoftware.babl.monitoring.MappedSessionContainerStatistics;
 import com.aitusoftware.babl.monitoring.MappedSessionStatistics;
@@ -113,6 +114,12 @@ final class HealthCheckMonitoringConsumer implements MonitoringConsumer
     @Override
     public void sessionStatistics(
         final Path statisticsFile, final MappedSessionStatistics sessionStatistics)
+    {
+
+    }
+
+    @Override
+    public void connectorStatistics(final MappedConnectorStatistics connectorStatistics)
     {
 
     }

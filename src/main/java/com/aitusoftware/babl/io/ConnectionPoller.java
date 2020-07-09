@@ -26,6 +26,7 @@ import java.nio.channels.SocketChannel;
 import java.util.Queue;
 
 import com.aitusoftware.babl.config.SocketConfig;
+import com.aitusoftware.babl.monitoring.ConnectorStatistics;
 import com.aitusoftware.babl.websocket.routing.ConnectionRouter;
 
 import org.agrona.CloseHelper;
@@ -43,27 +44,31 @@ public final class ConnectionPoller extends TransportPoller implements Agent
     private final IdleStrategy idleStrategy;
     private final SocketConfig socketConfig;
     private final ConnectionRouter connectionRouter;
+    private final ConnectorStatistics connectorStatistics;
 
     /**
      * Constructor.
-     * @param serverSocket     the server socket to select on
-     * @param toServerChannels thread-safe queues that will be polled by session container instances
-     * @param idleStrategy     idle strategy to use when queue is full
-     * @param socketConfig     configuration to apply to opened sockets
-     * @param connectionRouter indicates what server instance the new connection should be dispatched to
+     * @param serverSocket        the server socket to select on
+     * @param toServerChannels    thread-safe queues that will be polled by session container instances
+     * @param idleStrategy        idle strategy to use when queue is full
+     * @param socketConfig        configuration to apply to opened sockets
+     * @param connectionRouter    indicates what server instance the new connection should be dispatched to
+     * @param connectorStatistics statistics counter for connection events
      */
     public ConnectionPoller(
         final ServerSocketChannel serverSocket,
         final Queue<SocketChannel>[] toServerChannels,
         final IdleStrategy idleStrategy,
         final SocketConfig socketConfig,
-        final ConnectionRouter connectionRouter)
+        final ConnectionRouter connectionRouter,
+        final ConnectorStatistics connectorStatistics)
     {
         this.serverSocket = serverSocket;
         this.toServerChannels = toServerChannels;
         this.idleStrategy = idleStrategy;
         this.socketConfig = socketConfig;
         this.connectionRouter = connectionRouter;
+        this.connectorStatistics = connectorStatistics;
     }
 
     /**
@@ -100,6 +105,7 @@ public final class ConnectionPoller extends TransportPoller implements Agent
                     final int serverIndex = connectionRouter.allocateServer(channel);
                     if (ConnectionRouter.REJECT_CONNECTION == serverIndex)
                     {
+                        connectorStatistics.onConnectionRejected();
                         CloseHelper.close(channel);
                         return 1;
                     }
@@ -110,6 +116,7 @@ public final class ConnectionPoller extends TransportPoller implements Agent
                     {
                         idleStrategy.idle();
                     }
+                    connectorStatistics.onConnectionAccepted();
                 }
                 catch (final IOException e)
                 {

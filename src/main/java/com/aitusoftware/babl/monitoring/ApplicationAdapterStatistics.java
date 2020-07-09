@@ -26,4 +26,6 @@ public abstract class ApplicationAdapterStatistics
     public abstract void proxyBackPressure();
 
     public abstract void proxyBackPressured(int isBackPressured);
+
+    public abstract void heartbeat(long timeMs);
 }

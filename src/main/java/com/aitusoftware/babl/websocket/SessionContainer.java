@@ -139,7 +139,7 @@ final class SessionContainer implements Agent, AutoCloseable
         validationTimeoutMs = TimeUnit.NANOSECONDS.toMillis(sessionContainerConfig.validationTimeoutNanos());
         activeSessionLimit = sessionContainerConfig.activeSessionLimit();
         eventLoopDurationReporter = new EventLoopDurationReporter(
-            clock, sessionContainerStatistics::eventLoopDurationMs);
+            sessionContainerStatistics::eventLoopDurationMs);
     }
 
     /**
@@ -165,7 +165,7 @@ final class SessionContainer implements Agent, AutoCloseable
     public int doWork() throws Exception
     {
         final long timeMs = clock.time();
-        eventLoopDurationReporter.eventLoopStart();
+        eventLoopDurationReporter.eventLoopStart(timeMs);
         sharedClock.set(timeMs);
         int workCount = 0;
         if (!queuedSessions.isEmpty())
@@ -180,7 +180,7 @@ final class SessionContainer implements Agent, AutoCloseable
         workCount += receiveData();
         workCount += removeInactiveSessions();
         workCount += doAdminWork(timeMs);
-        eventLoopDurationReporter.eventLoopComplete();
+        eventLoopDurationReporter.eventLoopComplete(clock.time());
         return workCount;
     }
 

@@ -17,7 +17,7 @@
  */
 package com.aitusoftware.babl.monitoring;
 
-public class NoOpApplicationAdapterStatistics extends ApplicationAdapterStatistics
+public final class NoOpApplicationAdapterStatistics extends ApplicationAdapterStatistics
 {
     @Override
     public void adapterPollLimitReached()
@@ -39,6 +39,12 @@ public class NoOpApplicationAdapterStatistics extends ApplicationAdapterStatisti
 
     @Override
     public void proxyBackPressured(final int isBackPressured)
+    {
+
+    }
+
+    @Override
+    public void heartbeat(final long timeMs)
     {
 
     }

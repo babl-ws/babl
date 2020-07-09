@@ -26,6 +26,7 @@ import java.time.Instant;
 import com.aitusoftware.babl.config.PropertiesLoader;
 import com.aitusoftware.babl.config.SessionContainerConfig;
 import com.aitusoftware.babl.monitoring.MappedApplicationAdapterStatistics;
+import com.aitusoftware.babl.monitoring.MappedConnectorStatistics;
 import com.aitusoftware.babl.monitoring.MappedSessionContainerAdapterStatistics;
 import com.aitusoftware.babl.monitoring.MappedSessionContainerStatistics;
 import com.aitusoftware.babl.monitoring.MappedSessionStatistics;
@@ -178,6 +179,13 @@ public final class StatisticsMonitorMain
             System.out.printf("Invalid Pings Received:    %20d%n", sessionStatistics.invalidPingsReceived());
             System.out.printf("Send Back Pressure Events: %20d%n", sessionStatistics.sendBackPressureEvents());
 
+        }
+
+        @Override
+        public void connectorStatistics(final MappedConnectorStatistics connectorStatistics)
+        {
+            System.out.printf("Connector Statistics:%n");
+            System.out.printf("Rejected connections:      %20d%n", connectorStatistics.rejectedCount());
         }
     }
 }

@@ -56,6 +56,7 @@ public final class ApplicationAdapter implements Agent, ControlledFragmentHandle
     private final String agentName;
     private final Application application;
     private final Subscription fromServerSubscription;
+    private final EpochClock clock;
     private final SessionProxy sessionProxy;
     private final int applicationAdapterPollFragmentLimit;
     private final ApplicationAdapterStatistics applicationAdapterStatistics;
@@ -84,11 +85,12 @@ public final class ApplicationAdapter implements Agent, ControlledFragmentHandle
         agentName = "babl-application-container-" + instanceId;
         this.application = application;
         this.fromServerSubscription = fromServerSubscription;
+        this.clock = clock;
         sessionProxy = new SessionProxy(toServerPublications, applicationAdapterStatistics);
         this.applicationAdapterPollFragmentLimit = applicationAdapterPollFragmentLimit;
         this.applicationAdapterStatistics = applicationAdapterStatistics;
         this.eventLoopDurationReporter = new EventLoopDurationReporter(
-            clock, applicationAdapterStatistics::eventLoopDurationMs);
+            applicationAdapterStatistics::eventLoopDurationMs);
     }
 
     /**
@@ -97,13 +99,15 @@ public final class ApplicationAdapter implements Agent, ControlledFragmentHandle
     @Override
     public int doWork()
     {
-        eventLoopDurationReporter.eventLoopStart();
+        eventLoopDurationReporter.eventLoopStart(clock.time());
         final int workDone = fromServerSubscription.controlledPoll(this, applicationAdapterPollFragmentLimit);
         if (workDone == applicationAdapterPollFragmentLimit)
         {
             applicationAdapterStatistics.adapterPollLimitReached();
         }
-        eventLoopDurationReporter.eventLoopComplete();
+        final long timeMs = clock.time();
+        applicationAdapterStatistics.heartbeat(timeMs);
+        eventLoopDurationReporter.eventLoopComplete(timeMs);
         return workDone;
     }
 

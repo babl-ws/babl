@@ -120,7 +120,7 @@ final class SessionProxy implements Session
             closeSessionEncoder.containerId(sessionContainerId);
             closeSessionEncoder.closeReason(disconnectReason.ordinal());
             bufferClaim.commit();
-            Logger.log(Category.PROXY, "[%d] SessionProxy close(sessionId: %d)", sessionContainerId, sessionId);
+            Logger.log(Category.PROXY, "[%d] SessionProxy close(sessionId: %d)%n", sessionContainerId, sessionId);
             return SendResult.OK;
         }
         bufferClaim.abort();

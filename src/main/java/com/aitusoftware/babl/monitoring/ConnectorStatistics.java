@@ -17,17 +17,9 @@
  */
 package com.aitusoftware.babl.monitoring;
 
-public final class NoOpSessionContainerAdapterStatistics extends SessionContainerAdapterStatistics
+public abstract class ConnectorStatistics
 {
-    @Override
-    public void adapterPollLimitReached()
-    {
+    public abstract void onConnectionRejected();
 
-    }
-
-    @Override
-    public void onSessionBackPressure()
-    {
-
-    }
+    public abstract void onConnectionAccepted();
 }

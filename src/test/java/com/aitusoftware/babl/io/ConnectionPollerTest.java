@@ -17,6 +17,10 @@
  */
 package com.aitusoftware.babl.io;
 
+import static com.google.common.truth.Truth.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
@@ -25,15 +29,16 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 import com.aitusoftware.babl.config.SocketConfig;
+import com.aitusoftware.babl.monitoring.ConnectorStatistics;
 import com.aitusoftware.babl.websocket.routing.ConnectionRouter;
 
 import org.agrona.concurrent.SleepingMillisIdleStrategy;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class ConnectionPollerTest
 {
+    private final ConnectorStatistics connectorStatistics = mock(ConnectorStatistics.class);
     private ServerSocketChannel serverSocketChannel;
     private ConnectionPoller connectionPoller;
 
@@ -45,7 +50,8 @@ class ConnectionPollerTest
         serverSocketChannel.configureBlocking(false);
         serverSocketChannel.bind(null);
         connectionPoller = new ConnectionPoller(serverSocketChannel, new Queue[]{new LinkedList<SocketChannel>()},
-            new SleepingMillisIdleStrategy(1), new SocketConfig(), new RejectConnectionRouter());
+            new SleepingMillisIdleStrategy(1), new SocketConfig(), new RejectConnectionRouter(),
+            connectorStatistics);
         connectionPoller.onStart();
     }
 
@@ -54,29 +60,31 @@ class ConnectionPollerTest
     {
         final SocketChannel socketChannel = SocketChannel.open(serverSocketChannel.getLocalAddress());
         final long deadlineMs = System.currentTimeMillis() + 10_000L;
+        boolean closed = false;
         while (System.currentTimeMillis() < deadlineMs)
         {
             connectionPoller.doWork();
 
             if (!socketChannel.isOpen())
             {
-                return;
+                closed = true;
             }
             try
             {
                 if (socketChannel.write(ByteBuffer.allocate(1)) == -1)
                 {
-                    return;
+                    closed = true;
                 }
             }
             catch (final IOException e)
             {
-                return;
+                closed = true;
             }
 
         }
 
-        Assertions.fail();
+        verify(connectorStatistics).onConnectionRejected();
+        assertThat(closed).isTrue();
     }
 
     private static final class RejectConnectionRouter implements ConnectionRouter

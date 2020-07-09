@@ -94,7 +94,6 @@ class ConnectionUpgrade implements Pooled
 
     private void writeUpgradeResponse(final CharSequence key)
     {
-        Logger.log(Category.CONNECTION, "Session %d web-socket key: %s%n", sessionId, key);
         sha1.reset();
         for (int i = 0; i < key.length(); i++)
         {

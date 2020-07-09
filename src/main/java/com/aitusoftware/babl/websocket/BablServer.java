@@ -36,6 +36,7 @@ import com.aitusoftware.babl.config.ProxyConfig;
 import com.aitusoftware.babl.config.SessionContainerConfig;
 import com.aitusoftware.babl.io.ConnectionPoller;
 import com.aitusoftware.babl.monitoring.MappedApplicationAdapterStatistics;
+import com.aitusoftware.babl.monitoring.MappedConnectorStatistics;
 import com.aitusoftware.babl.monitoring.MappedFile;
 import com.aitusoftware.babl.monitoring.MappedSessionContainerAdapterStatistics;
 import com.aitusoftware.babl.monitoring.ServerMarkFile;
@@ -133,7 +134,7 @@ public final class BablServer
             final MappedApplicationAdapterStatistics applicationAdapterStatistics =
                 new MappedApplicationAdapterStatistics(mappedFile);
             applicationAdapterStatistics.reset();
-            dependencies.add(mappedFile);
+            dependencies.add(applicationAdapterStatistics);
             final ApplicationAdapter applicationAdapter = new ApplicationAdapter(
                 applicationInstanceId, application,
                 toApplicationSubscription,
@@ -145,23 +146,15 @@ public final class BablServer
                 errorHandler, null,
                 new DoubleAgent(applicationAdapter, mediaDriverInvoker.agent()));
             AgentRunner.startOnThread(applicationAdapterRunner, sessionContainerConfig.threadFactory());
-            final ServerSocketChannel serverSocketChannel;
-            try
-            {
-                serverSocketChannel = ServerSocketChannel.open();
-                serverSocketChannel.configureBlocking(false);
-                serverSocketChannel.bind(new InetSocketAddress(
-                    sessionContainerConfig.bindAddress(), sessionContainerConfig.listenPort()),
-                    sessionContainerConfig.connectionBacklog());
-            }
-            catch (final IOException e)
-            {
-                throw new UncheckedIOException(e);
-            }
+            final ServerSocketChannel serverSocketChannel = createServerSocket(sessionContainerConfig);
             final IdleStrategy connectorIdleStrategy = sessionContainerConfig.connectorIdleStrategySupplier().get();
+            final MappedConnectorStatistics mappedConnectorStatistics = new MappedConnectorStatistics(
+                new MappedFile(Paths.get(sessionContainerConfig.serverDirectory(0),
+                MappedConnectorStatistics.FILE_NAME), MappedConnectorStatistics.LENGTH));
+            dependencies.add(mappedConnectorStatistics);
             final ConnectionPoller connectionPoller = new ConnectionPoller(serverSocketChannel,
                 toServerChannels, connectorIdleStrategy, bablConfig.socketConfig(),
-                sessionContainerConfig.connectionRouter());
+                sessionContainerConfig.connectionRouter(), mappedConnectorStatistics);
             final AgentRunner connectorAgentRunner = new AgentRunner(connectorIdleStrategy, errorHandler,
                 null, connectionPoller);
             AgentRunner.startOnThread(connectorAgentRunner, sessionContainerConfig.threadFactory());
@@ -216,6 +209,7 @@ public final class BablServer
         dependencies.add(serverAdapterStatsFile);
         final MappedSessionContainerAdapterStatistics sessionAdapterStatistics =
             new MappedSessionContainerAdapterStatistics(serverAdapterStatsFile);
+        dependencies.add(sessionAdapterStatistics);
         sessionAdapterStatistics.reset();
         applicationProxy.init(toApplicationPublication,
             sessionContainers[sessionContainerId].sessionContainerStatistics());
@@ -232,6 +226,25 @@ public final class BablServer
         final SessionContainer sessionContainer = new SessionContainer(
             application, bablConfig.sessionConfig(),
             sessionContainerConfig, incomingConnections);
+        final ServerSocketChannel serverSocketChannel = createServerSocket(sessionContainerConfig);
+        final DistinctErrorLog errorLog = new DistinctErrorLog(sessionContainer.serverMarkFile().errorBuffer(),
+            new SystemEpochClock());
+        final ErrorHandler errorHandler = new LoggingErrorHandler(errorLog);
+        final MappedConnectorStatistics mappedConnectorStatistics = new MappedConnectorStatistics(
+            new MappedFile(Paths.get(sessionContainerConfig.serverDirectory(0),
+            MappedConnectorStatistics.FILE_NAME), MappedConnectorStatistics.LENGTH));
+        final ConnectionPoller connectionPoller = new ConnectionPoller(serverSocketChannel,
+            new Queue[] {incomingConnections}, connectorIdleStrategy, bablConfig.socketConfig(),
+            sessionContainerConfig.connectionRouter(), mappedConnectorStatistics);
+        final AgentRunner connectorAgentRunner = new AgentRunner(
+            connectorIdleStrategy, errorHandler,
+            null, connectionPoller);
+        AgentRunner.startOnThread(connectorAgentRunner, sessionContainerConfig.threadFactory());
+        return new SessionContainers(sessionContainer);
+    }
+
+    private static ServerSocketChannel createServerSocket(final SessionContainerConfig sessionContainerConfig)
+    {
         final ServerSocketChannel serverSocketChannel;
         try
         {
@@ -245,17 +258,7 @@ public final class BablServer
         {
             throw new UncheckedIOException(e);
         }
-        final DistinctErrorLog errorLog = new DistinctErrorLog(sessionContainer.serverMarkFile().errorBuffer(),
-            new SystemEpochClock());
-        final ErrorHandler errorHandler = new LoggingErrorHandler(errorLog);
-        final ConnectionPoller connectionPoller = new ConnectionPoller(serverSocketChannel,
-            new Queue[] {incomingConnections}, connectorIdleStrategy, bablConfig.socketConfig(),
-            sessionContainerConfig.connectionRouter());
-        final AgentRunner connectorAgentRunner = new AgentRunner(
-            connectorIdleStrategy, errorHandler,
-            null, connectionPoller);
-        AgentRunner.startOnThread(connectorAgentRunner, sessionContainerConfig.threadFactory());
-        return new SessionContainers(sessionContainer);
+        return serverSocketChannel;
     }
 
     private static BackPressureStrategy forPolicy(final BackPressurePolicy backPressurePolicy)
