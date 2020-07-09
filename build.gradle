@@ -192,6 +192,17 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
     from javadoc.destinationDir
 }
 
+jar {
+    manifest {
+        attributes(
+            "Implementation-Title": "Babl",
+            "Implementation-Version": version,
+            "Implementation-Vendor": "Aitu Software Limited",
+            "Automatic-Module-Name": "com.aitusoftware.babl"
+        )
+    }
+}
+
 artifacts {
     archives sourcesJar, javadocJar
 }
