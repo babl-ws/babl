@@ -89,7 +89,7 @@ public class WebSocketSessionBenchmark
     }
 
     @Benchmark
-    public long decodeSingleFrame() throws IOException
+    public long processSingleFrame() throws IOException
     {
         session.doSendWork();
         session.doReceiveWork();
