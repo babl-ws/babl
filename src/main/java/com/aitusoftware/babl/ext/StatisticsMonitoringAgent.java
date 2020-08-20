@@ -73,11 +73,11 @@ final class StatisticsMonitoringAgent implements Agent
     public int doWork()
     {
         final long currentTimeNs = System.nanoTime();
-        assignDataSources();
         if (currentTimeNs > lastSessionFileCheckTimestamp + SESSION_FILE_CHECK_INTERVAL_NS)
         {
-            checkForNewSessionFiles();
+            assignDataSources();
             lastSessionFileCheckTimestamp = currentTimeNs;
+            checkForNewSessionFiles();
         }
         if (applicationAdapterStatistics != null)
         {
