@@ -24,6 +24,7 @@ import java.util.function.Function;
 import org.agrona.concurrent.BackoffIdleStrategy;
 import org.agrona.concurrent.BusySpinIdleStrategy;
 import org.agrona.concurrent.IdleStrategy;
+import org.agrona.concurrent.NoOpIdleStrategy;
 import org.agrona.concurrent.SleepingMillisIdleStrategy;
 import org.agrona.concurrent.YieldingIdleStrategy;
 
@@ -74,6 +75,10 @@ final class ConfigUtil
         else if ("YIELDING".equals(value))
         {
             return YieldingIdleStrategy.INSTANCE;
+        }
+        else if ("NO_OP".equals(value))
+        {
+            return NoOpIdleStrategy.INSTANCE;
         }
         else if ("SLEEPING".equals(value))
         {
