@@ -55,7 +55,15 @@ public final class PropertiesLoader
         final Path propertyFile)
     {
         final BablConfig bablConfig = new BablConfig();
+        final String previousPerformanceMode =
+            System.getProperty(PerformanceConfig.Constants.PERFORMANCE_MODE_PROPERTY);
         SystemUtil.loadPropertiesFile(propertyFile.toFile().getAbsolutePath());
+
+        if (previousPerformanceMode != null)
+        {
+            System.setProperty(PerformanceConfig.Constants.PERFORMANCE_MODE_PROPERTY, previousPerformanceMode);
+        }
+
         Logger.log(Category.CONFIG, "Loaded config from %s%n", propertyFile.toAbsolutePath().toString());
         load(propertyFile, bablConfig.applicationConfig(), bablConfig.sessionContainerConfig(),
             bablConfig.sessionConfig(), bablConfig.socketConfig(), bablConfig.proxyConfig(),

@@ -46,7 +46,6 @@ import com.aitusoftware.babl.proxy.SessionContainerAdapter;
 import com.aitusoftware.babl.user.Application;
 
 import org.agrona.ErrorHandler;
-import org.agrona.SystemUtil;
 import org.agrona.collections.Long2ObjectHashMap;
 import org.agrona.concurrent.Agent;
 import org.agrona.concurrent.AgentInvoker;
@@ -78,7 +77,6 @@ public final class BablServer
         final BablConfig bablConfig;
         if (args.length > 0)
         {
-            SystemUtil.loadPropertiesFile(args[0]);
             bablConfig = PropertiesLoader.configure(Paths.get(args[0]));
         }
         else
