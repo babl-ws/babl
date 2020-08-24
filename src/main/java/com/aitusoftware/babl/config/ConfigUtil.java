@@ -59,6 +59,8 @@ final class ConfigUtil
                     return YieldingIdleStrategy.INSTANCE;
                 case LOW:
                     return new SleepingMillisIdleStrategy(1L);
+                case DEVELOPMENT:
+                    return new SleepingMillisIdleStrategy(10L);
                 default:
                     throw new IllegalArgumentException(performanceMode.name());
             }

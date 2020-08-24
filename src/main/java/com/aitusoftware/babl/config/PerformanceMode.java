@@ -18,10 +18,11 @@
 package com.aitusoftware.babl.config;
 
 /**
- * A hint to the server indicating to what extend system resources should be utilised to improve responsiveness.
+ * A hint to the server indicating to what extent system resources should be utilised to improve responsiveness.
  */
 public enum PerformanceMode
 {
+    DEVELOPMENT,
     CUSTOM,
     LOW,
     MEDIUM,

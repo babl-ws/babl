@@ -245,12 +245,20 @@ public final class ProxyConfig implements AutoCloseable
         aeronClientContext.aeronDirectoryName(mediaDriverDir);
         ContextConfiguration.applySettings(performanceConfig.performanceMode(), mediaDriverContext);
         ContextConfiguration.applySettings(performanceConfig.performanceMode(), aeronClientContext);
-        mediaDriverContext.threadingMode(ThreadingMode.INVOKER);
+
         if (launchMediaDriver)
         {
+            final boolean notHighPerformanceMode = performanceConfig.performanceMode() != PerformanceMode.HIGH;
+            if (notHighPerformanceMode)
+            {
+                mediaDriverContext.threadingMode(ThreadingMode.INVOKER);
+            }
             mediaDriver = MediaDriver.launch(mediaDriverContext);
-            mediaDriverInvoker = mediaDriver.sharedAgentInvoker();
-            aeronClientContext.driverAgentInvoker(mediaDriverInvoker);
+            if (notHighPerformanceMode)
+            {
+                mediaDriverInvoker = mediaDriver.sharedAgentInvoker();
+                aeronClientContext.driverAgentInvoker(mediaDriverInvoker);
+            }
         }
         aeron = Aeron.connect(aeronClientContext);
     }

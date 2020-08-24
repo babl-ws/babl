@@ -36,6 +36,7 @@ public final class ContextConfiguration
     {
         switch (performanceMode)
         {
+            case DEVELOPMENT:
             case LOW:
                 mediaDriverContext
                     .clientLivenessTimeoutNs(TimeUnit.SECONDS.toNanos(7L))
@@ -68,6 +69,7 @@ public final class ContextConfiguration
     {
         switch (performanceMode)
         {
+            case DEVELOPMENT:
             case LOW:
                 aeronClientContext
                     .driverTimeoutMs(TimeUnit.SECONDS.toNanos(10L))

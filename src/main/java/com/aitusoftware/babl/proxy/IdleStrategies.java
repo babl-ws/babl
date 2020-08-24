@@ -26,7 +26,7 @@ import org.agrona.concurrent.SleepingMillisIdleStrategy;
 
 final class IdleStrategies
 {
-    private static final SleepingMillisIdleStrategy SLEEPING_MILLIS_IDLE_STRATEGY = new SleepingMillisIdleStrategy(1);
+    private static final SleepingMillisIdleStrategy SLEEPING_MILLIS_IDLE_STRATEGY = new SleepingMillisIdleStrategy(10);
     private static final BusySpinIdleStrategy BUSY_SPIN_IDLE_STRATEGY = BusySpinIdleStrategy.INSTANCE;
 
     private IdleStrategies()

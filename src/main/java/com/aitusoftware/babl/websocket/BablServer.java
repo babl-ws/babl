@@ -48,6 +48,7 @@ import com.aitusoftware.babl.user.Application;
 import org.agrona.ErrorHandler;
 import org.agrona.SystemUtil;
 import org.agrona.collections.Long2ObjectHashMap;
+import org.agrona.concurrent.Agent;
 import org.agrona.concurrent.AgentInvoker;
 import org.agrona.concurrent.AgentRunner;
 import org.agrona.concurrent.IdleStrategy;
@@ -100,7 +101,6 @@ public final class BablServer
         {
             final ProxyConfig proxyConfig = bablConfig.proxyConfig();
             final AgentInvoker mediaDriverInvoker = proxyConfig.mediaDriverInvoker();
-            mediaDriverInvoker.invoke();
             final int applicationStreamId = proxyConfig.applicationStreamBaseId();
             final Application application = bablConfig.applicationConfig().application();
             final Aeron aeron = proxyConfig.aeron();
@@ -141,10 +141,12 @@ public final class BablServer
                 toServerPublications,
                 proxyConfig.applicationAdapterPollFragmentLimit(),
                 applicationAdapterStatistics, SystemEpochClock.INSTANCE);
+            final Agent applicationAgent = mediaDriverInvoker == null ?
+                applicationAdapter : new DoubleAgent(applicationAdapter, mediaDriverInvoker.agent());
             final AgentRunner applicationAdapterRunner = new AgentRunner(
                 bablConfig.applicationConfig().applicationIdleStrategy(sessionContainerConfig.serverDirectory(0)),
                 errorHandler, null,
-                new DoubleAgent(applicationAdapter, mediaDriverInvoker.agent()));
+                applicationAgent);
             AgentRunner.startOnThread(applicationAdapterRunner, sessionContainerConfig.threadFactory());
             final ServerSocketChannel serverSocketChannel = createServerSocket(sessionContainerConfig);
             final IdleStrategy connectorIdleStrategy = sessionContainerConfig.connectorIdleStrategySupplier().get();

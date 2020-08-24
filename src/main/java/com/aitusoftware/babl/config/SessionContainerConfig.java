@@ -25,6 +25,8 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import com.aitusoftware.babl.log.Category;
+import com.aitusoftware.babl.log.Logger;
 import com.aitusoftware.babl.pool.BufferPoolPreAllocator;
 import com.aitusoftware.babl.pool.NoOpBufferPoolPreAllocator;
 import com.aitusoftware.babl.websocket.AlwaysValidConnectionValidator;
@@ -85,13 +87,23 @@ public final class SessionContainerConfig
         this.performanceConfig = performanceConfig;
     }
 
-
     /**
      * Validates configuration and creates the server's mark file.
      */
     @SuppressWarnings("unchecked")
     public void conclude()
     {
+        if (performanceConfig.performanceMode() == PerformanceMode.DEVELOPMENT)
+        {
+            Logger.log(Category.CONFIG, "Overriding SessionContainer settings due to performance mode %s",
+                performanceConfig.performanceMode().name());
+            deploymentMode = DeploymentMode.DIRECT;
+            sessionContainerInstanceCount = Constants.SESSION_CONTAINER_INSTANCE_COUNT_DEFAULT;
+            autoScale = false;
+            connectorIdleStrategySupplier =
+                () -> new SleepingMillisIdleStrategy(100L);
+        }
+
         if (deploymentMode == DeploymentMode.DIRECT &&
             sessionContainerInstanceCount != Constants.SESSION_CONTAINER_INSTANCE_COUNT_DEFAULT)
         {
