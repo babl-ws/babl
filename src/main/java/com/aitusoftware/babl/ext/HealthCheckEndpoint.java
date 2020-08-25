@@ -29,9 +29,12 @@ import java.util.function.Supplier;
 
 import org.agrona.CloseHelper;
 import org.agrona.concurrent.EpochClock;
+import org.agrona.concurrent.IdleStrategy;
+import org.agrona.concurrent.SleepingMillisIdleStrategy;
 
 final class HealthCheckEndpoint implements Runnable
 {
+    private static final IdleStrategy IDLE_STRATEGY = new SleepingMillisIdleStrategy(10L);
     private static final int PORT = Integer.getInteger("babl.healthcheck.port", 8090);
     private static final byte[] HTTP_RESPONSE_OK_PREFIX = toBytes("HTTP/1.1 200 OK\r\n");
     private static final byte[] HTTP_RESPONSE_ERROR_PREFIX = toBytes("HTTP/1.1 500 Internal Server Error\r\n");
@@ -39,7 +42,7 @@ final class HealthCheckEndpoint implements Runnable
     private static final byte[] ERROR_HEADER_SUFFIX = toBytes("\r\n");
     private static final byte[] HTTP_RESPONSE_SUFFIX = toBytes(
         "Content-Length: 0\r\n" +
-        "Connection: close\r\n\r\n");
+            "Connection: close\r\n\r\n");
 
     private final BooleanSupplier healthCheck;
     private final Supplier<String> reasonSupplier;
@@ -67,41 +70,14 @@ final class HealthCheckEndpoint implements Runnable
         {
             while (!Thread.currentThread().isInterrupted())
             {
-                tryAssignServerSocket();
+                int workDone = tryAssignServerSocket();
                 CloseHelper.quietClose(channelToClose);
 
                 if (serverSocketChannel != null)
                 {
-                    final SocketChannel channel;
-                    try
-                    {
-                        channel = serverSocketChannel.accept();
-                        if (channel != null)
-                        {
-                            channelToClose = channel;
-                            sendBuffer.clear();
-                            if (healthCheck.getAsBoolean())
-                            {
-                                sendBuffer.put(HTTP_RESPONSE_OK_PREFIX);
-                            }
-                            else
-                            {
-                                sendBuffer.put(HTTP_RESPONSE_ERROR_PREFIX);
-                                sendBuffer.put(ERROR_HEADER_PREFIX);
-                                sendBuffer.put(reasonSupplier.get().getBytes(StandardCharsets.UTF_8));
-                                sendBuffer.put(ERROR_HEADER_SUFFIX);
-                            }
-                            sendBuffer.put(HTTP_RESPONSE_SUFFIX);
-                            sendBuffer.flip();
-                            channel.write(sendBuffer);
-                        }
-
-                    }
-                    catch (final IOException e)
-                    {
-                        e.printStackTrace(System.out);
-                    }
+                    workDone += tryProcessConnection();
                 }
+                IDLE_STRATEGY.idle(workDone);
             }
         }
         finally
@@ -110,12 +86,45 @@ final class HealthCheckEndpoint implements Runnable
         }
     }
 
+    private int tryProcessConnection()
+    {
+        try
+        {
+            final SocketChannel channel = serverSocketChannel.accept();
+            if (channel != null)
+            {
+                channelToClose = channel;
+                sendBuffer.clear();
+                if (healthCheck.getAsBoolean())
+                {
+                    sendBuffer.put(HTTP_RESPONSE_OK_PREFIX);
+                }
+                else
+                {
+                    sendBuffer.put(HTTP_RESPONSE_ERROR_PREFIX);
+                    sendBuffer.put(ERROR_HEADER_PREFIX);
+                    sendBuffer.put(reasonSupplier.get().getBytes(StandardCharsets.UTF_8));
+                    sendBuffer.put(ERROR_HEADER_SUFFIX);
+                }
+                sendBuffer.put(HTTP_RESPONSE_SUFFIX);
+                sendBuffer.flip();
+                channel.write(sendBuffer);
+                return 1;
+            }
+        }
+        catch (final IOException e)
+        {
+            e.printStackTrace(System.out);
+        }
+        return 0;
+    }
+
     private void cleanUp()
     {
         CloseHelper.quietClose(serverSocketChannel);
     }
 
-    private void tryAssignServerSocket()
+    private int tryAssignServerSocket()
     {
         if (serverSocketChannel == null && clock.time() > nextBindAttemptMs)
         {
@@ -124,6 +133,7 @@ final class HealthCheckEndpoint implements Runnable
                 serverSocketChannel = ServerSocketChannel.open();
                 serverSocketChannel.bind(new InetSocketAddress(PORT));
                 serverSocketChannel.configureBlocking(false);
+                return 1;
             }
             catch (final IOException e)
             {
@@ -131,6 +141,7 @@ final class HealthCheckEndpoint implements Runnable
                 nextBindAttemptMs = clock.time() + TimeUnit.SECONDS.toMillis(5L);
             }
         }
+        return 0;
     }
 
     private static byte[] toBytes(final String input)
