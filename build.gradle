@@ -144,7 +144,7 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.2'
     testImplementation 'org.mockito:mockito-core:3.3.3'
     testImplementation 'com.google.truth:truth:1.0.1'
-    testImplementation 'io.vertx:vertx-core:3.8.5'
+    testImplementation 'io.vertx:vertx-core:3.9.2'
     testImplementation 'io.vertx:vertx-web:3.9.2'
     testImplementation 'org.hdrhistogram:HdrHistogram:2.1.12'
     testImplementation 'org.awaitility:awaitility:4.0.3'
