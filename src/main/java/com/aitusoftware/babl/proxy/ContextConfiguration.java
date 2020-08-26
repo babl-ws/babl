@@ -62,7 +62,7 @@ public final class ContextConfiguration
                 // do nothing for CUSTOM mode
                 break;
         }
-
+        mediaDriverContext.ipcMtuLength(8192);
     }
 
     public static void applySettings(final PerformanceMode performanceMode, final Aeron.Context aeronClientContext)
