@@ -140,7 +140,7 @@ dependencies {
     codegen 'uk.co.real-logic:sbe-all:1.18.2'
 
     jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.23'
-    jmhImplementation 'org.openjdk.jmh:jmh-core:1.23'
+    jmhImplementation 'org.openjdk.jmh:jmh-core:1.25.1'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.2'
     testImplementation 'org.mockito:mockito-core:3.3.3'
     testImplementation 'com.google.truth:truth:1.0.1'
