@@ -101,7 +101,7 @@ class BackPressureDirectSessionContainerAcceptanceTest
             System.out.println(messagesSent);
             System.out.println(messagesReceived);
         }
-        assertThat(messagesSent).isEqualTo(messagesReceived);
+        assertThat(messagesReceived).isEqualTo(messagesSent);
     }
 
     private static class MessageHandler implements Handler<WebSocketFrame>
@@ -124,15 +124,18 @@ class BackPressureDirectSessionContainerAcceptanceTest
         @Override
         public void handle(final WebSocketFrame event)
         {
-            current.append(event.textData());
-            if (event.isFinal())
+            if (event.isText() && !event.isClose())
             {
-                messagesReceived.add(current.toString());
-                if (current.toString().indexOf("payload") < 0)
+                current.append(event.textData());
+                if (event.isFinal())
                 {
-                    System.out.println("Unexpected: " + current.toString());
+                    messagesReceived.add(current.toString());
+                    if (!current.toString().contains("payload"))
+                    {
+                        System.out.println("Unexpected: " + current.toString());
+                    }
+                    current.setLength(0);
                 }
-                current.setLength(0);
             }
             if (messagesReceived.size() == expectedMessageCount)
             {
