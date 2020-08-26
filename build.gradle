@@ -135,11 +135,11 @@ sourceSets {
 }
 
 dependencies {
-    implementation 'org.agrona:agrona:1.5.1'
-    implementation 'io.aeron:aeron-driver:1.28.2'
-    codegen 'uk.co.real-logic:sbe-all:1.18.2'
+    implementation 'org.agrona:agrona:1.6.0'
+    implementation 'io.aeron:aeron-driver:1.29.0'
+    codegen 'uk.co.real-logic:sbe-all:1.19.0'
 
-    jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.23'
+    jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.25.1'
     jmhImplementation 'org.openjdk.jmh:jmh-core:1.25.1'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.2'
     testImplementation 'org.mockito:mockito-core:3.3.3'
