@@ -132,12 +132,17 @@ public final class BablServer
                 new MappedApplicationAdapterStatistics(mappedFile);
             applicationAdapterStatistics.reset();
             dependencies.add(applicationAdapterStatistics);
+            final int maxActiveSessionCount =
+                sessionContainerConfig.sessionContainerInstanceCount() *
+                sessionContainerConfig.activeSessionLimit();
             final ApplicationAdapter applicationAdapter = new ApplicationAdapter(
                 applicationInstanceId, application,
                 toApplicationSubscription,
                 toServerPublications,
                 proxyConfig.applicationAdapterPollFragmentLimit(),
-                applicationAdapterStatistics, SystemEpochClock.INSTANCE);
+                applicationAdapterStatistics,
+                maxActiveSessionCount,
+                SystemEpochClock.INSTANCE);
             final Agent applicationAgent = constructApplicationAgent(bablConfig, applicationAdapter);
             final AgentRunner applicationAdapterRunner = new AgentRunner(
                 bablConfig.applicationConfig().applicationIdleStrategy(sessionContainerConfig.serverDirectory(0)),

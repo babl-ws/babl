@@ -35,7 +35,6 @@ import com.aitusoftware.babl.user.ContentType;
 import com.aitusoftware.babl.websocket.DisconnectReason;
 
 import org.agrona.DirectBuffer;
-import org.agrona.collections.Hashing;
 import org.agrona.collections.Long2ObjectHashMap;
 import org.agrona.concurrent.Agent;
 import org.agrona.concurrent.EpochClock;
@@ -57,8 +56,7 @@ public final class ApplicationAdapter implements Agent, ControlledFragmentHandle
     private final SessionClosedDecoder sessionCloseDecoder = new SessionClosedDecoder();
     private final SessionMessageDecoder sessionMessageDecoder = new SessionMessageDecoder();
     private final MessageHeaderDecoder messageHeaderDecoder = new MessageHeaderDecoder();
-    private final Long2ObjectHashMap<SessionProxy> sessionProxyById =
-        new Long2ObjectHashMap<>(1024, Hashing.DEFAULT_LOAD_FACTOR);
+    private final Long2ObjectHashMap<SessionProxy> sessionProxyById;
     private final ObjectPool<SessionProxy> sessionProxyObjectPool;
     private final String agentName;
     private final Application application;
@@ -70,13 +68,13 @@ public final class ApplicationAdapter implements Agent, ControlledFragmentHandle
 
     /**
      * Constructor.
-     *
      * @param instanceId                          application instance ID
      * @param application                         user application
      * @param fromServerSubscription              IPC subscription for messages from session containers
      * @param toServerPublications                IPC publications back to session containers
      * @param applicationAdapterPollFragmentLimit maximum number of messages to process per invocation of the event-loop
      * @param applicationAdapterStatistics        sink for metrics
+     * @param maxActiveSessionCount               maximum expected active session count
      * @param clock                               clock for timing events
      */
     public ApplicationAdapter(
@@ -86,6 +84,7 @@ public final class ApplicationAdapter implements Agent, ControlledFragmentHandle
         final Publication[] toServerPublications,
         final int applicationAdapterPollFragmentLimit,
         final ApplicationAdapterStatistics applicationAdapterStatistics,
+        final int maxActiveSessionCount,
         final EpochClock clock)
     {
         agentName = "babl-application-container-" + instanceId;
@@ -97,7 +96,8 @@ public final class ApplicationAdapter implements Agent, ControlledFragmentHandle
         this.eventLoopDurationReporter = new EventLoopDurationReporter(
             applicationAdapterStatistics::eventLoopDurationMs);
         sessionProxyObjectPool = new ObjectPool<>(
-            new SessionProxy.Factory(toServerPublications, applicationAdapterStatistics), 1024);
+            new SessionProxy.Factory(toServerPublications, applicationAdapterStatistics), maxActiveSessionCount);
+        sessionProxyById = new Long2ObjectHashMap<>(maxActiveSessionCount, 0.8f);
     }
 
     /**

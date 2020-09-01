@@ -138,7 +138,7 @@ class ProxyIntegrationTest
         final ApplicationAdapter applicationAdapter =
             new ApplicationAdapter(5, application, serverToApplicationSubscription,
             new Publication[] {applicationToServerPublication}, POLL_FRAGMENT_LIMIT,
-            new NoOpApplicationAdapterStatistics(), SystemEpochClock.INSTANCE);
+            new NoOpApplicationAdapterStatistics(), 16, SystemEpochClock.INSTANCE);
 
         final ApplicationProxy applicationProxy = new ApplicationProxy(SERVER_ID, new Long2ObjectHashMap<>());
         applicationProxy.init(serverToApplicationPublication, new NoOpSessionContainerStatistics());
