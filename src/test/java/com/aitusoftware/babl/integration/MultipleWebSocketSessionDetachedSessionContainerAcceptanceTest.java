@@ -20,6 +20,7 @@ package com.aitusoftware.babl.integration;
 import static com.google.common.truth.Truth.assertThat;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,12 +30,17 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import com.aitusoftware.babl.config.DeploymentMode;
 import com.aitusoftware.babl.monitoring.SessionContainerStatisticsPrinter;
+import com.aitusoftware.babl.user.ContentType;
 import com.aitusoftware.babl.user.EchoApplication;
 import com.aitusoftware.babl.websocket.Constants;
+import com.aitusoftware.babl.websocket.Session;
 
 import org.agrona.CloseHelper;
+import org.agrona.DirectBuffer;
+import org.agrona.collections.Long2ObjectHashMap;
 import org.agrona.collections.MutableInteger;
 import org.agrona.concurrent.Agent;
+import org.agrona.concurrent.UnsafeBuffer;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,7 +62,8 @@ class MultipleWebSocketSessionDetachedSessionContainerAcceptanceTest
 
     private final EchoApplication application = new EchoApplication(false);
     private final ServerHarness harness = new ServerHarness(application);
-    private final CountingAgent additionalWork = new CountingAgent();
+    private final CountingAgent additionalWork =
+        new CountingAgent(application.getSessionCache(), true);
     private HttpClient client;
     @TempDir
     Path workingDir;
@@ -150,15 +157,43 @@ class MultipleWebSocketSessionDetachedSessionContainerAcceptanceTest
             .until(() -> application.getSessionClosedCount() == CLIENT_COUNT + 1);
 
         assertThat(additionalWork.invocationCount.get()).isNotEqualTo(0);
+        assertThat(clientDataList.stream().anyMatch(data -> !data.otherMessagesReceived.isEmpty())).isTrue();
     }
 
     private static final class CountingAgent implements Agent
     {
         private final AtomicLong invocationCount = new AtomicLong();
+        private final Long2ObjectHashMap<Session> sessionCache;
+        private final Long2ObjectHashMap<Boolean> sent = new Long2ObjectHashMap<>();
+        private final DirectBuffer payload = new UnsafeBuffer("Hello".getBytes(StandardCharsets.UTF_8));
+        private final boolean sendMessages;
+
+        CountingAgent(
+            final Long2ObjectHashMap<Session> sessionCache,
+            final boolean sendMessages)
+        {
+            this.sessionCache = sessionCache;
+            this.sendMessages = sendMessages;
+        }
 
         @Override
-        public int doWork() throws Exception
+        public int doWork()
         {
+            if (sendMessages)
+            {
+                final Long2ObjectHashMap<Session>.KeySet keySet = sessionCache.keySet();
+                final Long2ObjectHashMap<Session>.KeyIterator keyIterator = keySet.iterator();
+                while (keyIterator.hasNext())
+                {
+
+                    final long sessionId = keyIterator.nextLong();
+                    if (!sent.containsKey(sessionId))
+                    {
+                        sessionCache.get(sessionId).send(ContentType.TEXT, payload, 0, payload.capacity());
+                        sent.put(sessionId, Boolean.TRUE);
+                    }
+                }
+            }
             invocationCount.incrementAndGet();
             return 0;
         }

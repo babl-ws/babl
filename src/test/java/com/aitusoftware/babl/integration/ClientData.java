@@ -29,6 +29,7 @@ final class ClientData implements Handler<WebSocketFrame>
     final CountDownLatch latch;
     final List<String> messagesSent = new ArrayList<>();
     final List<String> messagesReceived = new ArrayList<>();
+    final List<String> otherMessagesReceived = new ArrayList<>();
 
     ClientData(final int messageCount)
     {
@@ -40,8 +41,16 @@ final class ClientData implements Handler<WebSocketFrame>
     {
         if (event.isFinal())
         {
-            messagesReceived.add(event.textData());
-            latch.countDown();
+            final String textData = event.textData();
+            if (textData.startsWith("payload"))
+            {
+                messagesReceived.add(textData);
+                latch.countDown();
+            }
+            else
+            {
+                otherMessagesReceived.add(textData);
+            }
         }
     }
 }

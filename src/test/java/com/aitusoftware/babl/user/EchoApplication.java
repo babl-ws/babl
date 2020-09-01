@@ -24,11 +24,13 @@ import com.aitusoftware.babl.websocket.Session;
 import org.agrona.DirectBuffer;
 import org.agrona.ExpandableDirectByteBuffer;
 import org.agrona.MutableDirectBuffer;
+import org.agrona.collections.Long2ObjectHashMap;
 
 @SuppressWarnings("NonAtomicOperationOnVolatileField")
 public final class EchoApplication implements Application
 {
     private final MutableDirectBuffer buffer = new ExpandableDirectByteBuffer(512);
+    private final Long2ObjectHashMap<Session> sessionCache = new Long2ObjectHashMap<>();
     private final boolean shouldProvideBackPressure;
     private long messageCount = 0L;
     private volatile int sessionOpenedCount;
@@ -43,6 +45,7 @@ public final class EchoApplication implements Application
     public int onSessionConnected(final Session session)
     {
         sessionOpenedCount++;
+        sessionCache.put(session.id(), session);
         return SendResult.OK;
     }
 
@@ -50,6 +53,7 @@ public final class EchoApplication implements Application
     public int onSessionDisconnected(final Session session, final DisconnectReason reason)
     {
         sessionClosedCount++;
+        sessionCache.remove(session.id());
         return SendResult.OK;
     }
 
@@ -85,5 +89,10 @@ public final class EchoApplication implements Application
     public int getSessionClosedCount()
     {
         return sessionClosedCount;
+    }
+
+    public Long2ObjectHashMap<Session> getSessionCache()
+    {
+        return sessionCache;
     }
 }
