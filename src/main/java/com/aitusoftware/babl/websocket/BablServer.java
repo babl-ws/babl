@@ -168,8 +168,9 @@ public final class BablServer
         }
     }
 
-    private static Agent constructApplicationAgent(final BablConfig config,
-                                                   final ApplicationAdapter applicationAdapter)
+    private static Agent constructApplicationAgent(
+        final BablConfig config,
+        final ApplicationAdapter applicationAdapter)
     {
         final AgentInvoker mediaDriverInvoker = config.proxyConfig().mediaDriverInvoker();
         final Agent additionalWork = config.applicationConfig().additionalWork();

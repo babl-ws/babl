@@ -25,6 +25,11 @@ import org.agrona.DirectBuffer;
 /**
  * User code should implement this interface to handle
  * web-socket messages.
+ *
+ * Implementations MAY cache the <code>Session</code> objects when opened, and until closed.
+ * Implementations MUST NOT use a <code>Session</code> object after <code>onSessionDisconnected</code>
+ * has been called.
+ * Implementations MUST NOT use a <code>Session</code> object from another thread.
  */
 public interface Application
 {

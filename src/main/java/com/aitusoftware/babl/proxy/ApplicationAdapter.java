@@ -29,11 +29,14 @@ import com.aitusoftware.babl.log.Category;
 import com.aitusoftware.babl.log.Logger;
 import com.aitusoftware.babl.monitoring.ApplicationAdapterStatistics;
 import com.aitusoftware.babl.monitoring.EventLoopDurationReporter;
+import com.aitusoftware.babl.pool.ObjectPool;
 import com.aitusoftware.babl.user.Application;
 import com.aitusoftware.babl.user.ContentType;
 import com.aitusoftware.babl.websocket.DisconnectReason;
 
 import org.agrona.DirectBuffer;
+import org.agrona.collections.Hashing;
+import org.agrona.collections.Long2ObjectHashMap;
 import org.agrona.concurrent.Agent;
 import org.agrona.concurrent.EpochClock;
 
@@ -49,15 +52,18 @@ public final class ApplicationAdapter implements Agent, ControlledFragmentHandle
 {
     private static final ContentType[] CONTENT_TYPES = ContentType.values();
     private static final DisconnectReason[] DISCONNECT_REASONS = DisconnectReason.values();
+
     private final SessionOpenedDecoder sessionOpenDecoder = new SessionOpenedDecoder();
     private final SessionClosedDecoder sessionCloseDecoder = new SessionClosedDecoder();
     private final SessionMessageDecoder sessionMessageDecoder = new SessionMessageDecoder();
     private final MessageHeaderDecoder messageHeaderDecoder = new MessageHeaderDecoder();
+    private final Long2ObjectHashMap<SessionProxy> sessionProxyById =
+        new Long2ObjectHashMap<>(1024, Hashing.DEFAULT_LOAD_FACTOR);
+    private final ObjectPool<SessionProxy> sessionProxyObjectPool;
     private final String agentName;
     private final Application application;
     private final Subscription fromServerSubscription;
     private final EpochClock clock;
-    private final SessionProxy sessionProxy;
     private final int applicationAdapterPollFragmentLimit;
     private final ApplicationAdapterStatistics applicationAdapterStatistics;
     private final EventLoopDurationReporter eventLoopDurationReporter;
@@ -86,11 +92,12 @@ public final class ApplicationAdapter implements Agent, ControlledFragmentHandle
         this.application = application;
         this.fromServerSubscription = fromServerSubscription;
         this.clock = clock;
-        sessionProxy = new SessionProxy(toServerPublications, applicationAdapterStatistics);
         this.applicationAdapterPollFragmentLimit = applicationAdapterPollFragmentLimit;
         this.applicationAdapterStatistics = applicationAdapterStatistics;
         this.eventLoopDurationReporter = new EventLoopDurationReporter(
             applicationAdapterStatistics::eventLoopDurationMs);
+        sessionProxyObjectPool = new ObjectPool<>(
+            new SessionProxy.Factory(toServerPublications, applicationAdapterStatistics), 1024);
     }
 
     /**
@@ -122,41 +129,17 @@ public final class ApplicationAdapter implements Agent, ControlledFragmentHandle
         final Header header)
     {
         Action action = Action.CONTINUE;
-        final int applicationResult;
         messageHeaderDecoder.wrap(buffer, offset);
         switch (messageHeaderDecoder.templateId())
         {
             case SessionMessageDecoder.TEMPLATE_ID:
-                sessionMessageDecoder.wrap(buffer, offset + MessageHeaderDecoder.ENCODED_LENGTH,
-                    messageHeaderDecoder.blockLength(), messageHeaderDecoder.version());
-                setSessionProxy(sessionMessageDecoder.sessionId(), sessionMessageDecoder.containerId());
-                final ContentType contentType = CONTENT_TYPES[sessionMessageDecoder.contentType()];
-                final VarDataEncodingDecoder decodedMessage = sessionMessageDecoder.message();
-                Logger.log(Category.PROXY, "[%d] ApplicationAdapter onSessionMessage(sessionId: %d)%n",
-                    sessionMessageDecoder.containerId(), sessionMessageDecoder.sessionId());
-                applicationResult = application.onSessionMessage(
-                    sessionProxy, contentType, decodedMessage.buffer(),
-                    decodedMessage.offset() + varDataEncodingOffset(), (int)decodedMessage.length());
-                action = sendResultToAction(applicationResult);
+                action = handleSessionMessage(buffer, offset);
                 break;
             case SessionOpenedDecoder.TEMPLATE_ID:
-                sessionOpenDecoder.wrap(buffer, offset + MessageHeaderDecoder.ENCODED_LENGTH,
-                    messageHeaderDecoder.blockLength(), messageHeaderDecoder.version());
-                setSessionProxy(sessionOpenDecoder.sessionId(), sessionOpenDecoder.containerId());
-                Logger.log(Category.PROXY, "[%d] ApplicationAdapter onSessionConnected(sessionId: %d)%n",
-                    sessionOpenDecoder.containerId(), sessionOpenDecoder.sessionId());
-                applicationResult = application.onSessionConnected(sessionProxy);
-                action = sendResultToAction(applicationResult);
+                action = handleSessionOpen(buffer, offset);
                 break;
             case SessionClosedDecoder.TEMPLATE_ID:
-                sessionCloseDecoder.wrap(buffer, offset + MessageHeaderDecoder.ENCODED_LENGTH,
-                    messageHeaderDecoder.blockLength(), messageHeaderDecoder.version());
-                setSessionProxy(sessionCloseDecoder.sessionId(), sessionCloseDecoder.containerId());
-                Logger.log(Category.PROXY, "[%d] ApplicationAdapter onSessionDisconnected(sessionId: %d)%n",
-                    sessionCloseDecoder.containerId(), sessionCloseDecoder.sessionId());
-                applicationResult = application.onSessionDisconnected(sessionProxy,
-                    DISCONNECT_REASONS[sessionCloseDecoder.closeReason()]);
-                action = sendResultToAction(applicationResult);
+                action = handleSessionClose(buffer, offset);
                 break;
             default:
                 // ignore unknown message type
@@ -174,8 +157,77 @@ public final class ApplicationAdapter implements Agent, ControlledFragmentHandle
         return agentName;
     }
 
-    private void setSessionProxy(final long sessionId, final int sessionContainerId)
+    private Action handleSessionMessage(final DirectBuffer buffer, final int offset)
     {
-        sessionProxy.set(sessionId, sessionContainerId);
+        sessionMessageDecoder.wrap(buffer, offset + MessageHeaderDecoder.ENCODED_LENGTH,
+            messageHeaderDecoder.blockLength(), messageHeaderDecoder.version());
+        final long sessionId = sessionMessageDecoder.sessionId();
+        SessionProxy sessionProxy = sessionProxyById.get(sessionId);
+        if (sessionProxy == null)
+        {
+            Logger.log(Category.PROXY, "WARNING: Received message for unknown session [%d]%n",
+                sessionId);
+            sessionProxy = sessionProxyObjectPool.acquire();
+            sessionProxyById.put(sessionId, sessionProxy);
+            sessionProxy.set(sessionId, sessionMessageDecoder.containerId());
+        }
+        final ContentType contentType = CONTENT_TYPES[sessionMessageDecoder.contentType()];
+        final VarDataEncodingDecoder decodedMessage = sessionMessageDecoder.message();
+        Logger.log(Category.PROXY, "[%d] ApplicationAdapter onSessionMessage(sessionId: %d)%n",
+            sessionMessageDecoder.containerId(), sessionId);
+        final int applicationResult = application.onSessionMessage(
+            sessionProxy, contentType, decodedMessage.buffer(),
+            decodedMessage.offset() + varDataEncodingOffset(), (int)decodedMessage.length());
+        return sendResultToAction(applicationResult);
+    }
+
+    private Action handleSessionOpen(final DirectBuffer buffer, final int offset)
+    {
+        sessionOpenDecoder.wrap(buffer, offset + MessageHeaderDecoder.ENCODED_LENGTH,
+            messageHeaderDecoder.blockLength(), messageHeaderDecoder.version());
+        final long sessionId = sessionOpenDecoder.sessionId();
+        SessionProxy sessionProxy = sessionProxyById.get(sessionId);
+        if (sessionProxy == null)
+        {
+            sessionProxy = sessionProxyObjectPool.acquire();
+            sessionProxyById.put(sessionId, sessionProxy);
+            sessionProxy.set(sessionId, sessionOpenDecoder.containerId());
+        }
+        else
+        {
+            Logger.log(Category.PROXY, "WARNING: Received session open for already open session [%d]%n",
+                sessionId);
+        }
+        Logger.log(Category.PROXY, "[%d] ApplicationAdapter onSessionConnected(sessionId: %d)%n",
+            sessionOpenDecoder.containerId(), sessionOpenDecoder.sessionId());
+        final int applicationResult = application.onSessionConnected(sessionProxy);
+        return sendResultToAction(applicationResult);
+    }
+
+    private Action handleSessionClose(final DirectBuffer buffer, final int offset)
+    {
+        sessionCloseDecoder.wrap(buffer, offset + MessageHeaderDecoder.ENCODED_LENGTH,
+            messageHeaderDecoder.blockLength(), messageHeaderDecoder.version());
+        final long sessionId = sessionCloseDecoder.sessionId();
+        SessionProxy sessionProxy = sessionProxyById.get(sessionId);
+        if (sessionProxy == null)
+        {
+            Logger.log(Category.PROXY, "WARNING: Received session close for unknown session [%d]%n",
+                sessionId);
+            sessionProxy = sessionProxyObjectPool.acquire();
+            sessionProxyById.put(sessionId, sessionProxy);
+            sessionProxy.set(sessionId, sessionCloseDecoder.containerId());
+        }
+        Logger.log(Category.PROXY, "[%d] ApplicationAdapter onSessionDisconnected(sessionId: %d)%n",
+            sessionCloseDecoder.containerId(), sessionCloseDecoder.sessionId());
+        final int applicationResult = application.onSessionDisconnected(sessionProxy,
+            DISCONNECT_REASONS[sessionCloseDecoder.closeReason()]);
+        final Action action = sendResultToAction(applicationResult);
+        if (action != Action.ABORT)
+        {
+            final SessionProxy closedSession = sessionProxyById.remove(sessionCloseDecoder.sessionId());
+            sessionProxyObjectPool.release(closedSession);
+        }
+        return action;
     }
 }

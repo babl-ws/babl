@@ -20,6 +20,8 @@ package com.aitusoftware.babl.proxy;
 import static com.aitusoftware.babl.codec.VarDataEncodingEncoder.varDataEncodingOffset;
 import static com.aitusoftware.babl.proxy.ProxyUtil.acquireBuffer;
 
+import java.util.function.Supplier;
+
 import com.aitusoftware.babl.codec.ApplicationMessageEncoder;
 import com.aitusoftware.babl.codec.CloseSessionEncoder;
 import com.aitusoftware.babl.codec.MessageHeaderEncoder;
@@ -28,6 +30,7 @@ import com.aitusoftware.babl.log.Category;
 import com.aitusoftware.babl.log.Logger;
 import com.aitusoftware.babl.monitoring.ApplicationAdapterStatistics;
 import com.aitusoftware.babl.monitoring.BackPressureStatus;
+import com.aitusoftware.babl.pool.Pooled;
 import com.aitusoftware.babl.user.ContentType;
 import com.aitusoftware.babl.websocket.DisconnectReason;
 import com.aitusoftware.babl.websocket.SendResult;
@@ -39,7 +42,7 @@ import org.agrona.DirectBuffer;
 import io.aeron.Publication;
 import io.aeron.logbuffer.BufferClaim;
 
-final class SessionProxy implements Session
+final class SessionProxy implements Session, Pooled
 {
     private static final int HEADER_LENGTH = MessageHeaderEncoder.ENCODED_LENGTH;
     private static final int APPLICATION_MESSAGE_BASE_SIZE =
@@ -134,9 +137,36 @@ final class SessionProxy implements Session
     }
 
     @Override
+    public void reset()
+    {
+        this.sessionId = Long.MIN_VALUE;
+        this.sessionContainerId = Integer.MIN_VALUE;
+    }
+
+    @Override
     public String toString()
     {
         return String.format("SessionProxy{sessionId: %d, sessionContainerId: %d}",
             sessionId, sessionContainerId);
+    }
+
+    static final class Factory implements Supplier<SessionProxy>
+    {
+        private final Publication[] toServerPublications;
+        private final ApplicationAdapterStatistics applicationAdapterStatistics;
+
+        Factory(
+            final Publication[] toServerPublications,
+            final ApplicationAdapterStatistics applicationAdapterStatistics)
+        {
+            this.toServerPublications = toServerPublications;
+            this.applicationAdapterStatistics = applicationAdapterStatistics;
+        }
+
+        @Override
+        public SessionProxy get()
+        {
+            return new SessionProxy(toServerPublications, applicationAdapterStatistics);
+        }
     }
 }
