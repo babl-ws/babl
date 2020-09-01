@@ -26,6 +26,7 @@ import java.util.function.Supplier;
 
 import com.aitusoftware.babl.user.Application;
 
+import org.agrona.concurrent.Agent;
 import org.agrona.concurrent.IdleStrategy;
 
 /**
@@ -41,6 +42,7 @@ public final class ApplicationConfig
     private String applicationClassName = System.getProperty(Constants.APPLICATION_CLASS_NAME_PROPERTY);
     private BiFunction<Path, IdleStrategy, IdleStrategy> applicationIdleStrategyFactory;
     private Supplier<IdleStrategy> idleStrategySupplier;
+    private Agent additionalWork;
 
     ApplicationConfig(final PerformanceConfig performanceConfig)
     {
@@ -98,6 +100,26 @@ public final class ApplicationConfig
     public IdleStrategy applicationIdleStrategy(final String directory)
     {
         return applicationIdleStrategyFactory.apply(Paths.get(directory), idleStrategySupplier.get());
+    }
+
+    /**
+     * Set additional work to be done on the application thread.
+     * @param additionalWork additional work
+     * @return this for a fluent API
+     */
+    public ApplicationConfig additionalWork(final Agent additionalWork)
+    {
+        this.additionalWork = additionalWork;
+        return this;
+    }
+
+    /**
+     * Gets the additional work to be done on the application thread.
+     * @return additional work
+     */
+    public Agent additionalWork()
+    {
+        return additionalWork;
     }
 
     @SuppressWarnings("unchecked")

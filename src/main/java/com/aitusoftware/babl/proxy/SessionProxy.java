@@ -132,4 +132,11 @@ final class SessionProxy implements Session
     {
         return sessionId;
     }
+
+    @Override
+    public String toString()
+    {
+        return String.format("SessionProxy{sessionId: %d, sessionContainerId: %d}",
+            sessionId, sessionContainerId);
+    }
 }

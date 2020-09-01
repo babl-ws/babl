@@ -183,6 +183,12 @@ public final class WebSocketSession implements Pooled, Session
         return closed;
     }
 
+    @Override
+    public String toString()
+    {
+        return "WebSocketSession{sessionId: %d}";
+    }
+
     void onCloseMessage(final short closeReason)
     {
         sessionClosing(closeReason);

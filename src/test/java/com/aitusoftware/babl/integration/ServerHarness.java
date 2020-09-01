@@ -25,6 +25,7 @@ import java.nio.file.Paths;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
+import com.aitusoftware.babl.config.ApplicationConfig;
 import com.aitusoftware.babl.config.BablConfig;
 import com.aitusoftware.babl.config.DeploymentMode;
 import com.aitusoftware.babl.config.PerformanceConfig;
@@ -103,6 +104,11 @@ public final class ServerHarness implements AutoCloseable
     public SessionContainerConfig serverConfig()
     {
         return sessionContainerConfig;
+    }
+
+    public ApplicationConfig applicationConfig()
+    {
+        return bablConfig.applicationConfig();
     }
 
     public SessionConfig sessionConfig()

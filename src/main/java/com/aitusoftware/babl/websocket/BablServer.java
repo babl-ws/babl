@@ -98,7 +98,6 @@ public final class BablServer
         if (sessionContainerConfig.deploymentMode() == DeploymentMode.DETACHED)
         {
             final ProxyConfig proxyConfig = bablConfig.proxyConfig();
-            final AgentInvoker mediaDriverInvoker = proxyConfig.mediaDriverInvoker();
             final int applicationStreamId = proxyConfig.applicationStreamBaseId();
             final Application application = bablConfig.applicationConfig().application();
             final Aeron aeron = proxyConfig.aeron();
@@ -139,8 +138,7 @@ public final class BablServer
                 toServerPublications,
                 proxyConfig.applicationAdapterPollFragmentLimit(),
                 applicationAdapterStatistics, SystemEpochClock.INSTANCE);
-            final Agent applicationAgent = mediaDriverInvoker == null ?
-                applicationAdapter : new DoubleAgent(applicationAdapter, mediaDriverInvoker.agent());
+            final Agent applicationAgent = constructApplicationAgent(bablConfig, applicationAdapter);
             final AgentRunner applicationAdapterRunner = new AgentRunner(
                 bablConfig.applicationConfig().applicationIdleStrategy(sessionContainerConfig.serverDirectory(0)),
                 errorHandler, null,
@@ -168,6 +166,26 @@ public final class BablServer
         {
             return launchDirectServer(bablConfig, sessionContainerConfig);
         }
+    }
+
+    private static Agent constructApplicationAgent(final BablConfig config,
+                                                   final ApplicationAdapter applicationAdapter)
+    {
+        final AgentInvoker mediaDriverInvoker = config.proxyConfig().mediaDriverInvoker();
+        final Agent additionalWork = config.applicationConfig().additionalWork();
+        if (mediaDriverInvoker != null && additionalWork != null)
+        {
+            return new TripleAgent(applicationAdapter, mediaDriverInvoker.agent(), additionalWork);
+        }
+        if (mediaDriverInvoker != null)
+        {
+            return new DoubleAgent(applicationAdapter, mediaDriverInvoker.agent());
+        }
+        if (additionalWork != null)
+        {
+            return new DoubleAgent(applicationAdapter, additionalWork);
+        }
+        return applicationAdapter;
     }
 
     private static void initialiseServerInstance(

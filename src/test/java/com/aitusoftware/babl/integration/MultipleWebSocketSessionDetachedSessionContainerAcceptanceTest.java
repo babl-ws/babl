@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import com.aitusoftware.babl.config.DeploymentMode;
 import com.aitusoftware.babl.monitoring.SessionContainerStatisticsPrinter;
@@ -33,6 +34,7 @@ import com.aitusoftware.babl.websocket.Constants;
 
 import org.agrona.CloseHelper;
 import org.agrona.collections.MutableInteger;
+import org.agrona.concurrent.Agent;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,6 +56,7 @@ class MultipleWebSocketSessionDetachedSessionContainerAcceptanceTest
 
     private final EchoApplication application = new EchoApplication(false);
     private final ServerHarness harness = new ServerHarness(application);
+    private final CountingAgent additionalWork = new CountingAgent();
     private HttpClient client;
     @TempDir
     Path workingDir;
@@ -64,6 +67,7 @@ class MultipleWebSocketSessionDetachedSessionContainerAcceptanceTest
     {
         harness.serverConfig().deploymentMode(DeploymentMode.DETACHED);
         harness.serverConfig().sessionContainerInstanceCount(SERVER_INSTANCE_COUNT);
+        harness.applicationConfig().additionalWork(additionalWork);
         harness.proxyConfig()
             .launchMediaDriver(true)
             .mediaDriverDir(workingDir.resolve("driver").toString());
@@ -144,5 +148,25 @@ class MultipleWebSocketSessionDetachedSessionContainerAcceptanceTest
 
         Awaitility.await().atMost(15, TimeUnit.SECONDS).pollInSameThread()
             .until(() -> application.getSessionClosedCount() == CLIENT_COUNT + 1);
+
+        assertThat(additionalWork.invocationCount.get()).isNotEqualTo(0);
+    }
+
+    private static final class CountingAgent implements Agent
+    {
+        private final AtomicLong invocationCount = new AtomicLong();
+
+        @Override
+        public int doWork() throws Exception
+        {
+            invocationCount.incrementAndGet();
+            return 0;
+        }
+
+        @Override
+        public String roleName()
+        {
+            return "additional";
+        }
     }
 }
