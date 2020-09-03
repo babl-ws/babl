@@ -135,7 +135,7 @@ sourceSets {
 }
 
 dependencies {
-    implementation 'org.agrona:agrona:1.6.0'
+    implementation 'org.agrona:agrona:1.7.0'
     implementation 'io.aeron:aeron-driver:1.29.0'
     codegen 'uk.co.real-logic:sbe-all:1.20.0'
 
