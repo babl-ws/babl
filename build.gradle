@@ -111,11 +111,14 @@ sourceSets {
 dependencies {
     implementation 'org.agrona:agrona:1.6.0'
     implementation 'io.aeron:aeron-driver:1.29.0'
-    codegen 'uk.co.real-logic:sbe-all:1.20.0'
+
+    codegen 'uk.co.real-logic:sbe-all:1.20.1'
 
     jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.25.2'
+
     jmhImplementation 'org.openjdk.jmh:jmh-core:1.25.2'
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.2'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
     testImplementation 'org.mockito:mockito-core:3.5.10'
     testImplementation 'com.google.truth:truth:1.0.1'
     testImplementation 'io.vertx:vertx-core:3.9.2'
@@ -124,8 +127,7 @@ dependencies {
     testImplementation 'org.awaitility:awaitility:4.0.3'
     testImplementation 'com.caucho:resin:4.0.63'
 
-
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.6.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
 }
 
 compileJava.dependsOn('generateCodecs')
