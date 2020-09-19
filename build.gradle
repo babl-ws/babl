@@ -14,7 +14,8 @@ plugins {
 
 apply plugin: 'checkstyle'
 apply plugin: 'signing'
-apply plugin: 'maven'
+apply plugin: 'maven-publish'
+apply plugin: 'java-library'
 
 def bablVersion = file('version.txt').text.trim()
 group = 'com.aitusoftware'
@@ -44,70 +45,44 @@ compileJava {
     targetCompatibility = '1.8'
 }
 
-def projectPom = {
-    name = fullName
-    description = fullDescription
-    url = siteUrl
-    packaging = 'pom'
 
-    scm {
-        url = "$sourceUrl"
-        connection = "scm:git:https://github.com/babl-ws/babl.git"
-        developerConnection = "scm:git:https://github.com/babl-ws/babl.git"
-    }
+java {
+    withJavadocJar()
+    withSourcesJar()
+}
 
-    licenses {
-        license {
-            name = 'The Apache Software License, Version 2.0'
-            url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-            distribution = 'repo'
-        }
-    }
-
-    developers {
-        developer {
-            id = 'epickrram'
-            name = 'Mark Price'
-            email = 'babl@aitusoftware.com'
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            pom {
+                name = fullName
+                description = fullDescription
+                url = siteUrl
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'epickrram'
+                        name = 'Mark Price'
+                        email = 'babl@aitusoftware.com'
+                    }
+                }
+                scm {
+                    connection = "scm:git:https://github.com/babl-ws/babl.git"
+                    developerConnection = "scm:git:https://github.com/babl-ws/babl.git"
+                    url = sourceUrl
+                }
+            }
         }
     }
 }
-
-
 
 signing {
-    required { gradle.taskGraph.hasTask('uploadArchives') }
-    sign configurations.archives, configurations.shadow
-}
-
-uploadArchives {
-    repositories.mavenDeployer {
-        beforeDeployment { deployment -> signing.signPom(deployment) }
-
-        repository(url: sonatypeUrl) {
-            authentication(userName: sonatypeUsername, password: sonatypePassword)
-        }
-
-        pom.project(projectPom)
-    }
-}
-
-uploadShadow {
-    repositories {
-        mavenDeployer {
-            beforeDeployment {
-                MavenDeployment deployment -> signing.signPom(deployment)
-            }
-
-            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-                authentication(userName: sonatypeUsername, password: sonatypePassword)
-            }
-
-            pom.project(projectPom)
-        }
-    }
-
-    mustRunAfter 'uploadArchives'
+    sign publishing.publications.mavenJava
 }
 
 
@@ -178,16 +153,6 @@ task benchmarkJar(type: Jar) {
             it.isDirectory() ? it : zipTree(it)
         }
     }
-}
-
-task sourcesJar(type: Jar) {
-    archiveClassifier = 'sources'
-    from sourceSets.main.allSource
-}
-
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    archiveClassifier = 'javadoc'
-    from javadoc.destinationDir
 }
 
 jar {
