@@ -38,6 +38,7 @@ import com.aitusoftware.babl.user.ContentType;
 
 import org.agrona.CloseHelper;
 import org.agrona.DirectBuffer;
+import org.agrona.concurrent.EpochClock;
 
 /**
  * Models a web socket session; used by an {@code Application} to send messages to a peer.
@@ -48,6 +49,7 @@ public final class WebSocketSession implements Pooled, Session
     private static final int MAX_FRAMES = 4;
     private static final int UPGRADE_SEND_BUFFER_SIZE = 1024;
     private static final short NULL_CLOSE_REASON = Short.MIN_VALUE;
+    private static final long CLOSING_TIMEOUT_MS = 5_000L;
 
     private final FrameDecoder frameDecoder;
     private final FrameEncoder frameEncoder;
@@ -57,6 +59,7 @@ public final class WebSocketSession implements Pooled, Session
     private final Application application;
     private final PingAgent pingAgent;
     private final SessionContainerStatistics sessionContainerStatistics;
+    private final EpochClock epochClock;
 
     private long id;
     private WritableByteChannel outputChannel;
@@ -72,6 +75,7 @@ public final class WebSocketSession implements Pooled, Session
     private DisconnectReason undeliveredDisconnectReason;
     private long connectedTimestampMs;
     private SelectionKey selectionKey;
+    private long closingTimestampMs;
 
     WebSocketSession(
         final SessionDataListener sessionDataListener,
@@ -81,6 +85,7 @@ public final class WebSocketSession implements Pooled, Session
         final BufferPool bufferPool,
         final Application application,
         final PingAgent pingAgent,
+        final EpochClock epochClock,
         final SessionStatistics sessionStatistics,
         final SessionContainerStatistics sessionContainerStatistics)
     {
@@ -91,6 +96,7 @@ public final class WebSocketSession implements Pooled, Session
         this.bufferPool = bufferPool;
         this.application = application;
         this.pingAgent = pingAgent;
+        this.epochClock = epochClock;
         this.sessionStatistics = sessionStatistics;
         this.sessionContainerStatistics = sessionContainerStatistics;
     }
@@ -109,6 +115,7 @@ public final class WebSocketSession implements Pooled, Session
         frameEncoder.reset();
         undeliveredDisconnectReason = null;
         selectionKey = null;
+        closingTimestampMs = 0L;
     }
 
     void init(
@@ -255,7 +262,7 @@ public final class WebSocketSession implements Pooled, Session
             {
                 closeReason = NULL_CLOSE_REASON;
             }
-            if (frameEncoder.sendBuffer().remaining() == 0)
+            if (frameEncoder.sendBuffer().remaining() == 0 || closingPhaseTimeOut())
             {
                 sessionClosed(DisconnectReason.LIFECYCLE);
                 return 1;
@@ -354,6 +361,11 @@ public final class WebSocketSession implements Pooled, Session
     public void selectionKey(final SelectionKey selectionKey)
     {
         this.selectionKey = selectionKey;
+    }
+
+    private boolean closingPhaseTimeOut()
+    {
+        return epochClock.time() - closingTimestampMs >= CLOSING_TIMEOUT_MS;
     }
 
     private void processReceivedMessages()
@@ -466,8 +478,6 @@ public final class WebSocketSession implements Pooled, Session
         }
         undeliveredDisconnectReason = null;
         onSessionClosed();
-        CloseHelper.quietClose(outputChannel);
-        CloseHelper.quietClose(inputChannel);
     }
 
     private int processLingeringClose()
@@ -486,12 +496,15 @@ public final class WebSocketSession implements Pooled, Session
         selectionKey.cancel();
         closed = true;
         setState(SessionState.DISCONNECTED);
+        CloseHelper.quietClose(outputChannel);
+        CloseHelper.quietClose(inputChannel);
     }
 
     private void sessionClosing(final short closeReason)
     {
         setState(SessionState.CLOSING);
         this.closeReason = closeReason;
+        this.closingTimestampMs = epochClock.time();
         // trigger call to doSendWork()
         sessionDataListener.sendDataAvailable();
     }

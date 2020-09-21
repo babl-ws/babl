@@ -178,7 +178,6 @@ final class SessionContainer implements Agent, AutoCloseable
         workCount += pollIncomingConnections(timeMs);
         workCount += sendData();
         workCount += receiveData();
-        workCount += removeInactiveSessions();
         workCount += doAdminWork(timeMs);
         eventLoopDurationReporter.eventLoopComplete(clock.time());
         return workCount;
@@ -235,6 +234,7 @@ final class SessionContainer implements Agent, AutoCloseable
         {
             sessionContainerStatistics.heartbeat(timeMs);
             lastServiceTimeMs = timeMs;
+            workCount += removeInactiveSessions();
             final Long2ObjectHashMap<WebSocketSession>.ValueIterator activeSessions =
                 activeSessionMap.values().iterator();
             while (activeSessions.hasNext())

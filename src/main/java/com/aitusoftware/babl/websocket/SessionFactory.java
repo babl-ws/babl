@@ -75,6 +75,6 @@ final class SessionFactory implements Supplier<WebSocketSession>
         return new WebSocketSession(
             perSessionDataListener, frameDecoder,
             frameEncoder, sessionConfig, bufferPool, application, pingAgent,
-            sessionStatistics, sessionContainerStatistics);
+            sharedClock, sessionStatistics, sessionContainerStatistics);
     }
 }

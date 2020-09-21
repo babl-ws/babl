@@ -70,7 +70,7 @@ public class WebSocketSessionBenchmark
         messageDispatcher, SESSION_CONFIG, bufferPool, pingAgent, false, SESSION_CONTAINER_STATISTICS);
     private final ByteBuffer singleFramePayload = ByteBuffer.allocateDirect(106);
     private final WebSocketSession session = new WebSocketSession(SESSION_DATA_LISTENER, frameDecoder, frameEncoder,
-        SESSION_CONFIG, bufferPool, application, pingAgent, SESSION_STATISTICS, SESSION_CONTAINER_STATISTICS);
+        SESSION_CONFIG, bufferPool, application, pingAgent, CLOCK, SESSION_STATISTICS, SESSION_CONTAINER_STATISTICS);
     private final DataSource dataSource = new DataSource();
     private final DataSink dataSink = new DataSink();
 

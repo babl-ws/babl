@@ -85,7 +85,7 @@ class WebSocketSessionTest
         .maxWebSocketFrameLength(65536)
         .pingIntervalNanos(TimeUnit.MILLISECONDS.toNanos(PING_INTERVAL_MS))
         .pongResponseTimeoutNanos(TimeUnit.MILLISECONDS.toNanos(PONG_RESPONSE_TIMEOUT_MS));
-    private final EpochClock clock = mock(EpochClock.class);
+    private final EpochClock clock = mock(EpochClock.class, "static");
     private final FrameEncoder frameEncoder = new FrameEncoder(
         bufferPool, sessionDataListener, sessionConfig, sessionContainerStatistics);
     private final PingAgent pingAgent = new PingAgent(
@@ -95,9 +95,9 @@ class WebSocketSessionTest
         new FrameDecoder(new MessageDispatcher(application), sessionConfig, bufferPool,
         pingAgent, true, sessionContainerStatistics),
         frameEncoder,
-        sessionConfig, bufferPool, application, pingAgent, sessionStatistics, sessionContainerStatistics);
+        sessionConfig, bufferPool, application, pingAgent, clock, sessionStatistics, sessionContainerStatistics);
     private final UnsafeBuffer applicationBuffer = new UnsafeBuffer(new byte[512]);
-    private SelectionKey selectionKey;
+    private final SelectionKey selectionKey = mock(SelectionKey.class);
 
     @BeforeAll
     static void enableLogging()
@@ -110,8 +110,27 @@ class WebSocketSessionTest
     {
         given(clock.time()).willReturn(BASE_TIME_MS);
         session.init(SESSION_ID, connectionUpgrade, cu -> {}, BASE_TIME_MS, channel, channel);
-        selectionKey = Mockito.mock(SelectionKey.class);
         session.selectionKey(selectionKey);
+    }
+
+    @Test
+    void shouldDisconnectAfterClosingPhaseTimeOut() throws IOException
+    {
+        final EpochClock advancingClock = mock(EpochClock.class, "advancing");
+        given(advancingClock.time()).willReturn(BASE_TIME_MS, BASE_TIME_MS + 6_000L);
+        final WebSocketSession closingSession = new WebSocketSession(
+            sessionDataListener,
+            new FrameDecoder(
+            new MessageDispatcher(application), sessionConfig, bufferPool,
+            pingAgent, true, sessionContainerStatistics),
+            frameEncoder, sessionConfig, bufferPool, application, pingAgent,
+            advancingClock, sessionStatistics, sessionContainerStatistics);
+        closingSession.init(SESSION_ID, connectionUpgrade, cu -> {}, BASE_TIME_MS, channel, channel);
+        closingSession.selectionKey(selectionKey);
+        closingSession.onCloseMessage((short)1);
+        closingSession.doSendWork();
+
+        verify(sessionDataListener).sessionClosed();
     }
 
     @Test
