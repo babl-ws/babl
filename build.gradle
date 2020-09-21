@@ -54,6 +54,7 @@ java {
 publishing {
     publications {
         mavenJava(MavenPublication) {
+            from components.java
             pom {
                 name = fullName
                 description = fullDescription
@@ -161,7 +162,7 @@ jar {
     manifest {
         attributes(
             "Implementation-Title": "Babl",
-            "Implementation-Version": version,
+            "Implementation-Version": project.version,
             "Implementation-Vendor": "Aitu Software Limited",
             "Automatic-Module-Name": "com.aitusoftware.babl"
         )
