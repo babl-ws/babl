@@ -42,6 +42,7 @@ public final class ContextConfiguration
                     .clientLivenessTimeoutNs(TimeUnit.SECONDS.toNanos(7L))
                     .publicationUnblockTimeoutNs(TimeUnit.SECONDS.toNanos(8L))
                     .timerIntervalNs(TimeUnit.SECONDS.toNanos(6L))
+                    .untetheredWindowLimitTimeoutNs(TimeUnit.SECONDS.toNanos(7L))
                     .threadingMode(ThreadingMode.SHARED)
                     .sharedIdleStrategy(lowResource());
                 break;
