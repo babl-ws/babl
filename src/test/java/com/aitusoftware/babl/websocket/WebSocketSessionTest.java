@@ -128,7 +128,7 @@ class WebSocketSessionTest
         closingSession.init(SESSION_ID, connectionUpgrade, cu -> {}, BASE_TIME_MS, channel, channel);
         closingSession.selectionKey(selectionKey);
         closingSession.onCloseMessage((short)1);
-        closingSession.doSendWork();
+        closingSession.doAdminWork();
 
         verify(sessionDataListener).sessionClosed();
     }

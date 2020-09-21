@@ -49,7 +49,7 @@ public final class WebSocketSession implements Pooled, Session
     private static final int MAX_FRAMES = 4;
     private static final int UPGRADE_SEND_BUFFER_SIZE = 1024;
     private static final short NULL_CLOSE_REASON = Short.MIN_VALUE;
-    private static final long CLOSING_TIMEOUT_MS = 5_000L;
+    private static final long CLOSING_TIMEOUT_MS = 3_000L;
 
     private final FrameDecoder frameDecoder;
     private final FrameEncoder frameEncoder;
@@ -114,6 +114,10 @@ public final class WebSocketSession implements Pooled, Session
         frameDecoder.reset();
         frameEncoder.reset();
         undeliveredDisconnectReason = null;
+        if (selectionKey != null)
+        {
+            selectionKey.cancel();
+        }
         selectionKey = null;
         closingTimestampMs = 0L;
     }
@@ -209,6 +213,13 @@ public final class WebSocketSession implements Pooled, Session
             case CONNECTED:
                 workDone = pingAgent.doWork() + processLingeringClose();
                 break;
+            case CLOSING:
+                if (closingPhaseTimeOut())
+                {
+                    sessionClosed(DisconnectReason.LIFECYCLE);
+                    workDone = 1;
+                }
+                break;
             default:
                 // no-op
         }
@@ -262,7 +273,7 @@ public final class WebSocketSession implements Pooled, Session
             {
                 closeReason = NULL_CLOSE_REASON;
             }
-            if (frameEncoder.sendBuffer().remaining() == 0 || closingPhaseTimeOut())
+            if (frameEncoder.sendBuffer().remaining() == 0)
             {
                 sessionClosed(DisconnectReason.LIFECYCLE);
                 return 1;
