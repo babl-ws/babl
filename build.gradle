@@ -1,7 +1,6 @@
 buildscript {
     repositories {
         mavenCentral()
-        jcenter()
     }
 }
 
@@ -24,7 +23,7 @@ version = bablVersion
 defaultTasks('clean', 'licenseFormat', 'check', 'assemble', 'shadowJar')
 
 repositories {
-    jcenter()
+    mavenCentral()
 }
 
 ext {
@@ -54,6 +53,7 @@ java {
 publishing {
     publications {
         mavenJava(MavenPublication) {
+            artifactId = 'babl'
             from components.java
             pom {
                 name = fullName
@@ -77,6 +77,17 @@ publishing {
                     developerConnection = "scm:git:https://github.com/babl-ws/babl.git"
                     url = sourceUrl
                 }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name = 'MavenCentral'
+            url = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
+            credentials {
+                username = sonatypeUsername
+                password = sonatypePassword
             }
         }
     }
