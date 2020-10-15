@@ -14,7 +14,7 @@ allocation-free, lock-free event-loop for maximum efficiency and mechanical symp
 
 ## Documentation
 
-   * [Getting Started](https://babl.ws/)
+   * [Getting Started](https://babl.ws/getting_started.html)
    * [Your Application](https://babl.ws/application.html)
    * [Configuration](https://babl.ws/configuration.html)
    * [Architecture](https://babl.ws/architecture.html)
