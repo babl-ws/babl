@@ -269,7 +269,10 @@ public final class ProxyConfig implements AutoCloseable
     public void close()
     {
         CloseHelper.close(aeron);
-        CloseHelper.close(mediaDriver);
+        if (mediaDriverInvoker == null)
+        {
+            CloseHelper.close(mediaDriver);
+        }
     }
 
     /**
