@@ -36,6 +36,7 @@ import com.aitusoftware.babl.config.ProxyConfig;
 import com.aitusoftware.babl.config.SessionContainerConfig;
 import com.aitusoftware.babl.io.ConnectionPoller;
 import com.aitusoftware.babl.monitoring.MappedApplicationAdapterStatistics;
+import com.aitusoftware.babl.monitoring.MappedBroadcastStatistics;
 import com.aitusoftware.babl.monitoring.MappedConnectorStatistics;
 import com.aitusoftware.babl.monitoring.MappedFile;
 import com.aitusoftware.babl.monitoring.MappedSessionContainerAdapterStatistics;
@@ -217,7 +218,8 @@ public final class BablServer
         toServerChannels[sessionContainerId] = new OneToOneConcurrentArrayQueue<>(16);
         final SessionContainerAdapter sessionContainerAdapter = new SessionContainerAdapter(
             sessionContainerId, sessionByIdMap, toServerSubscription,
-            proxyConfig.serverAdapterPollFragmentLimit(), backPressureStrategy);
+            proxyConfig.serverAdapterPollFragmentLimit(), backPressureStrategy,
+            new SessionBroadcast(new Long2ObjectHashMap<>(), new MappedBroadcastStatistics()));
         sessionContainers[sessionContainerId] = new SessionContainer(
             sessionContainerId,
             applicationProxy, bablConfig.sessionConfig(),

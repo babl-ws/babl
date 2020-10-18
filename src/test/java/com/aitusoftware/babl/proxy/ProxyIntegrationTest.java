@@ -20,11 +20,11 @@ package com.aitusoftware.babl.proxy;
 import static com.aitusoftware.babl.codec.VarDataEncodingEncoder.varDataEncodingOffset;
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.notNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -47,6 +47,7 @@ import com.aitusoftware.babl.monitoring.NoOpSessionContainerAdapterStatistics;
 import com.aitusoftware.babl.monitoring.NoOpSessionContainerStatistics;
 import com.aitusoftware.babl.user.Application;
 import com.aitusoftware.babl.user.ContentType;
+import com.aitusoftware.babl.websocket.Broadcast;
 import com.aitusoftware.babl.websocket.MaintainBackPressureStrategy;
 import com.aitusoftware.babl.websocket.Session;
 
@@ -94,6 +95,7 @@ class ProxyIntegrationTest
     private final MutableDirectBuffer buffer = new UnsafeBuffer(new byte[1024]);
     private final MutableDirectBuffer payload = new UnsafeBuffer(new byte[PAYLOAD_LENGTH]);
     private final Session session = mock(Session.class);
+    private final Broadcast broadcast = mock(Broadcast.class);
 
     private static final byte PAYLOAD_VALUE = (byte)7;
     private final Application application = mock(Application.class);
@@ -163,7 +165,7 @@ class ProxyIntegrationTest
         sessionByIdMap.put(SESSION_ID, session);
         final SessionContainerAdapter sessionContainerAdapter = new SessionContainerAdapter(
             0, sessionByIdMap, applicationToServerSubscription, POLL_FRAGMENT_LIMIT,
-            new MaintainBackPressureStrategy());
+            new MaintainBackPressureStrategy(), broadcast);
         sessionContainerAdapter.sessionAdapterStatistics(new NoOpSessionContainerAdapterStatistics());
 
         final SessionProxy sessionProxy = new SessionProxy(

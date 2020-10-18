@@ -20,15 +20,21 @@ package com.aitusoftware.babl.proxy;
 import static com.aitusoftware.babl.codec.VarDataEncodingEncoder.varDataEncodingOffset;
 import static com.aitusoftware.babl.proxy.ProxyUtil.sendResultToAction;
 
+import com.aitusoftware.babl.codec.AddSessionToTopicDecoder;
 import com.aitusoftware.babl.codec.ApplicationMessageDecoder;
 import com.aitusoftware.babl.codec.CloseSessionDecoder;
+import com.aitusoftware.babl.codec.CreateTopicDecoder;
+import com.aitusoftware.babl.codec.DeleteTopicDecoder;
 import com.aitusoftware.babl.codec.MessageHeaderDecoder;
+import com.aitusoftware.babl.codec.RemoveSessionFromTopicDecoder;
+import com.aitusoftware.babl.codec.TopicMessageDecoder;
 import com.aitusoftware.babl.codec.VarDataEncodingDecoder;
 import com.aitusoftware.babl.log.Category;
 import com.aitusoftware.babl.log.Logger;
 import com.aitusoftware.babl.monitoring.SessionContainerAdapterStatistics;
 import com.aitusoftware.babl.user.ContentType;
 import com.aitusoftware.babl.websocket.BackPressureStrategy;
+import com.aitusoftware.babl.websocket.Broadcast;
 import com.aitusoftware.babl.websocket.DisconnectReason;
 import com.aitusoftware.babl.websocket.SendResult;
 import com.aitusoftware.babl.websocket.Session;
@@ -48,15 +54,22 @@ public final class SessionContainerAdapter implements ControlledFragmentHandler,
 {
     private static final ContentType[] CONTENT_TYPES = ContentType.values();
     private static final DisconnectReason[] DISCONNECT_REASONS = DisconnectReason.values();
+
     private final MessageHeaderDecoder messageHeaderDecoder = new MessageHeaderDecoder();
     private final ApplicationMessageDecoder applicationMessageDecoder = new ApplicationMessageDecoder();
     private final CloseSessionDecoder closeSessionDecoder = new CloseSessionDecoder();
+    private final CreateTopicDecoder createTopicDecoder = new CreateTopicDecoder();
+    private final DeleteTopicDecoder deleteTopicDecoder = new DeleteTopicDecoder();
+    private final AddSessionToTopicDecoder addToTopicDecoder = new AddSessionToTopicDecoder();
+    private final RemoveSessionFromTopicDecoder removeFromTopicDecoder = new RemoveSessionFromTopicDecoder();
+    private final TopicMessageDecoder topicMessageDecoder = new TopicMessageDecoder();
     private final int sessionContainerId;
     private final Long2ObjectHashMap<Session> sessionByIdMap;
     private final Subscription fromApplicationSubscription;
     private final int sessionAdapterPollFragmentLimit;
     private final BackPressureStrategy backPressureStrategy;
     private final String agentName;
+    private final Broadcast broadcast;
     private SessionContainerAdapterStatistics sessionContainerAdapterStatistics;
 
     /**
@@ -67,19 +80,22 @@ public final class SessionContainerAdapter implements ControlledFragmentHandler,
      * @param fromApplicationSubscription     IPC subscription for messages from the application
      * @param sessionAdapterPollFragmentLimit maximum number of messages to process per invocation of the event-loop
      * @param backPressureStrategy            strategy to deal with back-pressure when sending to remote peers
+     * @param broadcast                       handle for broadcast messages
      */
     public SessionContainerAdapter(
         final int sessionContainerId,
         final Long2ObjectHashMap<Session> sessionByIdMap,
         final Subscription fromApplicationSubscription,
         final int sessionAdapterPollFragmentLimit,
-        final BackPressureStrategy backPressureStrategy)
+        final BackPressureStrategy backPressureStrategy,
+        final Broadcast broadcast)
     {
         this.sessionContainerId = sessionContainerId;
         this.sessionByIdMap = sessionByIdMap;
         this.fromApplicationSubscription = fromApplicationSubscription;
         this.sessionAdapterPollFragmentLimit = sessionAdapterPollFragmentLimit;
         this.backPressureStrategy = backPressureStrategy;
+        this.broadcast = broadcast;
         agentName = "babl-session-adapter-" + sessionContainerId;
     }
 
@@ -95,50 +111,58 @@ public final class SessionContainerAdapter implements ControlledFragmentHandler,
     {
         Action action = Action.CONTINUE;
         messageHeaderDecoder.wrap(buffer, offset);
-        if (messageHeaderDecoder.templateId() == ApplicationMessageDecoder.TEMPLATE_ID)
+        switch (messageHeaderDecoder.templateId())
         {
-            applicationMessageDecoder.wrap(buffer, offset + MessageHeaderDecoder.ENCODED_LENGTH,
-                messageHeaderDecoder.blockLength(), messageHeaderDecoder.version());
-            if (applicationMessageDecoder.containerId() != sessionContainerId)
-            {
-                return action;
-            }
-            final long sessionId = applicationMessageDecoder.sessionId();
-            final ContentType contentType = CONTENT_TYPES[applicationMessageDecoder.contentType()];
-            final VarDataEncodingDecoder decodedMessage = applicationMessageDecoder.message();
-            Logger.log(Category.PROXY, "[%d] SessionContainerAdapter send(sessionId: %d)%n",
-                sessionContainerId, sessionId);
-            final Session session = sessionByIdMap.get(sessionId);
-            if (session != null)
-            {
-                int sendResult = session.send(contentType, decodedMessage.buffer(),
-                    decodedMessage.offset() + varDataEncodingOffset(), (int)decodedMessage.length());
-                if (sendResult == SendResult.BACK_PRESSURE)
-                {
-                    sendResult = backPressureStrategy.onSessionBackPressure(session);
-                    sessionContainerAdapterStatistics.onSessionBackPressure();
-                }
-                action = sendResultToAction(sendResult);
-            }
-        }
-        else if (messageHeaderDecoder.templateId() == CloseSessionDecoder.TEMPLATE_ID)
-        {
-            closeSessionDecoder.wrap(buffer, offset + MessageHeaderDecoder.ENCODED_LENGTH,
-                messageHeaderDecoder.blockLength(), messageHeaderDecoder.version());
-            if (applicationMessageDecoder.containerId() != sessionContainerId)
-            {
-                return action;
-            }
-            final long sessionId = closeSessionDecoder.sessionId();
-            final DisconnectReason disconnectReason = DISCONNECT_REASONS[closeSessionDecoder.closeReason()];
-            Logger.log(Category.PROXY, "[%d] SessionContainerAdapter close(sessionId: %d)%n",
-                sessionContainerId, sessionId);
-            final Session session = sessionByIdMap.get(sessionId);
-            session.close(disconnectReason);
+            case ApplicationMessageDecoder.TEMPLATE_ID:
+
+                action = handleApplicationMessage(buffer, offset);
+                break;
+
+            case CloseSessionDecoder.TEMPLATE_ID:
+
+                handleCloseMessage(buffer, offset);
+                break;
+
+            case CreateTopicDecoder.TEMPLATE_ID:
+
+                createTopicDecoder.wrap(buffer, offset + MessageHeaderDecoder.ENCODED_LENGTH,
+                    messageHeaderDecoder.blockLength(), messageHeaderDecoder.version());
+                broadcast.createTopic(createTopicDecoder.topicId());
+                break;
+
+            case DeleteTopicDecoder.TEMPLATE_ID:
+
+                deleteTopicDecoder.wrap(buffer, offset + MessageHeaderDecoder.ENCODED_LENGTH,
+                    messageHeaderDecoder.blockLength(), messageHeaderDecoder.version());
+                broadcast.deleteTopic(deleteTopicDecoder.topicId());
+                break;
+
+            case AddSessionToTopicDecoder.TEMPLATE_ID:
+
+                addToTopicDecoder.wrap(buffer, offset + MessageHeaderDecoder.ENCODED_LENGTH,
+                    messageHeaderDecoder.blockLength(), messageHeaderDecoder.version());
+                broadcast.addToTopic(addToTopicDecoder.topicId(), addToTopicDecoder.sessionId());
+                break;
+
+            case RemoveSessionFromTopicDecoder.TEMPLATE_ID:
+
+                removeFromTopicDecoder.wrap(buffer, offset + MessageHeaderDecoder.ENCODED_LENGTH,
+                    messageHeaderDecoder.blockLength(), messageHeaderDecoder.version());
+                broadcast.removeFromTopic(removeFromTopicDecoder.topicId(), removeFromTopicDecoder.sessionId());
+                break;
+
+            case TopicMessageDecoder.TEMPLATE_ID:
+                action = handleTopicMessage(buffer, offset);
+
+                break;
+
+            default:
+                throw new IllegalArgumentException("Unknown templateId: " + messageHeaderDecoder.templateId());
         }
 
         return action;
     }
+
 
     /**
      * {@inheritDoc}
@@ -171,5 +195,73 @@ public final class SessionContainerAdapter implements ControlledFragmentHandler,
     public void sessionAdapterStatistics(final SessionContainerAdapterStatistics statistics)
     {
         this.sessionContainerAdapterStatistics = statistics;
+    }
+
+    private Action handleTopicMessage(final DirectBuffer buffer, final int offset)
+    {
+        final VarDataEncodingDecoder decodedMessage;
+        final ContentType contentType;
+        topicMessageDecoder.wrap(buffer, offset + MessageHeaderDecoder.ENCODED_LENGTH,
+            messageHeaderDecoder.blockLength(), messageHeaderDecoder.version());
+        contentType = CONTENT_TYPES[topicMessageDecoder.contentType()];
+        decodedMessage = topicMessageDecoder.message();
+        final int sendResult = broadcast.sendToTopic(
+            topicMessageDecoder.topicId(), contentType, decodedMessage.buffer(),
+            decodedMessage.offset() + varDataEncodingOffset(), (int)decodedMessage.length());
+
+        if (sendResult == SendResult.BACK_PRESSURE)
+        {
+            sessionContainerAdapterStatistics.onSessionBackPressure();
+        }
+        return sendResultToAction(sendResult);
+    }
+
+    private void handleCloseMessage(final DirectBuffer buffer, final int offset)
+    {
+        closeSessionDecoder.wrap(buffer, offset + MessageHeaderDecoder.ENCODED_LENGTH,
+            messageHeaderDecoder.blockLength(), messageHeaderDecoder.version());
+        if (applicationMessageDecoder.containerId() == sessionContainerId)
+        {
+            final long sessionId = closeSessionDecoder.sessionId();
+            final DisconnectReason disconnectReason = DISCONNECT_REASONS[closeSessionDecoder.closeReason()];
+            Logger.log(Category.PROXY, "[%d] SessionContainerAdapter close(sessionId: %d)%n",
+                sessionContainerId, sessionId);
+            final Session session = sessionByIdMap.get(sessionId);
+            if (session != null)
+            {
+                session.close(disconnectReason);
+            }
+        }
+    }
+
+    private Action handleApplicationMessage(final DirectBuffer buffer, final int offset)
+    {
+        final VarDataEncodingDecoder decodedMessage;
+        final ContentType contentType;
+        final long sessionId;
+        final Session session;
+        applicationMessageDecoder.wrap(buffer, offset + MessageHeaderDecoder.ENCODED_LENGTH,
+            messageHeaderDecoder.blockLength(), messageHeaderDecoder.version());
+        if (applicationMessageDecoder.containerId() == sessionContainerId)
+        {
+            sessionId = applicationMessageDecoder.sessionId();
+            contentType = CONTENT_TYPES[applicationMessageDecoder.contentType()];
+            decodedMessage = applicationMessageDecoder.message();
+            Logger.log(Category.PROXY, "[%d] SessionContainerAdapter send(sessionId: %d)%n",
+                sessionContainerId, sessionId);
+            session = sessionByIdMap.get(sessionId);
+            if (session != null)
+            {
+                int sendResult = session.send(contentType, decodedMessage.buffer(),
+                    decodedMessage.offset() + varDataEncodingOffset(), (int)decodedMessage.length());
+                if (sendResult == SendResult.BACK_PRESSURE)
+                {
+                    sendResult = backPressureStrategy.onSessionBackPressure(session);
+                    sessionContainerAdapterStatistics.onSessionBackPressure();
+                }
+                return sendResultToAction(sendResult);
+            }
+        }
+        return Action.CONTINUE;
     }
 }
