@@ -43,8 +43,10 @@ import com.aitusoftware.babl.monitoring.MappedSessionContainerAdapterStatistics;
 import com.aitusoftware.babl.monitoring.ServerMarkFile;
 import com.aitusoftware.babl.proxy.ApplicationAdapter;
 import com.aitusoftware.babl.proxy.ApplicationProxy;
+import com.aitusoftware.babl.proxy.BroadcastProxy;
 import com.aitusoftware.babl.proxy.SessionContainerAdapter;
 import com.aitusoftware.babl.user.Application;
+import com.aitusoftware.babl.user.BroadcastSource;
 
 import org.agrona.ErrorHandler;
 import org.agrona.collections.Long2ObjectHashMap;
@@ -60,6 +62,7 @@ import org.agrona.concurrent.errors.LoggingErrorHandler;
 
 import io.aeron.Aeron;
 import io.aeron.CommonContext;
+import io.aeron.ExclusivePublication;
 import io.aeron.Publication;
 import io.aeron.Subscription;
 
@@ -116,23 +119,35 @@ public final class BablServer
             final Queue<SocketChannel>[] toServerChannels = new Queue[instanceCount];
             final BackPressureStrategy backPressureStrategy = forPolicy(proxyConfig.backPressurePolicy());
             final List<AutoCloseable> dependencies = new ArrayList<>();
+            final MappedFile applicationAdapterMappedFile =
+                new MappedFile(Paths.get(sessionContainerConfig.serverDirectory(0),
+                MappedApplicationAdapterStatistics.FILE_NAME), MappedApplicationAdapterStatistics.LENGTH);
+            final MappedApplicationAdapterStatistics applicationAdapterStatistics =
+                new MappedApplicationAdapterStatistics(applicationAdapterMappedFile);
+            final boolean enableBroadcast = application instanceof BroadcastSource;
+            if (enableBroadcast)
+            {
+                final ExclusivePublication broadcastPublication =
+                    aeron.addExclusivePublication(CommonContext.IPC_CHANNEL, proxyConfig.broadcastStreamId());
+                ((BroadcastSource)application).setBroadcast(
+                    new BroadcastProxy(broadcastPublication, applicationAdapterStatistics));
+            }
+
             for (int i = 0; i < instanceCount; i++)
             {
                 initialiseServerInstance(
                     bablConfig, sessionContainerConfig, proxyConfig, aeron, toApplicationPublication,
                     toServerPublications, sessionContainers, serverMarkFiles, toServerChannels, backPressureStrategy,
-                    dependencies, i);
+                    dependencies, enableBroadcast, i);
             }
             final ServerMarkFile serverMarkFile = serverMarkFiles[0];
             final DistinctErrorLog errorLog = new DistinctErrorLog(serverMarkFile.errorBuffer(),
                 SystemEpochClock.INSTANCE);
             final ErrorHandler errorHandler = new LoggingErrorHandler(errorLog);
-            final MappedFile mappedFile = new MappedFile(Paths.get(sessionContainerConfig.serverDirectory(0),
-                MappedApplicationAdapterStatistics.FILE_NAME), MappedApplicationAdapterStatistics.LENGTH);
-            final MappedApplicationAdapterStatistics applicationAdapterStatistics =
-                new MappedApplicationAdapterStatistics(mappedFile);
+
             applicationAdapterStatistics.reset();
             dependencies.add(applicationAdapterStatistics);
+
             final int maxActiveSessionCount =
                 sessionContainerConfig.sessionContainerInstanceCount() *
                 sessionContainerConfig.activeSessionLimit();
@@ -207,12 +222,15 @@ public final class BablServer
         final Queue<SocketChannel>[] toServerChannels,
         final BackPressureStrategy backPressureStrategy,
         final List<AutoCloseable> dependencies,
+        final boolean enableBroadcast,
         final int sessionContainerId)
     {
         final int serverSubscriptionStreamId = proxyConfig.serverStreamBaseId() + sessionContainerId;
         final Subscription toServerSubscription =
             aeron.addSubscription(CommonContext.IPC_CHANNEL,
             serverSubscriptionStreamId);
+        final Subscription broadcastSubscription = enableBroadcast ?
+            aeron.addSubscription(CommonContext.IPC_CHANNEL, proxyConfig.broadcastStreamId()) : null;
         final Long2ObjectHashMap<Session> sessionByIdMap = new Long2ObjectHashMap<>();
         final ApplicationProxy applicationProxy = new ApplicationProxy(sessionContainerId, sessionByIdMap);
         toServerChannels[sessionContainerId] = new OneToOneConcurrentArrayQueue<>(16);
@@ -220,7 +238,7 @@ public final class BablServer
             Paths.get(sessionContainerConfig.serverDirectory(sessionContainerId), MappedBroadcastStatistics.FILE_NAME),
             MappedBroadcastStatistics.LENGTH);
         final SessionContainerAdapter sessionContainerAdapter = new SessionContainerAdapter(
-            sessionContainerId, sessionByIdMap, toServerSubscription,
+            sessionContainerId, sessionByIdMap, toServerSubscription, broadcastSubscription,
             proxyConfig.serverAdapterPollFragmentLimit(), backPressureStrategy,
             new SessionBroadcast(sessionByIdMap, new MappedBroadcastStatistics(broadcastStatsFile)));
         sessionContainers[sessionContainerId] = new SessionContainer(

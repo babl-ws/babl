@@ -41,6 +41,8 @@ public final class ProxyConfig implements AutoCloseable
         Constants.APPLICATION_STREAM_BASE_ID_PROPERTY, Constants.APPLICATION_STREAM_BASE_ID_DEFAULT);
     private int serverStreamBaseId = Integer.getInteger(
         Constants.SERVER_STREAM_BASE_ID_PROPERTY, Constants.SERVER_STREAM_BASE_ID_DEFAULT);
+    private int broadcastStreamId = Integer.getInteger(
+        Constants.BROADCAST_STREAM_ID_PROPERTY, Constants.BROADCAST_STREAM_ID_DEFAULT);
     private boolean launchMediaDriver = ConfigUtil.mapBoolean(
         Constants.LAUNCH_MEDIA_DRIVER_PROPERTY, Constants.LAUNCH_MEDIA_DRIVER_DEFAULT);
     private int applicationAdapterPollFragmentLimit = Integer.getInteger(
@@ -149,6 +151,26 @@ public final class ProxyConfig implements AutoCloseable
     public ProxyConfig serverStreamBaseId(final int serverStreamBaseId)
     {
         this.serverStreamBaseId = serverStreamBaseId;
+        return this;
+    }
+
+    /**
+     * Returns the broadcast IPC stream ID.
+     * @return the broadcast IPC stream ID
+     */
+    public int broadcastStreamId()
+    {
+        return broadcastStreamId;
+    }
+
+    /**
+     * Sets the broadcast IPC stream ID.
+     * @param broadcastStreamId the stream ID
+     * @return this for a fluent API
+     */
+    public ProxyConfig broadcastStreamId(final int broadcastStreamId)
+    {
+        this.broadcastStreamId = broadcastStreamId;
         return this;
     }
 
@@ -320,6 +342,16 @@ public final class ProxyConfig implements AutoCloseable
          * Default value for the session container IPC stream ID
          */
         public static final int SERVER_STREAM_BASE_ID_DEFAULT = 6000;
+
+        /**
+         * System property that will be used to set the broadcast IPC stream ID
+         */
+        public static final String BROADCAST_STREAM_ID_PROPERTY = "babl.proxy.broadcast.stream.id";
+
+        /**
+         * Default value for the broadcast IPC stream ID
+         */
+        public static final int BROADCAST_STREAM_ID_DEFAULT = 4900;
 
         /**
          * System property that will be used to set whether to launch an Aeron MediaDriver

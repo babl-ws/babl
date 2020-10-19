@@ -66,6 +66,7 @@ public final class SessionContainerAdapter implements ControlledFragmentHandler,
     private final int sessionContainerId;
     private final Long2ObjectHashMap<Session> sessionByIdMap;
     private final Subscription fromApplicationSubscription;
+    private final Subscription broadcastSubscription;
     private final int sessionAdapterPollFragmentLimit;
     private final BackPressureStrategy backPressureStrategy;
     private final String agentName;
@@ -74,10 +75,10 @@ public final class SessionContainerAdapter implements ControlledFragmentHandler,
 
     /**
      * Constructor.
-     *
      * @param sessionContainerId              identifier for the session container instance
      * @param sessionByIdMap                  map containing sessions keyed by ID
      * @param fromApplicationSubscription     IPC subscription for messages from the application
+     * @param broadcastSubscription           IPC subscription for broadcasts from the application
      * @param sessionAdapterPollFragmentLimit maximum number of messages to process per invocation of the event-loop
      * @param backPressureStrategy            strategy to deal with back-pressure when sending to remote peers
      * @param broadcast                       handle for broadcast messages
@@ -86,6 +87,7 @@ public final class SessionContainerAdapter implements ControlledFragmentHandler,
         final int sessionContainerId,
         final Long2ObjectHashMap<Session> sessionByIdMap,
         final Subscription fromApplicationSubscription,
+        final Subscription broadcastSubscription,
         final int sessionAdapterPollFragmentLimit,
         final BackPressureStrategy backPressureStrategy,
         final Broadcast broadcast)
@@ -93,6 +95,7 @@ public final class SessionContainerAdapter implements ControlledFragmentHandler,
         this.sessionContainerId = sessionContainerId;
         this.sessionByIdMap = sessionByIdMap;
         this.fromApplicationSubscription = fromApplicationSubscription;
+        this.broadcastSubscription = broadcastSubscription;
         this.sessionAdapterPollFragmentLimit = sessionAdapterPollFragmentLimit;
         this.backPressureStrategy = backPressureStrategy;
         this.broadcast = broadcast;
@@ -170,12 +173,23 @@ public final class SessionContainerAdapter implements ControlledFragmentHandler,
     @Override
     public int doWork()
     {
-        final int workDone = fromApplicationSubscription.controlledPoll(this, sessionAdapterPollFragmentLimit);
-        if (workDone == sessionAdapterPollFragmentLimit)
+        final int sessionWorkDone =
+            fromApplicationSubscription.controlledPoll(this, sessionAdapterPollFragmentLimit);
+        if (sessionWorkDone == sessionAdapterPollFragmentLimit)
         {
             sessionContainerAdapterStatistics.adapterPollLimitReached();
         }
-        return workDone;
+        int broadcastWorkDone = 0;
+        if (broadcastSubscription != null)
+        {
+            broadcastWorkDone =
+                broadcastSubscription.controlledPoll(this, sessionAdapterPollFragmentLimit);
+            if (broadcastWorkDone == sessionAdapterPollFragmentLimit)
+            {
+                sessionContainerAdapterStatistics.adapterPollLimitReached();
+            }
+        }
+        return sessionWorkDone + broadcastWorkDone;
     }
 
     /**

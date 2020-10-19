@@ -168,6 +168,8 @@ public final class PropertiesLoader
             proxyConfig::applicationStreamBaseId, properties);
         mapInt(ProxyConfig.Constants.SERVER_STREAM_BASE_ID_PROPERTY,
             proxyConfig::serverStreamBaseId, properties);
+        mapInt(ProxyConfig.Constants.BROADCAST_STREAM_ID_PROPERTY,
+            proxyConfig::broadcastStreamId, properties);
         mapType(ProxyConfig.Constants.LAUNCH_MEDIA_DRIVER_PROPERTY,
             proxyConfig::launchMediaDriver, Boolean::parseBoolean, properties);
         map(ProxyConfig.Constants.MEDIA_DRIVER_DIRECTORY_PROPERTY,

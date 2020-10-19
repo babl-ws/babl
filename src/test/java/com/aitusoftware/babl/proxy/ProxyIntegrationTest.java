@@ -164,7 +164,7 @@ class ProxyIntegrationTest
         final Long2ObjectHashMap<Session> sessionByIdMap = new Long2ObjectHashMap<>();
         sessionByIdMap.put(SESSION_ID, session);
         final SessionContainerAdapter sessionContainerAdapter = new SessionContainerAdapter(
-            0, sessionByIdMap, applicationToServerSubscription, POLL_FRAGMENT_LIMIT,
+            0, sessionByIdMap, applicationToServerSubscription, null, POLL_FRAGMENT_LIMIT,
             new MaintainBackPressureStrategy(), broadcast);
         sessionContainerAdapter.sessionAdapterStatistics(new NoOpSessionContainerAdapterStatistics());
 
