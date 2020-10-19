@@ -41,7 +41,7 @@ import org.agrona.DirectBuffer;
 import io.aeron.Publication;
 import io.aeron.logbuffer.BufferClaim;
 
-final class BroadcastProxy implements Broadcast
+public final class BroadcastProxy implements Broadcast
 {
     private static final int HEADER_LENGTH = MessageHeaderEncoder.ENCODED_LENGTH;
     private static final int CREATE_TOPIC_MSG_LENGTH =
@@ -66,7 +66,7 @@ final class BroadcastProxy implements Broadcast
     private final Publication broadcastPublication;
     private final ApplicationAdapterStatistics applicationAdapterStatistics;
 
-    BroadcastProxy(
+    public BroadcastProxy(
         final Publication broadcastPublication,
         final ApplicationAdapterStatistics applicationAdapterStatistics)
     {

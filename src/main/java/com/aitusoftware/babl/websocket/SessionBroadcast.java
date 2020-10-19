@@ -36,6 +36,7 @@ final class SessionBroadcast implements Broadcast
         new Int2ObjectHashMap<>(64, Hashing.DEFAULT_LOAD_FACTOR);
     private final Long2ObjectHashMap<Session> sessionByIdMap;
     private final BroadcastStatistics statistics;
+    private final LongHashSet removalSet = new LongHashSet(128);
 
     SessionBroadcast(
         final Long2ObjectHashMap<Session> sessionByIdMap,
@@ -104,6 +105,7 @@ final class SessionBroadcast implements Broadcast
         final PooledSessionSet sessionSet = topicMap.get(topicId);
         if (sessionSet != null)
         {
+            removalSet.clear();
             final LongHashSet.LongIterator iterator = sessionSet.set.iterator();
             while (iterator.hasNext())
             {
@@ -116,8 +118,17 @@ final class SessionBroadcast implements Broadcast
                         statistics.broadcastSessionBackPressure();
                     }
                 }
+                else
+                {
+                    removalSet.add(sessionId);
+                }
+            }
+            if (!removalSet.isEmpty())
+            {
+                sessionSet.set.removeAll(removalSet);
             }
         }
+
         return SendResult.OK;
     }
 

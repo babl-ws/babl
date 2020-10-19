@@ -17,17 +17,57 @@
  */
 package com.aitusoftware.babl.monitoring;
 
-public final class MappedBroadcastStatistics extends BroadcastStatistics
+import java.io.Closeable;
+
+import org.agrona.BitUtil;
+import org.agrona.CloseHelper;
+import org.agrona.concurrent.AtomicBuffer;
+
+public final class MappedBroadcastStatistics extends BroadcastStatistics implements Closeable
 {
+    private static final int SESSION_BACK_PRESSURE_COUNT_OFFSET = 0;
+    private static final int TOPIC_COUNT_OFFSET = SESSION_BACK_PRESSURE_COUNT_OFFSET + BitUtil.SIZE_OF_LONG;
+    public static final int LENGTH = TOPIC_COUNT_OFFSET + BitUtil.SIZE_OF_INT;
+    public static final String FILE_NAME = "broadcast-stats.data";
+
+    private final MappedFile mappedFile;
+    private final AtomicBuffer buffer;
+
+    private long sessionBackPressureCount;
+
+    public MappedBroadcastStatistics(
+        final MappedFile mappedFile)
+    {
+        this.mappedFile = mappedFile;
+        this.buffer = mappedFile.buffer();
+    }
+
     @Override
     public void broadcastSessionBackPressure()
     {
-
+        sessionBackPressureCount++;
+        buffer.putLongOrdered(SESSION_BACK_PRESSURE_COUNT_OFFSET, sessionBackPressureCount);
     }
 
     @Override
     public void topicCount(final int count)
     {
+        buffer.putIntOrdered(TOPIC_COUNT_OFFSET, count);
+    }
 
+    public long broadcastSessionBackPressureCount()
+    {
+        return buffer.getLongVolatile(SESSION_BACK_PRESSURE_COUNT_OFFSET);
+    }
+
+    public int topicCount()
+    {
+        return buffer.getIntVolatile(TOPIC_COUNT_OFFSET);
+    }
+
+    @Override
+    public void close()
+    {
+        CloseHelper.close(mappedFile);
     }
 }

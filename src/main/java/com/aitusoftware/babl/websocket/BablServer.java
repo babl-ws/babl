@@ -216,10 +216,13 @@ public final class BablServer
         final Long2ObjectHashMap<Session> sessionByIdMap = new Long2ObjectHashMap<>();
         final ApplicationProxy applicationProxy = new ApplicationProxy(sessionContainerId, sessionByIdMap);
         toServerChannels[sessionContainerId] = new OneToOneConcurrentArrayQueue<>(16);
+        final MappedFile broadcastStatsFile = new MappedFile(
+            Paths.get(sessionContainerConfig.serverDirectory(sessionContainerId), MappedBroadcastStatistics.FILE_NAME),
+            MappedBroadcastStatistics.LENGTH);
         final SessionContainerAdapter sessionContainerAdapter = new SessionContainerAdapter(
             sessionContainerId, sessionByIdMap, toServerSubscription,
             proxyConfig.serverAdapterPollFragmentLimit(), backPressureStrategy,
-            new SessionBroadcast(new Long2ObjectHashMap<>(), new MappedBroadcastStatistics()));
+            new SessionBroadcast(sessionByIdMap, new MappedBroadcastStatistics(broadcastStatsFile)));
         sessionContainers[sessionContainerId] = new SessionContainer(
             sessionContainerId,
             applicationProxy, bablConfig.sessionConfig(),
@@ -232,7 +235,6 @@ public final class BablServer
         final MappedFile serverAdapterStatsFile = new MappedFile(
             Paths.get(sessionContainerConfig.serverDirectory(sessionContainerId),
             MappedSessionContainerAdapterStatistics.FILE_NAME), MappedSessionContainerAdapterStatistics.LENGTH);
-        dependencies.add(serverAdapterStatsFile);
         final MappedSessionContainerAdapterStatistics sessionAdapterStatistics =
             new MappedSessionContainerAdapterStatistics(serverAdapterStatsFile);
         dependencies.add(sessionAdapterStatistics);
