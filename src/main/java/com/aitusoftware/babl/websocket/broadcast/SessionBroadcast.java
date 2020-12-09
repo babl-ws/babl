@@ -39,13 +39,23 @@ public final class SessionBroadcast implements Broadcast
     private final Long2ObjectHashMap<Session> sessionByIdMap;
     private final BroadcastStatistics statistics;
     private final LongHashSet removalSet = new LongHashSet(128);
+    private final MessageTransformer messageTransformer;
 
     public SessionBroadcast(
         final Long2ObjectHashMap<Session> sessionByIdMap,
         final BroadcastStatistics statistics)
     {
+        this(sessionByIdMap, statistics, new NoOpMessageTransformer());
+    }
+
+    public SessionBroadcast(
+        final Long2ObjectHashMap<Session> sessionByIdMap,
+        final BroadcastStatistics statistics,
+        final MessageTransformer messageTransformer)
+    {
         this.sessionByIdMap = sessionByIdMap;
         this.statistics = statistics;
+        this.messageTransformer = messageTransformer;
     }
 
     @Override
@@ -105,6 +115,7 @@ public final class SessionBroadcast implements Broadcast
         final int length)
     {
         final PooledSessionSet sessionSet = topicMap.get(topicId);
+        final TransformResult transformResult = messageTransformer.translate(topicId, buffer, offset, length);
         if (sessionSet != null)
         {
             removalSet.clear();
@@ -115,7 +126,8 @@ public final class SessionBroadcast implements Broadcast
                 final Session session = sessionByIdMap.get(sessionId);
                 if (session != null)
                 {
-                    if (SendResult.BACK_PRESSURE == session.send(contentType, buffer, offset, length))
+                    if (SendResult.BACK_PRESSURE == session.send(
+                        contentType, transformResult.directBuffer, transformResult.offset, transformResult.length))
                     {
                         statistics.broadcastSessionBackPressure();
                     }
