@@ -34,7 +34,7 @@ import com.aitusoftware.babl.log.Logger;
 import com.aitusoftware.babl.monitoring.SessionContainerAdapterStatistics;
 import com.aitusoftware.babl.user.ContentType;
 import com.aitusoftware.babl.websocket.BackPressureStrategy;
-import com.aitusoftware.babl.websocket.Broadcast;
+import com.aitusoftware.babl.websocket.broadcast.Broadcast;
 import com.aitusoftware.babl.websocket.DisconnectReason;
 import com.aitusoftware.babl.websocket.SendResult;
 import com.aitusoftware.babl.websocket.Session;
@@ -230,24 +230,6 @@ public final class SessionContainerAdapter implements ControlledFragmentHandler,
         return sendResultToAction(sendResult);
     }
 
-    private void handleCloseMessage(final DirectBuffer buffer, final int offset)
-    {
-        closeSessionDecoder.wrap(buffer, offset + MessageHeaderDecoder.ENCODED_LENGTH,
-            messageHeaderDecoder.blockLength(), messageHeaderDecoder.version());
-        if (applicationMessageDecoder.containerId() == sessionContainerId)
-        {
-            final long sessionId = closeSessionDecoder.sessionId();
-            final DisconnectReason disconnectReason = DISCONNECT_REASONS[closeSessionDecoder.closeReason()];
-            Logger.log(Category.PROXY, "[%d] SessionContainerAdapter close(sessionId: %d)%n",
-                sessionContainerId, sessionId);
-            final Session session = sessionByIdMap.get(sessionId);
-            if (session != null)
-            {
-                session.close(disconnectReason);
-            }
-        }
-    }
-
     private Action handleApplicationMessage(final DirectBuffer buffer, final int offset)
     {
         final VarDataEncodingDecoder decodedMessage;
@@ -277,5 +259,23 @@ public final class SessionContainerAdapter implements ControlledFragmentHandler,
             }
         }
         return Action.CONTINUE;
+    }
+
+    private void handleCloseMessage(final DirectBuffer buffer, final int offset)
+    {
+        closeSessionDecoder.wrap(buffer, offset + MessageHeaderDecoder.ENCODED_LENGTH,
+            messageHeaderDecoder.blockLength(), messageHeaderDecoder.version());
+        if (applicationMessageDecoder.containerId() == sessionContainerId)
+        {
+            final long sessionId = closeSessionDecoder.sessionId();
+            final DisconnectReason disconnectReason = DISCONNECT_REASONS[closeSessionDecoder.closeReason()];
+            Logger.log(Category.PROXY, "[%d] SessionContainerAdapter close(sessionId: %d)%n",
+                sessionContainerId, sessionId);
+            final Session session = sessionByIdMap.get(sessionId);
+            if (session != null)
+            {
+                session.close(disconnectReason);
+            }
+        }
     }
 }

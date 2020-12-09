@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.aitusoftware.babl.websocket;
+package com.aitusoftware.babl.websocket.broadcast;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -27,6 +27,8 @@ import static org.mockito.Mockito.when;
 
 import com.aitusoftware.babl.monitoring.BroadcastStatistics;
 import com.aitusoftware.babl.user.ContentType;
+import com.aitusoftware.babl.websocket.SendResult;
+import com.aitusoftware.babl.websocket.Session;
 
 import org.agrona.DirectBuffer;
 import org.agrona.collections.Long2ObjectHashMap;

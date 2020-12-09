@@ -15,21 +15,56 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.aitusoftware.babl.websocket;
+package com.aitusoftware.babl.websocket.broadcast;
 
 import com.aitusoftware.babl.user.ContentType;
 
 import org.agrona.DirectBuffer;
 
+/**
+ * An interface for sending broadcast messages to topics.
+ */
 public interface Broadcast
 {
+    /**
+     * Create a new topic.
+     * @param topicId the topic ID
+     * @return a {@code SendResult}
+     */
     int createTopic(int topicId);
 
+    /**
+     * Delete a topic.
+     * @param topicId the topic ID
+     * @return a {@code SendResult}
+     */
     int deleteTopic(int topicId);
 
+    /**
+     * Add a session to a topic.
+     * @param topicId the topic ID
+     * @param sessionId the session ID to add
+     * @return a {@code SendResult}
+     */
     int addToTopic(int topicId, long sessionId);
 
+    /**
+     * Remove a session from a topic.
+     * @param topicId the topic ID
+     * @param sessionId the session ID to remove
+     * @return a {@code SendResult}
+     */
     int removeFromTopic(int topicId, long sessionId);
 
+    /**
+     * Send a message to a topic.
+     *
+     * @param topicId the topic ID
+     * @param contentType the message content type
+     * @param buffer the buffer
+     * @param offset the offset into the buffer
+     * @param length the length of the message
+     * @return a {@code SendResult}
+     */
     int sendToTopic(int topicId, ContentType contentType, DirectBuffer buffer, int offset, int length);
 }

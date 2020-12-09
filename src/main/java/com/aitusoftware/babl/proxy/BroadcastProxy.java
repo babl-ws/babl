@@ -32,7 +32,7 @@ import com.aitusoftware.babl.log.Logger;
 import com.aitusoftware.babl.monitoring.ApplicationAdapterStatistics;
 import com.aitusoftware.babl.monitoring.BackPressureStatus;
 import com.aitusoftware.babl.user.ContentType;
-import com.aitusoftware.babl.websocket.Broadcast;
+import com.aitusoftware.babl.websocket.broadcast.Broadcast;
 import com.aitusoftware.babl.websocket.SendResult;
 
 import org.agrona.BitUtil;

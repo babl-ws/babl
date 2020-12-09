@@ -47,7 +47,7 @@ import com.aitusoftware.babl.monitoring.NoOpSessionContainerAdapterStatistics;
 import com.aitusoftware.babl.monitoring.NoOpSessionContainerStatistics;
 import com.aitusoftware.babl.user.Application;
 import com.aitusoftware.babl.user.ContentType;
-import com.aitusoftware.babl.websocket.Broadcast;
+import com.aitusoftware.babl.websocket.broadcast.Broadcast;
 import com.aitusoftware.babl.websocket.MaintainBackPressureStrategy;
 import com.aitusoftware.babl.websocket.Session;
 

@@ -17,9 +17,16 @@
  */
 package com.aitusoftware.babl.user;
 
-import com.aitusoftware.babl.websocket.Broadcast;
+import com.aitusoftware.babl.websocket.broadcast.Broadcast;
 
+/**
+ * User applications should implement this interface to obtain a handle to the {@code Broadcast} interface.
+ */
 public interface BroadcastSource
 {
+    /**
+     * Called by the application container on start-up.
+     * @param broadcast the handle to send broadcast messages
+     */
     void setBroadcast(Broadcast broadcast);
 }

@@ -47,6 +47,7 @@ import com.aitusoftware.babl.proxy.BroadcastProxy;
 import com.aitusoftware.babl.proxy.SessionContainerAdapter;
 import com.aitusoftware.babl.user.Application;
 import com.aitusoftware.babl.user.BroadcastSource;
+import com.aitusoftware.babl.websocket.broadcast.SessionBroadcast;
 
 import org.agrona.ErrorHandler;
 import org.agrona.collections.Long2ObjectHashMap;

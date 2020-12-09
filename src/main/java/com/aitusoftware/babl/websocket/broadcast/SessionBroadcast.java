@@ -15,12 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.aitusoftware.babl.websocket;
+package com.aitusoftware.babl.websocket.broadcast;
 
 import com.aitusoftware.babl.monitoring.BroadcastStatistics;
 import com.aitusoftware.babl.pool.ObjectPool;
 import com.aitusoftware.babl.pool.Pooled;
 import com.aitusoftware.babl.user.ContentType;
+import com.aitusoftware.babl.websocket.SendResult;
+import com.aitusoftware.babl.websocket.Session;
 
 import org.agrona.DirectBuffer;
 import org.agrona.collections.Hashing;
@@ -28,7 +30,7 @@ import org.agrona.collections.Int2ObjectHashMap;
 import org.agrona.collections.Long2ObjectHashMap;
 import org.agrona.collections.LongHashSet;
 
-final class SessionBroadcast implements Broadcast
+public final class SessionBroadcast implements Broadcast
 {
     private final ObjectPool<PooledSessionSet> sessionSetPool =
         new ObjectPool<>(PooledSessionSet::new, 8);
@@ -38,7 +40,7 @@ final class SessionBroadcast implements Broadcast
     private final BroadcastStatistics statistics;
     private final LongHashSet removalSet = new LongHashSet(128);
 
-    SessionBroadcast(
+    public SessionBroadcast(
         final Long2ObjectHashMap<Session> sessionByIdMap,
         final BroadcastStatistics statistics)
     {

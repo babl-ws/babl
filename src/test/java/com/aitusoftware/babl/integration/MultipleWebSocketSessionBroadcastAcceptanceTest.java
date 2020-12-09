@@ -31,7 +31,7 @@ import com.aitusoftware.babl.config.DeploymentMode;
 import com.aitusoftware.babl.user.Application;
 import com.aitusoftware.babl.user.BroadcastSource;
 import com.aitusoftware.babl.user.ContentType;
-import com.aitusoftware.babl.websocket.Broadcast;
+import com.aitusoftware.babl.websocket.broadcast.Broadcast;
 import com.aitusoftware.babl.websocket.Constants;
 import com.aitusoftware.babl.websocket.DisconnectReason;
 import com.aitusoftware.babl.websocket.SendResult;
