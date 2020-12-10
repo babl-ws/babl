@@ -35,7 +35,7 @@ public interface MessageTransformer
      * @param length the length of the message
      * @return the translated message intended for broadcast
      */
-    TransformResult translate(
+    TransformResult transform(
         int topicId,
         DirectBuffer input,
         int offset,

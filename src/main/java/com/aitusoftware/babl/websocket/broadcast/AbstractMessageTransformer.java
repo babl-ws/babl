@@ -27,13 +27,13 @@ public abstract class AbstractMessageTransformer implements MessageTransformer
     private final TransformResult transformResult = new TransformResult();
 
     @Override
-    public TransformResult translate(
+    public TransformResult transform(
         final int topicId,
         final DirectBuffer input,
         final int offset,
         final int length)
     {
-        if (!doTranslate(topicId, input, offset, length, transformResult))
+        if (!doTransform(topicId, input, offset, length, transformResult))
         {
             transformResult.set(input, offset, length);
         }
@@ -51,7 +51,7 @@ public abstract class AbstractMessageTransformer implements MessageTransformer
      * @param result a container for the resulting transformed message
      * @return whether the message was transformed from its original form
      */
-    protected abstract boolean doTranslate(
+    protected abstract boolean doTransform(
         int topicId,
         DirectBuffer input,
         int offset,

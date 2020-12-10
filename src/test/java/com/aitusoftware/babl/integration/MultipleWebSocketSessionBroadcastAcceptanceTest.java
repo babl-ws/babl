@@ -31,14 +31,17 @@ import com.aitusoftware.babl.config.DeploymentMode;
 import com.aitusoftware.babl.user.Application;
 import com.aitusoftware.babl.user.BroadcastSource;
 import com.aitusoftware.babl.user.ContentType;
+import com.aitusoftware.babl.websocket.broadcast.AbstractMessageTransformer;
 import com.aitusoftware.babl.websocket.broadcast.Broadcast;
 import com.aitusoftware.babl.websocket.Constants;
 import com.aitusoftware.babl.websocket.DisconnectReason;
 import com.aitusoftware.babl.websocket.SendResult;
 import com.aitusoftware.babl.websocket.Session;
+import com.aitusoftware.babl.websocket.broadcast.TransformResult;
 
 import org.agrona.CloseHelper;
 import org.agrona.DirectBuffer;
+import org.agrona.ExpandableArrayBuffer;
 import org.agrona.collections.LongHashSet;
 import org.agrona.concurrent.Agent;
 import org.agrona.concurrent.UnsafeBuffer;
@@ -62,6 +65,8 @@ class MultipleWebSocketSessionBroadcastAcceptanceTest
     private static final int SERVER_INSTANCE_COUNT = 2;
     private static final String TOPIC_ONE_MSG = "TOPIC_ONE";
     private static final String TOPIC_TWO_MSG = "TOPIC_TWO";
+    private static final int TOPIC_ONE = 1337;
+    private static final int TOPIC_TWO = 999;
 
     private final BroadcastApplication application = new BroadcastApplication();
     private final ServerHarness harness = new ServerHarness(application);
@@ -73,8 +78,9 @@ class MultipleWebSocketSessionBroadcastAcceptanceTest
     @BeforeEach
     void setUp() throws IOException
     {
-        harness.serverConfig().deploymentMode(DeploymentMode.DETACHED);
-        harness.serverConfig().sessionContainerInstanceCount(SERVER_INSTANCE_COUNT);
+        harness.sessionContainerConfig().messageTransformerFactory(id -> new SuffixingMessageTransformer());
+        harness.sessionContainerConfig().deploymentMode(DeploymentMode.DETACHED);
+        harness.sessionContainerConfig().sessionContainerInstanceCount(SERVER_INSTANCE_COUNT);
         harness.applicationConfig().additionalWork(application);
         harness.proxyConfig()
             .launchMediaDriver(true)
@@ -136,6 +142,26 @@ class MultipleWebSocketSessionBroadcastAcceptanceTest
         }
     }
 
+    private static final class SuffixingMessageTransformer extends AbstractMessageTransformer
+    {
+        private final ExpandableArrayBuffer suffixBuffer = new ExpandableArrayBuffer();
+
+        @Override
+        protected boolean doTransform(
+            final int topicId,
+            final DirectBuffer input,
+            final int offset,
+            final int length,
+            final TransformResult result)
+        {
+            suffixBuffer.putBytes(0, input, offset, length);
+            final byte[] suffix = ("-" + topicId).getBytes(StandardCharsets.UTF_8);
+            suffixBuffer.putBytes(length, suffix);
+            result.set(suffixBuffer, 0, length + suffix.length);
+            return true;
+        }
+    }
+
     private static final class ClientHandler implements Handler<WebSocketFrame>
     {
         private final List<String> receivedMessages = new CopyOnWriteArrayList<>();
@@ -151,12 +177,12 @@ class MultipleWebSocketSessionBroadcastAcceptanceTest
 
         private boolean hasSeveralTopicOneMessages()
         {
-            return hasSeveralMessages(TOPIC_ONE_MSG);
+            return hasSeveralMessages(TOPIC_ONE_MSG + "-" + TOPIC_ONE);
         }
 
         private boolean hasSeveralTopicTwoMessages()
         {
-            return hasSeveralMessages(TOPIC_TWO_MSG);
+            return hasSeveralMessages(TOPIC_TWO_MSG + "-" + TOPIC_TWO);
         }
 
         private boolean hasSeveralMessages(final String filter)
@@ -168,8 +194,6 @@ class MultipleWebSocketSessionBroadcastAcceptanceTest
     private static final class BroadcastApplication implements Application, BroadcastSource, Agent
     {
         private static final long PUBLICATION_INTERVAL_NS = TimeUnit.MILLISECONDS.toNanos(10);
-        private static final int TOPIC_ONE = 1337;
-        private static final int TOPIC_TWO = 999;
         private final LongHashSet sessionIds = new LongHashSet();
         private final AtomicLong evenNumberedSessionCount = new AtomicLong();
         private final UnsafeBuffer topicOneMsg = new UnsafeBuffer(TOPIC_ONE_MSG.getBytes(StandardCharsets.UTF_8));

@@ -55,7 +55,7 @@ class WebSocketSessionPollModeAcceptanceTest
     @BeforeEach
     void setUp() throws IOException
     {
-        harness.serverConfig().pollModeEnabled(true).pollModeSessionLimit(POLL_MODE_SESSION_LIMIT);
+        harness.sessionContainerConfig().pollModeEnabled(true).pollModeSessionLimit(POLL_MODE_SESSION_LIMIT);
         harness.start(workingDir);
         client = Vertx.vertx().createHttpClient(new HttpClientOptions().setMaxPoolSize(50));
     }

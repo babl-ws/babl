@@ -23,6 +23,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 import com.aitusoftware.babl.log.Category;
@@ -31,6 +32,7 @@ import com.aitusoftware.babl.pool.BufferPoolPreAllocator;
 import com.aitusoftware.babl.pool.NoOpBufferPoolPreAllocator;
 import com.aitusoftware.babl.websocket.AlwaysValidConnectionValidator;
 import com.aitusoftware.babl.websocket.ConnectionValidator;
+import com.aitusoftware.babl.websocket.broadcast.MessageTransformer;
 import com.aitusoftware.babl.websocket.routing.ConnectionRouter;
 import com.aitusoftware.babl.websocket.routing.RoundRobinConnectionRouter;
 
@@ -81,6 +83,7 @@ public final class SessionContainerConfig
         Constants.ACTIVE_SESSION_LIMIT_DEFAULT);
     private BiFunction<Path, IdleStrategy, IdleStrategy> serverIdleStrategyFactory;
     private ConnectionRouter connectionRouter;
+    private IntFunction<MessageTransformer> messageTransformerFactory;
 
     SessionContainerConfig(final PerformanceConfig performanceConfig)
     {
@@ -551,6 +554,26 @@ public final class SessionContainerConfig
     public SessionContainerConfig connectionRouter(final ConnectionRouter connectionRouter)
     {
         this.connectionRouter = connectionRouter;
+        return this;
+    }
+
+    /**
+     * Returns the message transformer factory.
+     * @return the message transformer factory
+     */
+    public IntFunction<MessageTransformer> messageTransformerFactory()
+    {
+        return messageTransformerFactory;
+    }
+
+    /**
+     * Sets the message transformer factory.
+     * @param messageTransformer the message transformer factory
+     * @return this for a fluent API
+     */
+    public SessionContainerConfig messageTransformerFactory(final IntFunction<MessageTransformer> messageTransformer)
+    {
+        this.messageTransformerFactory = messageTransformer;
         return this;
     }
 

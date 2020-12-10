@@ -26,6 +26,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.Queue;
 
 import com.aitusoftware.babl.config.BablConfig;
@@ -241,7 +242,11 @@ public final class BablServer
         final SessionContainerAdapter sessionContainerAdapter = new SessionContainerAdapter(
             sessionContainerId, sessionByIdMap, toServerSubscription, broadcastSubscription,
             proxyConfig.serverAdapterPollFragmentLimit(), backPressureStrategy,
-            new SessionBroadcast(sessionByIdMap, new MappedBroadcastStatistics(broadcastStatsFile)));
+            new SessionBroadcast(
+            sessionByIdMap,
+            new MappedBroadcastStatistics(broadcastStatsFile),
+            Optional.ofNullable(sessionContainerConfig.messageTransformerFactory())
+            .map(factory -> factory.apply(sessionContainerId)).orElse(null)));
         sessionContainers[sessionContainerId] = new SessionContainer(
             sessionContainerId,
             applicationProxy, bablConfig.sessionConfig(),

@@ -69,9 +69,9 @@ class SoakTest
     @BeforeEach
     void setUp() throws IOException
     {
-        harness.serverConfig().deploymentMode(DeploymentMode.DETACHED);
-        harness.serverConfig().sessionContainerInstanceCount(1);
-        harness.serverConfig().activeSessionLimit(2000);
+        harness.sessionContainerConfig().deploymentMode(DeploymentMode.DETACHED);
+        harness.sessionContainerConfig().sessionContainerInstanceCount(1);
+        harness.sessionContainerConfig().activeSessionLimit(2000);
         harness.proxyConfig()
             .launchMediaDriver(true)
             .mediaDriverDir(workingDir.resolve("driver").toString());

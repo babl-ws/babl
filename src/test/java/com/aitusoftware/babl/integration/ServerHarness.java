@@ -101,7 +101,7 @@ public final class ServerHarness implements AutoCloseable
         throw new IllegalStateException("Unable to find free port");
     }
 
-    public SessionContainerConfig serverConfig()
+    public SessionContainerConfig sessionContainerConfig()
     {
         return sessionContainerConfig;
     }

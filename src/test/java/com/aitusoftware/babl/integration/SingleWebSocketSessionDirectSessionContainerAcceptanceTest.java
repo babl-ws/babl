@@ -90,8 +90,8 @@ class SingleWebSocketSessionDirectSessionContainerAcceptanceTest
     @BeforeEach
     void setUp() throws IOException
     {
-        harness.serverConfig().connectionValidator(testConnectionValidator);
-        harness.serverConfig().validationTimeoutNanos(TimeUnit.MILLISECONDS.toNanos(500L));
+        harness.sessionContainerConfig().connectionValidator(testConnectionValidator);
+        harness.sessionContainerConfig().validationTimeoutNanos(TimeUnit.MILLISECONDS.toNanos(500L));
         harness.sessionConfig().maxBufferSize(1 << 20);
         harness.start(workingDir);
         client = Vertx.vertx().createHttpClient(new HttpClientOptions());

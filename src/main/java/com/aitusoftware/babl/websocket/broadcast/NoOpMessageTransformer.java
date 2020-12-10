@@ -24,7 +24,7 @@ final class NoOpMessageTransformer implements MessageTransformer
     private final TransformResult transformResult = new TransformResult();
 
     @Override
-    public TransformResult translate(final int topicId, final DirectBuffer input, final int offset, final int length)
+    public TransformResult transform(final int topicId, final DirectBuffer input, final int offset, final int length)
     {
         if (transformResult.directBuffer != input)
         {

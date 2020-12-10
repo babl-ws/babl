@@ -70,7 +70,7 @@ class LatencyTest
     void setUp() throws Exception
     {
         harness.sessionConfig().pingIntervalNanos(TimeUnit.SECONDS.toNanos(30L));
-        harness.serverConfig().pollModeEnabled(true)
+        harness.sessionContainerConfig().pollModeEnabled(true)
             .serverIdleStrategySupplier(NoOpIdleStrategy::new)
             .serverDirectory(workingDir.resolve("server").toString());
 
@@ -97,8 +97,8 @@ class LatencyTest
     @Test
     void testBablDetachedLatency() throws Exception
     {
-        harness.serverConfig().deploymentMode(DeploymentMode.DETACHED);
-        harness.serverConfig().sessionContainerInstanceCount(1);
+        harness.sessionContainerConfig().deploymentMode(DeploymentMode.DETACHED);
+        harness.sessionContainerConfig().sessionContainerInstanceCount(1);
         final ProxyConfig proxyConfig = harness.proxyConfig();
         final MediaDriver.Context mediaDriverContext = proxyConfig.mediaDriverContext();
         mediaDriverContext.termBufferSparseFile(false);
