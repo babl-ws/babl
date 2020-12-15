@@ -26,6 +26,7 @@ import com.aitusoftware.babl.codec.CloseSessionDecoder;
 import com.aitusoftware.babl.codec.CreateTopicDecoder;
 import com.aitusoftware.babl.codec.DeleteTopicDecoder;
 import com.aitusoftware.babl.codec.MessageHeaderDecoder;
+import com.aitusoftware.babl.codec.MultiTopicMessageDecoder;
 import com.aitusoftware.babl.codec.RemoveSessionFromTopicDecoder;
 import com.aitusoftware.babl.codec.TopicMessageDecoder;
 import com.aitusoftware.babl.codec.VarDataEncodingDecoder;
@@ -39,6 +40,7 @@ import com.aitusoftware.babl.websocket.DisconnectReason;
 import com.aitusoftware.babl.websocket.SendResult;
 import com.aitusoftware.babl.websocket.Session;
 
+import org.agrona.BitUtil;
 import org.agrona.DirectBuffer;
 import org.agrona.collections.Long2ObjectHashMap;
 import org.agrona.concurrent.Agent;
@@ -63,6 +65,7 @@ public final class SessionContainerAdapter implements ControlledFragmentHandler,
     private final AddSessionToTopicDecoder addToTopicDecoder = new AddSessionToTopicDecoder();
     private final RemoveSessionFromTopicDecoder removeFromTopicDecoder = new RemoveSessionFromTopicDecoder();
     private final TopicMessageDecoder topicMessageDecoder = new TopicMessageDecoder();
+    private final MultiTopicMessageDecoder multiTopicMessageDecoder = new MultiTopicMessageDecoder();
     private final int sessionContainerId;
     private final Long2ObjectHashMap<Session> sessionByIdMap;
     private final Subscription fromApplicationSubscription;
@@ -72,6 +75,7 @@ public final class SessionContainerAdapter implements ControlledFragmentHandler,
     private final String agentName;
     private final Broadcast broadcast;
     private SessionContainerAdapterStatistics sessionContainerAdapterStatistics;
+    private int[] topicIds = new int[16];
 
     /**
      * Constructor.
@@ -155,8 +159,13 @@ public final class SessionContainerAdapter implements ControlledFragmentHandler,
                 break;
 
             case TopicMessageDecoder.TEMPLATE_ID:
-                action = handleTopicMessage(buffer, offset);
 
+                action = handleTopicMessage(buffer, offset);
+                break;
+
+            case MultiTopicMessageDecoder.TEMPLATE_ID:
+
+                action = handleMultiTopicMessage(buffer, offset);
                 break;
 
             default:
@@ -222,6 +231,44 @@ public final class SessionContainerAdapter implements ControlledFragmentHandler,
         final int sendResult = broadcast.sendToTopic(
             topicMessageDecoder.topicId(), contentType, decodedMessage.buffer(),
             decodedMessage.offset() + varDataEncodingOffset(), (int)decodedMessage.length());
+
+        if (sendResult == SendResult.BACK_PRESSURE)
+        {
+            sessionContainerAdapterStatistics.onSessionBackPressure();
+        }
+        return sendResultToAction(sendResult);
+    }
+
+
+    private Action handleMultiTopicMessage(final DirectBuffer buffer, final int offset)
+    {
+        final VarDataEncodingDecoder decodedMessage;
+        final ContentType contentType;
+        multiTopicMessageDecoder.wrap(buffer, offset + MessageHeaderDecoder.ENCODED_LENGTH,
+            messageHeaderDecoder.blockLength(), messageHeaderDecoder.version());
+        contentType = CONTENT_TYPES[multiTopicMessageDecoder.contentType()];
+        decodedMessage = multiTopicMessageDecoder.message();
+        int topicIdsHeaderLength = BitUtil.SIZE_OF_INT;
+        int relativeOffset = decodedMessage.offset() + varDataEncodingOffset();
+        final DirectBuffer msgBuffer = decodedMessage.buffer();
+        final int topicIdCount = msgBuffer.getInt(relativeOffset);
+        relativeOffset += BitUtil.SIZE_OF_INT;
+        if (topicIdCount > topicIds.length)
+        {
+            topicIds = new int[topicIdCount];
+        }
+
+        for (int i = 0; i < topicIdCount; i++)
+        {
+            topicIds[i] = msgBuffer.getInt(relativeOffset);
+            relativeOffset += BitUtil.SIZE_OF_INT;
+            topicIdsHeaderLength += BitUtil.SIZE_OF_INT;
+        }
+
+        final int sendResult = broadcast.sendToTopics(
+            topicIds, topicIdCount,
+            contentType, msgBuffer,
+            relativeOffset, (int)decodedMessage.length() - topicIdsHeaderLength);
 
         if (sendResult == SendResult.BACK_PRESSURE)
         {

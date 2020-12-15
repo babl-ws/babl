@@ -155,6 +155,22 @@ public final class SessionBroadcast implements Broadcast
         return SendResult.OK;
     }
 
+    @Override
+    public int sendToTopics(
+        final int[] topicIds,
+        final int idCount,
+        final ContentType contentType,
+        final DirectBuffer buffer,
+        final int offset,
+        final int length)
+    {
+        for (int i = 0; i < idCount; i++)
+        {
+            sendToTopic(topicIds[i], contentType, buffer, offset, length);
+        }
+        return SendResult.OK;
+    }
+
     private static final class PooledSessionSet implements Pooled
     {
         private final LongHashSet set = new LongHashSet(128, Hashing.DEFAULT_LOAD_FACTOR);

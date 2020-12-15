@@ -83,4 +83,8 @@
         <field name="contentType" id="2" type="int32"/>
         <field name="message" id="3" type="varDataEncoding"/>
     </sbe:message>
+    <sbe:message name="MultiTopicMessage" id="11" description="Multi Topic message event">
+        <field name="contentType" id="1" type="int32"/>
+        <field name="message" id="2" type="varDataEncoding"/>
+    </sbe:message>
 </sbe:messageSchema>

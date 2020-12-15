@@ -24,6 +24,7 @@ import com.aitusoftware.babl.codec.AddSessionToTopicEncoder;
 import com.aitusoftware.babl.codec.CreateTopicEncoder;
 import com.aitusoftware.babl.codec.DeleteTopicEncoder;
 import com.aitusoftware.babl.codec.MessageHeaderEncoder;
+import com.aitusoftware.babl.codec.MultiTopicMessageEncoder;
 import com.aitusoftware.babl.codec.RemoveSessionFromTopicEncoder;
 import com.aitusoftware.babl.codec.TopicMessageEncoder;
 import com.aitusoftware.babl.codec.VarDataEncodingEncoder;
@@ -37,6 +38,7 @@ import com.aitusoftware.babl.websocket.SendResult;
 
 import org.agrona.BitUtil;
 import org.agrona.DirectBuffer;
+import org.agrona.MutableDirectBuffer;
 
 import io.aeron.Publication;
 import io.aeron.logbuffer.BufferClaim;
@@ -54,6 +56,8 @@ public final class BroadcastProxy implements Broadcast
         HEADER_LENGTH + RemoveSessionFromTopicEncoder.BLOCK_LENGTH;
     private static final int TOPIC_MESSAGE_BASE_SIZE =
         HEADER_LENGTH + TopicMessageEncoder.BLOCK_LENGTH + BitUtil.SIZE_OF_INT;
+    private static final int MULTI_TOPIC_MESSAGE_BASE_SIZE =
+        HEADER_LENGTH + MultiTopicMessageEncoder.BLOCK_LENGTH + (2 * BitUtil.SIZE_OF_INT);
 
     private final MessageHeaderEncoder messageHeaderEncoder = new MessageHeaderEncoder();
     private final CreateTopicEncoder createTopicEncoder = new CreateTopicEncoder();
@@ -61,6 +65,7 @@ public final class BroadcastProxy implements Broadcast
     private final AddSessionToTopicEncoder addSessionEncoder = new AddSessionToTopicEncoder();
     private final RemoveSessionFromTopicEncoder removeSessionEncoder = new RemoveSessionFromTopicEncoder();
     private final TopicMessageEncoder topicMessageEncoder = new TopicMessageEncoder();
+    private final MultiTopicMessageEncoder multiTopicMessageEncoder = new MultiTopicMessageEncoder();
     private final BufferClaim bufferClaim = new BufferClaim();
 
     private final Publication broadcastPublication;
@@ -177,13 +182,46 @@ public final class BroadcastProxy implements Broadcast
             applicationAdapterStatistics.proxyBackPressured(BackPressureStatus.NOT_BACK_PRESSURED);
             return SendResult.OK;
         }
-        bufferClaim.abort();
-        if (result == Publication.BACK_PRESSURED)
+        return handleOfferResult(result);
+    }
+
+    @Override
+    public int sendToTopics(
+        final int[] topicIds,
+        final int idCount,
+        final ContentType contentType,
+        final DirectBuffer buffer,
+        final int offset,
+        final int length)
+    {
+        final int totalLength = MULTI_TOPIC_MESSAGE_BASE_SIZE + length + (BitUtil.SIZE_OF_INT * idCount);
+        final long result = acquireBuffer(totalLength, broadcastPublication, bufferClaim);
+        if (result > 0)
         {
-            applicationAdapterStatistics.proxyBackPressure();
-            applicationAdapterStatistics.proxyBackPressured(BackPressureStatus.BACK_PRESSURED);
+            multiTopicMessageEncoder.wrapAndApplyHeader(
+                bufferClaim.buffer(), bufferClaim.offset(), messageHeaderEncoder);
+
+            multiTopicMessageEncoder.contentType(contentType.ordinal());
+
+            final VarDataEncodingEncoder encodedMessage = multiTopicMessageEncoder.message();
+            encodedMessage.length(length + BitUtil.SIZE_OF_INT + (BitUtil.SIZE_OF_INT * idCount));
+            final MutableDirectBuffer msgBuffer = encodedMessage.buffer();
+            final int initialIndex = encodedMessage.offset() + varDataEncodingOffset();
+            int relativeIndex = initialIndex;
+            msgBuffer.putInt(initialIndex, idCount);
+            relativeIndex += BitUtil.SIZE_OF_INT;
+            for (int i = 0; i < idCount; i++)
+            {
+                msgBuffer.putInt(relativeIndex, topicIds[i]);
+                relativeIndex += BitUtil.SIZE_OF_INT;
+            }
+            msgBuffer.putBytes(relativeIndex, buffer, offset, length);
+            bufferClaim.commit();
+            Logger.log(Category.PROXY, "BroadcastProxy sendToTopics(count: %d)%n", idCount);
+            applicationAdapterStatistics.proxyBackPressured(BackPressureStatus.NOT_BACK_PRESSURED);
+            return SendResult.OK;
         }
-        return ProxyUtil.offerResultToSendResult(result);
+        return handleOfferResult(result);
     }
 
     private int handleOfferResult(final long result)

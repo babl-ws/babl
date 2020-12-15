@@ -31,12 +31,12 @@ import com.aitusoftware.babl.config.DeploymentMode;
 import com.aitusoftware.babl.user.Application;
 import com.aitusoftware.babl.user.BroadcastSource;
 import com.aitusoftware.babl.user.ContentType;
-import com.aitusoftware.babl.websocket.broadcast.AbstractMessageTransformer;
-import com.aitusoftware.babl.websocket.broadcast.Broadcast;
 import com.aitusoftware.babl.websocket.Constants;
 import com.aitusoftware.babl.websocket.DisconnectReason;
 import com.aitusoftware.babl.websocket.SendResult;
 import com.aitusoftware.babl.websocket.Session;
+import com.aitusoftware.babl.websocket.broadcast.AbstractMessageTransformer;
+import com.aitusoftware.babl.websocket.broadcast.Broadcast;
 import com.aitusoftware.babl.websocket.broadcast.TransformResult;
 
 import org.agrona.CloseHelper;
@@ -61,12 +61,14 @@ import io.vertx.core.http.WebSocketFrame;
 
 class MultipleWebSocketSessionBroadcastAcceptanceTest
 {
-    private static final int CLIENT_COUNT = 37;
+    private static final int CLIENT_COUNT = 3;
     private static final int SERVER_INSTANCE_COUNT = 2;
     private static final String TOPIC_ONE_MSG = "TOPIC_ONE";
     private static final String TOPIC_TWO_MSG = "TOPIC_TWO";
+    private static final String MULTI_TOPIC_MSG = "MULTI_TOPIC";
     private static final int TOPIC_ONE = 1337;
     private static final int TOPIC_TWO = 999;
+    private static final int[] TOPIC_IDS = new int[] {TOPIC_ONE, TOPIC_TWO};
 
     private final BroadcastApplication application = new BroadcastApplication();
     private final ServerHarness harness = new ServerHarness(application);
@@ -133,6 +135,8 @@ class MultipleWebSocketSessionBroadcastAcceptanceTest
                 return
                     clientDataList.stream().filter(ClientHandler::hasSeveralTopicOneMessages).count() == CLIENT_COUNT &&
                     clientDataList.stream().filter(ClientHandler::hasSeveralTopicTwoMessages).count() ==
+                        application.evenNumberedSessionCount.get() &&
+                    clientDataList.stream().filter(ClientHandler::hasSeveralMultiTopicMessages).count() ==
                         application.evenNumberedSessionCount.get();
             });
 
@@ -169,10 +173,16 @@ class MultipleWebSocketSessionBroadcastAcceptanceTest
         @Override
         public void handle(final WebSocketFrame event)
         {
-            if (event.isFinal())
+            if (event.isFinal() && event.isText())
             {
                 receivedMessages.add(event.textData());
             }
+        }
+
+        private boolean hasSeveralMultiTopicMessages()
+        {
+            return hasSeveralMessages(MULTI_TOPIC_MSG + "-" + TOPIC_ONE) &&
+                    hasSeveralMessages(MULTI_TOPIC_MSG + "-" + TOPIC_TWO);
         }
 
         private boolean hasSeveralTopicOneMessages()
@@ -193,11 +203,13 @@ class MultipleWebSocketSessionBroadcastAcceptanceTest
 
     private static final class BroadcastApplication implements Application, BroadcastSource, Agent
     {
-        private static final long PUBLICATION_INTERVAL_NS = TimeUnit.MILLISECONDS.toNanos(10);
+        private static final long PUBLICATION_INTERVAL_NS = TimeUnit.MILLISECONDS.toNanos(100);
+
         private final LongHashSet sessionIds = new LongHashSet();
         private final AtomicLong evenNumberedSessionCount = new AtomicLong();
         private final UnsafeBuffer topicOneMsg = new UnsafeBuffer(TOPIC_ONE_MSG.getBytes(StandardCharsets.UTF_8));
         private final UnsafeBuffer topicTwoMsg = new UnsafeBuffer(TOPIC_TWO_MSG.getBytes(StandardCharsets.UTF_8));
+        private final UnsafeBuffer multiTopicMsg = new UnsafeBuffer(MULTI_TOPIC_MSG.getBytes(StandardCharsets.UTF_8));
         private Broadcast broadcast;
         private boolean topicsCreated = false;
         private long lastPublicationNs;
@@ -257,6 +269,8 @@ class MultipleWebSocketSessionBroadcastAcceptanceTest
                 {
                     broadcast.sendToTopic(TOPIC_ONE, ContentType.TEXT, topicOneMsg, 0, topicOneMsg.capacity());
                     broadcast.sendToTopic(TOPIC_TWO, ContentType.TEXT, topicTwoMsg, 0, topicTwoMsg.capacity());
+                    broadcast.sendToTopics(TOPIC_IDS, TOPIC_IDS.length, ContentType.TEXT,
+                        multiTopicMsg, 0, multiTopicMsg.capacity());
 
                     lastPublicationNs = System.nanoTime();
                     return 1;

@@ -67,4 +67,23 @@ public interface Broadcast
      * @return a {@code SendResult}
      */
     int sendToTopic(int topicId, ContentType contentType, DirectBuffer buffer, int offset, int length);
+
+    /**
+     * Send a message to multiple topics.
+     *
+     * @param topicIds the topic IDs
+     * @param idCount the number of topic IDs in the array
+     * @param contentType the message content type
+     * @param buffer the buffer
+     * @param offset the offset into the buffer
+     * @param length the length of the message
+     * @return a {@code SendResult}
+     */
+    int sendToTopics(
+        int[] topicIds,
+        int idCount,
+        ContentType contentType,
+        DirectBuffer buffer,
+        int offset,
+        int length);
 }
