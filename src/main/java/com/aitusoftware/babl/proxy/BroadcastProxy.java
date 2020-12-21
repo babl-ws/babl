@@ -204,7 +204,7 @@ public final class BroadcastProxy implements Broadcast
             multiTopicMessageEncoder.contentType(contentType.ordinal());
 
             final VarDataEncodingEncoder encodedMessage = multiTopicMessageEncoder.message();
-            encodedMessage.length(length + BitUtil.SIZE_OF_INT + (BitUtil.SIZE_OF_INT * idCount));
+            encodedMessage.length(length + BitUtil.SIZE_OF_INT + (BitUtil.SIZE_OF_INT * (long)idCount));
             final MutableDirectBuffer msgBuffer = encodedMessage.buffer();
             final int initialIndex = encodedMessage.offset() + varDataEncodingOffset();
             int relativeIndex = initialIndex;
