@@ -144,18 +144,19 @@ final class SessionContainer implements Agent, AutoCloseable
 
     /**
      * Constructs a web-socket server that will dispatch messages to the supplied {@code Application}.
-     *
-     * @param application   the application that will process inbound messages
+     *  @param application   the application that will process inbound messages
      * @param sessionConfig configuration for web socket sessions
      * @param sessionContainerConfig  configuration for the web socket server
+     * @param additionalWork
      */
     SessionContainer(
         final Application application,
         final SessionConfig sessionConfig,
         final SessionContainerConfig sessionContainerConfig,
-        final Queue<SocketChannel> incomingConnections)
+        final Queue<SocketChannel> incomingConnections,
+        final Agent additionalWork)
     {
-        this(0, application, sessionConfig, sessionContainerConfig, null, incomingConnections);
+        this(0, application, sessionConfig, sessionContainerConfig, additionalWork, incomingConnections);
     }
 
     /**
