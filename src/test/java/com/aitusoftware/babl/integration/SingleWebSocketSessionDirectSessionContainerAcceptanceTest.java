@@ -20,13 +20,21 @@ package com.aitusoftware.babl.integration;
 import com.aitusoftware.babl.log.Logger;
 import com.aitusoftware.babl.user.ContentType;
 import com.aitusoftware.babl.user.EchoApplication;
-import com.aitusoftware.babl.websocket.*;
+import com.aitusoftware.babl.websocket.Client;
+import com.aitusoftware.babl.websocket.ClientEventHandler;
+import com.aitusoftware.babl.websocket.ConnectionValidator;
+import com.aitusoftware.babl.websocket.ValidationResult;
+import com.aitusoftware.babl.websocket.ValidationResultPublisher;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.buffer.impl.BufferImpl;
-import io.vertx.core.http.*;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.WebSocket;
+import io.vertx.core.http.WebSocketConnectOptions;
+import io.vertx.core.http.WebSocketFrame;
 import org.agrona.CloseHelper;
 import org.agrona.DirectBuffer;
 import org.agrona.concurrent.Agent;
@@ -43,7 +51,11 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -410,9 +422,9 @@ class SingleWebSocketSessionDirectSessionContainerAcceptanceTest
         }
     }
 
-    private class AdditionalWorkTestHandler implements Agent
+    private static final class AdditionalWorkTestHandler implements Agent
     {
-        int additionalWorkCount = 0;
+        private volatile int additionalWorkCount = 0;
         @Override
         public int doWork() throws Exception
         {
