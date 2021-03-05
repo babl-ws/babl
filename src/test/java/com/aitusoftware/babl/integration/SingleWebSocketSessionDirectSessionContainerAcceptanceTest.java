@@ -17,8 +17,34 @@
  */
 package com.aitusoftware.babl.integration;
 
-import static com.aitusoftware.babl.websocket.Constants.CLOSE_REASON_PROTOCOL_ERROR;
-import static com.google.common.truth.Truth.assertThat;
+import com.aitusoftware.babl.log.Logger;
+import com.aitusoftware.babl.user.ContentType;
+import com.aitusoftware.babl.user.EchoApplication;
+import com.aitusoftware.babl.websocket.Client;
+import com.aitusoftware.babl.websocket.ClientEventHandler;
+import com.aitusoftware.babl.websocket.ConnectionValidator;
+import com.aitusoftware.babl.websocket.ValidationResult;
+import com.aitusoftware.babl.websocket.ValidationResultPublisher;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.impl.BufferImpl;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.WebSocket;
+import io.vertx.core.http.WebSocketConnectOptions;
+import io.vertx.core.http.WebSocketFrame;
+import org.agrona.CloseHelper;
+import org.agrona.DirectBuffer;
+import org.agrona.concurrent.Agent;
+import org.agrona.concurrent.UnsafeBuffer;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.net.URL;
@@ -37,35 +63,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import com.aitusoftware.babl.log.Logger;
-import com.aitusoftware.babl.user.ContentType;
-import com.aitusoftware.babl.user.EchoApplication;
-import com.aitusoftware.babl.websocket.Client;
-import com.aitusoftware.babl.websocket.ClientEventHandler;
-import com.aitusoftware.babl.websocket.ConnectionValidator;
-import com.aitusoftware.babl.websocket.ValidationResult;
-import com.aitusoftware.babl.websocket.ValidationResultPublisher;
-
-import org.agrona.CloseHelper;
-import org.agrona.DirectBuffer;
-import org.agrona.concurrent.UnsafeBuffer;
-import org.awaitility.Awaitility;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.buffer.impl.BufferImpl;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.WebSocket;
-import io.vertx.core.http.WebSocketConnectOptions;
-import io.vertx.core.http.WebSocketFrame;
+import static com.aitusoftware.babl.websocket.Constants.CLOSE_REASON_PROTOCOL_ERROR;
+import static com.google.common.truth.Truth.assertThat;
 
 class SingleWebSocketSessionDirectSessionContainerAcceptanceTest
 {
@@ -74,6 +73,7 @@ class SingleWebSocketSessionDirectSessionContainerAcceptanceTest
     private static final String HOST = "localhost";
 
     private final EchoApplication application = new EchoApplication(false);
+    private final AdditionalWorkTestHandler additionalWorkTestHandler = new AdditionalWorkTestHandler();
     private final ServerHarness harness = new ServerHarness(application);
     private final TestConnectionValidator testConnectionValidator = new TestConnectionValidator();
 
@@ -90,6 +90,7 @@ class SingleWebSocketSessionDirectSessionContainerAcceptanceTest
     @BeforeEach
     void setUp() throws IOException
     {
+        harness.applicationConfig().additionalWork(additionalWorkTestHandler);
         harness.sessionContainerConfig().connectionValidator(testConnectionValidator);
         harness.sessionContainerConfig().validationTimeoutNanos(TimeUnit.MILLISECONDS.toNanos(500L));
         harness.sessionConfig().maxBufferSize(1 << 20);
@@ -134,6 +135,14 @@ class SingleWebSocketSessionDirectSessionContainerAcceptanceTest
         sendSingleMessage(126);
         sendSingleMessage(65536);
         sendSingleMessage(65537);
+    }
+
+    @Test
+    void shouldPerformAdditionalWork() throws InterruptedException
+    {
+        sendSingleMessage(126);
+        Awaitility.await().pollInterval(50, TimeUnit.MILLISECONDS).atMost(10, TimeUnit.SECONDS)
+                .until(additionalWorkTestHandler::hasDoneWork);
     }
 
     @Test
@@ -410,6 +419,34 @@ class SingleWebSocketSessionDirectSessionContainerAcceptanceTest
         public void onConnectionClosed()
         {
             latch.countDown();
+        }
+    }
+
+    private static final class AdditionalWorkTestHandler implements Agent
+    {
+        private volatile int additionalWorkCount = 0;
+        @Override
+        public int doWork() throws Exception
+        {
+            if (additionalWorkCount++ % 2 == 0)
+            {
+                return 1;
+            }
+            else
+            {
+                return 0;
+            }
+        }
+
+        @Override
+        public String roleName()
+        {
+            return "AdditionalWorkTestHandler";
+        }
+
+        public boolean hasDoneWork()
+        {
+            return additionalWorkCount > 0;
         }
     }
 }

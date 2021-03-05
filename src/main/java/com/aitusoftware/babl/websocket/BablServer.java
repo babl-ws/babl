@@ -277,7 +277,8 @@ public final class BablServer
         final Queue<SocketChannel> incomingConnections = new OneToOneConcurrentArrayQueue<>(16);
         final SessionContainer sessionContainer = new SessionContainer(
             application, bablConfig.sessionConfig(),
-            sessionContainerConfig, incomingConnections);
+            sessionContainerConfig, incomingConnections,
+            bablConfig.applicationConfig().additionalWork());
         final ServerSocketChannel serverSocketChannel = createServerSocket(sessionContainerConfig);
         final DistinctErrorLog errorLog = new DistinctErrorLog(sessionContainer.serverMarkFile().errorBuffer(),
             new SystemEpochClock());
