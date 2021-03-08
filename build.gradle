@@ -126,7 +126,7 @@ dependencies {
 
     codegen 'uk.co.real-logic:sbe-all:1.21.0'
 
-    jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.27'
+    jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.28'
 
     jmhImplementation 'org.openjdk.jmh:jmh-core:1.28'
 
