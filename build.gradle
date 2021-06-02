@@ -121,10 +121,10 @@ sourceSets {
 }
 
 dependencies {
-    implementation 'org.agrona:agrona:1.9.0'
-    implementation 'io.aeron:aeron-driver:1.32.0'
+    implementation 'org.agrona:agrona:1.10.0'
+    implementation 'io.aeron:aeron-driver:1.33.1'
 
-    codegen 'uk.co.real-logic:sbe-all:1.21.0'
+    codegen 'uk.co.real-logic:sbe-all:1.22.0'
 
     jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.27'
 
