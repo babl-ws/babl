@@ -136,7 +136,7 @@ dependencies {
     testImplementation 'io.vertx:vertx-core:3.9.4'
     testImplementation 'io.vertx:vertx-web:3.9.4'
     testImplementation 'org.hdrhistogram:HdrHistogram:2.1.12'
-    testImplementation 'org.awaitility:awaitility:4.0.3'
+    testImplementation 'org.awaitility:awaitility:4.1.0'
     testImplementation 'com.caucho:resin:4.0.65'
 
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.1'
