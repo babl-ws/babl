@@ -139,7 +139,7 @@ dependencies {
     testImplementation 'org.awaitility:awaitility:4.1.0'
     testImplementation 'com.caucho:resin:4.0.65'
 
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.0'
 }
 
 compileJava.dependsOn('generateCodecs')
