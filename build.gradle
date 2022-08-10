@@ -39,6 +39,21 @@ ext {
     if (!project.hasProperty('sonatypePassword')) sonatypePassword = ''
 }
 
+static def getBuildJavaVersion() {
+    def buildJavaVersion = System.getenv('BUILD_JAVA_VERSION') ?: JavaVersion.current().getMajorVersion()
+
+    if (buildJavaVersion.indexOf('.') > 0) {
+        buildJavaVersion = buildJavaVersion.substring(0, buildJavaVersion.indexOf('.'))
+    }
+
+    if (buildJavaVersion.indexOf('-') > 0) {
+        buildJavaVersion = buildJavaVersion.substring(0, buildJavaVersion.indexOf('-'))
+    }
+
+    Integer.parseInt(buildJavaVersion)
+}
+int buildJavaVersion = getBuildJavaVersion()
+
 compileJava {
     sourceCompatibility = '1.8'
     targetCompatibility = '1.8'
@@ -145,7 +160,7 @@ dependencies {
 compileJava.dependsOn('generateCodecs')
 
 task generateCodecs(type: JavaExec) {
-    main 'uk.co.real_logic.sbe.SbeTool'
+    mainClass.set('uk.co.real_logic.sbe.SbeTool')
     classpath configurations.codegen.asPath
     jvmArgs = ["-Dsbe.output.dir=${generatedSrcDir.getAbsolutePath()}", '-Dsbe.generate.ir=true', '-Dsbe.java.generate.interfaces=true']
     args "${project.projectDir}/src/main/resources/sbe-schema.xml"
@@ -153,6 +168,11 @@ task generateCodecs(type: JavaExec) {
 
 test {
     useJUnitPlatform()
+    if (buildJavaVersion >= 9) {
+        jvmArgs = [
+            "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED"
+        ]
+    }
 }
 
 task benchmarkJar(type: Jar) {
