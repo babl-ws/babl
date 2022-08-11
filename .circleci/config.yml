@@ -1,13 +1,12 @@
 version: 2
 jobs:
-  build:
+  jdk8-build:
     docker:
-      - image: cimg/openjdk:17.0.3
+      - image: circleci/openjdk:8-jdk
     working_directory: ~/repo
     environment:
       JVM_OPTS: -Xmx3200m
       TERM: dumb
-
     steps:
       - checkout
       - restore_cache:
@@ -15,11 +14,9 @@ jobs:
             - v1-dependencies-{{ checksum "build.gradle" }}
             # fallback to using the latest cache if no exact match is found
             - v1-dependencies-
-
       - run:
           command: |
             ./gradlew dependencies
-
       - save_cache:
           paths:
             - ~/.gradle
@@ -27,3 +24,35 @@ jobs:
       - run: 
           command: |
             ./gradlew licenseFormat check
+    
+  jdk17-build:
+    docker:
+      - image: cimg/openjdk:17.0.3
+    working_directory: ~/repo
+    environment:
+      JVM_OPTS: -Xmx3200m
+      TERM: dumb
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "build.gradle" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-dependencies-
+      - run:
+          command: |
+            ./gradlew dependencies
+      - save_cache:
+          paths:
+            - ~/.gradle
+          key: v1-dependencies-{{ checksum "build.gradle" }}
+      - run: 
+          command: |
+            ./gradlew licenseFormat check
+
+workflows:
+  version: 2
+  builds:
+    jobs:
+      - jdk8-build
+      - jdk17-build
