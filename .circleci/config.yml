@@ -48,7 +48,7 @@ jobs:
           key: v1-dependencies-{{ checksum "build.gradle" }}
       - run: 
           command: |
-            ./gradlew licenseFormat check --stacktrace
+            ./gradlew licenseFormat check --stacktrace --info
 
 workflows:
   version: 2
