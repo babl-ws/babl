@@ -90,12 +90,13 @@ class WebSocketSessionTest
         bufferPool, sessionDataListener, sessionConfig, sessionContainerStatistics);
     private final PingAgent pingAgent = new PingAgent(
         frameEncoder, clock, PING_INTERVAL_MS, PONG_RESPONSE_TIMEOUT_MS, sessionDataListener);
+    private final StringBuilder requestUri = new StringBuilder(64);
     private final WebSocketSession session = new WebSocketSession(
         sessionDataListener,
         new FrameDecoder(new MessageDispatcher(application), sessionConfig, bufferPool,
         pingAgent, true, sessionContainerStatistics),
-        frameEncoder,
-        sessionConfig, bufferPool, application, pingAgent, clock, sessionStatistics, sessionContainerStatistics);
+        frameEncoder, sessionConfig, bufferPool, application, pingAgent, clock, requestUri,
+        sessionStatistics, sessionContainerStatistics);
     private final UnsafeBuffer applicationBuffer = new UnsafeBuffer(new byte[512]);
     private final SelectionKey selectionKey = mock(SelectionKey.class);
 
@@ -118,13 +119,14 @@ class WebSocketSessionTest
     {
         final EpochClock advancingClock = mock(EpochClock.class, "advancing");
         given(advancingClock.time()).willReturn(BASE_TIME_MS, BASE_TIME_MS + 6_000L);
+        final StringBuilder requestUri = new StringBuilder();
         final WebSocketSession closingSession = new WebSocketSession(
             sessionDataListener,
             new FrameDecoder(
             new MessageDispatcher(application), sessionConfig, bufferPool,
             pingAgent, true, sessionContainerStatistics),
             frameEncoder, sessionConfig, bufferPool, application, pingAgent,
-            advancingClock, sessionStatistics, sessionContainerStatistics);
+            advancingClock, requestUri, sessionStatistics, sessionContainerStatistics);
         closingSession.init(SESSION_ID, connectionUpgrade, cu -> {}, BASE_TIME_MS, channel, channel);
         closingSession.selectionKey(selectionKey);
         closingSession.onCloseMessage((short)1);
@@ -208,7 +210,7 @@ class WebSocketSessionTest
 
         final InOrder order = Mockito.inOrder(sessionDataListener, connectionUpgrade, application);
         order.verify(sessionDataListener).receiveDataAvailable();
-        order.verify(connectionUpgrade).handleUpgrade(any(), any());
+        order.verify(connectionUpgrade).handleUpgrade(any(), any(), any());
         order.verify(sessionDataListener).receiveDataProcessed();
         order.verify(sessionDataListener).receiveDataAvailable();
         order.verify(application).onSessionMessage(
@@ -232,7 +234,7 @@ class WebSocketSessionTest
 
         final InOrder order = Mockito.inOrder(sessionDataListener, connectionUpgrade, application);
         order.verify(sessionDataListener).receiveDataAvailable();
-        order.verify(connectionUpgrade).handleUpgrade(any(), any());
+        order.verify(connectionUpgrade).handleUpgrade(any(), any(), any());
         order.verify(sessionDataListener).receiveDataProcessed();
         order.verify(sessionDataListener).receiveDataAvailable();
         order.verify(application).onSessionMessage(
@@ -264,7 +266,7 @@ class WebSocketSessionTest
 
         final InOrder order = Mockito.inOrder(sessionDataListener, connectionUpgrade, application);
         order.verify(sessionDataListener).receiveDataAvailable();
-        order.verify(connectionUpgrade).handleUpgrade(any(), any());
+        order.verify(connectionUpgrade).handleUpgrade(any(), any(), any());
         order.verify(sessionDataListener).receiveDataProcessed();
         order.verify(sessionDataListener).receiveDataAvailable();
         order.verify(application).onSessionMessage(
@@ -379,7 +381,7 @@ class WebSocketSessionTest
 
         final InOrder order = Mockito.inOrder(sessionDataListener, connectionUpgrade, application);
         order.verify(sessionDataListener).receiveDataAvailable();
-        order.verify(connectionUpgrade).handleUpgrade(any(), any());
+        order.verify(connectionUpgrade).handleUpgrade(any(), any(), any());
         order.verify(sessionDataListener).receiveDataProcessed();
         order.verify(sessionDataListener).receiveDataAvailable();
         order.verify(application).onSessionMessage(
@@ -420,6 +422,6 @@ class WebSocketSessionTest
             final ByteBuffer receiveBuffer = invocation.getArgument(0);
             receiveBuffer.position(receiveBuffer.limit());
             return true;
-        }).when(connectionUpgrade).handleUpgrade(any(), any());
+        }).when(connectionUpgrade).handleUpgrade(any(), any(), any());
     }
 }

@@ -48,7 +48,8 @@ import io.aeron.logbuffer.BufferClaim;
 public final class ApplicationProxy implements Application
 {
     private static final int HEADER_LENGTH = MessageHeaderEncoder.ENCODED_LENGTH;
-    private static final int SESSION_OPENED_SIZE = HEADER_LENGTH + SessionOpenedEncoder.BLOCK_LENGTH;
+    private static final int SESSION_OPENED_BASE_SIZE =
+        HEADER_LENGTH + SessionOpenedEncoder.BLOCK_LENGTH + BitUtil.SIZE_OF_INT;
     private static final int SESSION_CLOSED_SIZE = HEADER_LENGTH + SessionClosedEncoder.BLOCK_LENGTH;
     private static final int SESSION_MESSAGE_BASE_SIZE =
         HEADER_LENGTH + SessionMessageEncoder.BLOCK_LENGTH + BitUtil.SIZE_OF_INT;
@@ -98,12 +99,18 @@ public final class ApplicationProxy implements Application
     public int onSessionConnected(final Session session)
     {
         sessionByIdMap.put(session.id(), session);
-        final long result = acquireBuffer(SESSION_OPENED_SIZE, applicationsPublication, bufferClaim);
+        final long result = acquireBuffer(
+            SESSION_OPENED_BASE_SIZE + session.requestUri().length(), applicationsPublication, bufferClaim);
         if (result >= 0)
         {
             sessionOpenEncoder.wrapAndApplyHeader(bufferClaim.buffer(), bufferClaim.offset(), headerEncoder);
             sessionOpenEncoder.sessionId(session.id());
             sessionOpenEncoder.containerId(sessionContainerId);
+
+            final VarDataEncodingEncoder encodedRequestUri = sessionOpenEncoder.requestUri();
+            encodedRequestUri.length(session.requestUri().length());
+            encodedRequestUri.buffer().putStringWithoutLengthAscii(
+                encodedRequestUri.offset() + varDataEncodingOffset(), session.requestUri());
             bufferClaim.commit();
             Logger.log(Category.PROXY, "[%d] ApplicationProxy onSessionConnected(sessionId: %d)%n",
                 sessionContainerId, session.id());

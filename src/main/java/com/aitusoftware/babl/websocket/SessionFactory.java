@@ -71,10 +71,11 @@ final class SessionFactory implements Supplier<WebSocketSession>
             TimeUnit.NANOSECONDS.toMillis(sessionConfig.pongResponseTimeoutNanos()), perSessionDataListener);
         final FrameDecoder frameDecoder = new FrameDecoder(new MessageDispatcher(application), sessionConfig,
             bufferPool, pingAgent, true, sessionContainerStatistics);
+        final StringBuilder requestUri = new StringBuilder(64);
 
         return new WebSocketSession(
             perSessionDataListener, frameDecoder,
             frameEncoder, sessionConfig, bufferPool, application, pingAgent,
-            sharedClock, sessionStatistics, sessionContainerStatistics);
+            sharedClock, requestUri, sessionStatistics, sessionContainerStatistics);
     }
 }

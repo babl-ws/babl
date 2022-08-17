@@ -67,6 +67,7 @@ public final class WebSocketSession implements Pooled, Session
     private SessionStatistics sessionStatistics;
     private transient ByteBuffer handshakeSendBuffer;
     private ByteBuffer receiveBuffer;
+    private StringBuilder requestUri;
     private SessionState state = SessionState.UPGRADING;
     private boolean closed = true;
     private short closeReason = NULL_CLOSE_REASON;
@@ -86,6 +87,7 @@ public final class WebSocketSession implements Pooled, Session
         final Application application,
         final PingAgent pingAgent,
         final EpochClock epochClock,
+        final StringBuilder requestUri,
         final SessionStatistics sessionStatistics,
         final SessionContainerStatistics sessionContainerStatistics)
     {
@@ -97,6 +99,7 @@ public final class WebSocketSession implements Pooled, Session
         this.application = application;
         this.pingAgent = pingAgent;
         this.epochClock = epochClock;
+        this.requestUri = requestUri;
         this.sessionStatistics = sessionStatistics;
         this.sessionContainerStatistics = sessionContainerStatistics;
     }
@@ -120,6 +123,7 @@ public final class WebSocketSession implements Pooled, Session
         }
         selectionKey = null;
         closingTimestampMs = 0L;
+        requestUri.setLength(0);
     }
 
     void init(
@@ -176,6 +180,12 @@ public final class WebSocketSession implements Pooled, Session
     public long id()
     {
         return id;
+    }
+
+    @Override
+    public CharSequence requestUri()
+    {
+        return requestUri;
     }
 
     @Override
@@ -441,7 +451,7 @@ public final class WebSocketSession implements Pooled, Session
         }
         Logger.log(Category.CONNECTION, "Session %d attempting upgrade with %d available bytes%n",
             id, receiveBuffer.limit());
-        if (connectionUpgrade.handleUpgrade(receiveBuffer, handshakeSendBuffer))
+        if (connectionUpgrade.handleUpgrade(receiveBuffer, handshakeSendBuffer, requestUri))
         {
             Logger.log(Category.CONNECTION, "Session %d upgraded%n", id);
             setState(SessionState.VALIDATING);

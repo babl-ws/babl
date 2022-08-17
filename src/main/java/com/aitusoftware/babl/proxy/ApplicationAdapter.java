@@ -186,12 +186,14 @@ public final class ApplicationAdapter implements Agent, ControlledFragmentHandle
         sessionOpenDecoder.wrap(buffer, offset + MessageHeaderDecoder.ENCODED_LENGTH,
             messageHeaderDecoder.blockLength(), messageHeaderDecoder.version());
         final long sessionId = sessionOpenDecoder.sessionId();
+        final VarDataEncodingDecoder decodedRequestUri = sessionOpenDecoder.requestUri();
         SessionProxy sessionProxy = sessionProxyById.get(sessionId);
         if (sessionProxy == null)
         {
             sessionProxy = sessionProxyObjectPool.acquire();
             sessionProxyById.put(sessionId, sessionProxy);
-            sessionProxy.set(sessionId, sessionOpenDecoder.containerId());
+            sessionProxy.set(sessionId, sessionOpenDecoder.containerId(), decodedRequestUri.buffer(),
+                decodedRequestUri.offset() + varDataEncodingOffset(), (int)decodedRequestUri.length());
         }
         else
         {

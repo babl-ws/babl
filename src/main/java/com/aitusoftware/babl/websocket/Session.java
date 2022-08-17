@@ -30,5 +30,7 @@ public interface Session
 
     long id();
 
+    CharSequence requestUri();
+
     int close(DisconnectReason disconnectReason);
 }

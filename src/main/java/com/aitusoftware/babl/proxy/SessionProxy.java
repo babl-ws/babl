@@ -58,6 +58,7 @@ final class SessionProxy implements Session, Pooled
     private long sessionId;
     private int sessionContainerId;
     private Publication currentServerPublication;
+    private StringBuilder requestUri = new StringBuilder(64);
 
     SessionProxy(
         final Publication[] publications,
@@ -72,6 +73,19 @@ final class SessionProxy implements Session, Pooled
         this.sessionId = sessionId;
         this.sessionContainerId = sessionContainerId;
         currentServerPublication = toServerPublications[sessionContainerId];
+    }
+
+    void set(
+        final long sessionId,
+        final int sessionContainerId,
+        final DirectBuffer requestUri,
+        final int offset,
+        final int length)
+    {
+        this.sessionId = sessionId;
+        this.sessionContainerId = sessionContainerId;
+        currentServerPublication = toServerPublications[sessionContainerId];
+        requestUri.getStringWithoutLengthAscii(offset, length, this.requestUri);
     }
 
     @Override
@@ -137,10 +151,17 @@ final class SessionProxy implements Session, Pooled
     }
 
     @Override
+    public CharSequence requestUri()
+    {
+        return requestUri;
+    }
+
+    @Override
     public void reset()
     {
         this.sessionId = Long.MIN_VALUE;
         this.sessionContainerId = Integer.MIN_VALUE;
+        this.requestUri.setLength(0);
     }
 
     @Override

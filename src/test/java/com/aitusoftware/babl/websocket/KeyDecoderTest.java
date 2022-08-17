@@ -122,6 +122,7 @@ class KeyDecoderTest
 
     private final KeyDecoder keyDecoder = new KeyDecoder();
     private byte[] capturedKey;
+    private byte[] capturedUri;
 
     @Test
     void shouldSetBufferPositionAtEndOfHttpRequest()
@@ -163,11 +164,12 @@ class KeyDecoderTest
     {
         final ByteBuffer buffer = ByteBuffer.wrap(httpRequest.getBytes(StandardCharsets.UTF_8));
         assertThat(keyDecoder.decode(
-            buffer, this::captureCharKey))
+            buffer, this::captureCharKey, this::captureRequestUri))
             .isEqualTo(shouldBeDecoded);
         if (shouldBeDecoded)
         {
             assertThat(capturedKey).isEqualTo(WEB_SOCKET_KEY.getBytes(StandardCharsets.UTF_8));
+            assertThat(capturedUri).isEqualTo("/".getBytes(StandardCharsets.UTF_8));
         }
         else
         {
@@ -179,5 +181,10 @@ class KeyDecoderTest
     private void captureCharKey(final CharSequence key)
     {
         capturedKey = key.toString().getBytes(StandardCharsets.US_ASCII);
+    }
+
+    private void captureRequestUri(final CharSequence uri)
+    {
+        capturedUri = uri.toString().getBytes(StandardCharsets.US_ASCII);
     }
 }

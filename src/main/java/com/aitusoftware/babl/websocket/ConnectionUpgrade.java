@@ -46,6 +46,7 @@ class ConnectionUpgrade implements Pooled
     private final ConnectionValidator connectionValidator;
     private final ValidationResultPublisher validationResultPublisher;
     private ByteBuffer handshakeResponseOutputBuffer;
+    private StringBuilder requestUriBuilder;
     private long sessionId;
 
     ConnectionUpgrade(
@@ -67,10 +68,11 @@ class ConnectionUpgrade implements Pooled
         }
     }
 
-    boolean handleUpgrade(final ByteBuffer input, final ByteBuffer output)
+    boolean handleUpgrade(final ByteBuffer input, final ByteBuffer output, final StringBuilder requestUri)
     {
         handshakeResponseOutputBuffer = output;
-        final boolean decoded = keyDecoder.decode(input, this::writeUpgradeResponse);
+        requestUriBuilder = requestUri;
+        final boolean decoded = keyDecoder.decode(input, this::writeUpgradeResponse, this::copyRequestUri);
         if (decoded)
         {
             Logger.log(Category.CONNECTION, "Session %d key decoded%n", sessionId);
@@ -107,5 +109,12 @@ class ConnectionUpgrade implements Pooled
         handshakeResponseOutputBuffer.put(Base64.getEncoder().encode(hashed));
         handshakeResponseOutputBuffer.put(RESPONSE_MESSAGE_END);
         handshakeResponseOutputBuffer = null;
+    }
+
+    private void copyRequestUri(final CharSequence requestUri)
+    {
+        requestUriBuilder.setLength(0);
+        requestUriBuilder.append(requestUri);
+        requestUriBuilder = null;
     }
 }

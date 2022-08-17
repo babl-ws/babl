@@ -33,12 +33,13 @@ class ConnectionUpgradeTest
     private final ConnectionUpgrade connectionUpgrade =
         new ConnectionUpgrade(new ObjectPool<>(ValidationResult::new, 8),
         new AlwaysValidConnectionValidator(), (b) -> true);
+    private final StringBuilder requestUri = new StringBuilder();
 
     @Test
     void shouldHandleConnectionUpgrade()
     {
         final ByteBuffer output = ByteBuffer.allocate(256);
-        connectionUpgrade.handleUpgrade(INPUT, output);
+        connectionUpgrade.handleUpgrade(INPUT, output, requestUri);
 
         assertThat(new String(output.array(), 0, output.remaining())).contains(
             "HTTP/1.1 101 Switching Protocols\r\n" +

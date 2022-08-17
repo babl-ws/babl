@@ -27,6 +27,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -96,12 +97,12 @@ class ProxyIntegrationTest
     private final MutableDirectBuffer payload = new UnsafeBuffer(new byte[PAYLOAD_LENGTH]);
     private final Session session = mock(Session.class);
     private final Broadcast broadcast = mock(Broadcast.class);
-
     private static final byte PAYLOAD_VALUE = (byte)7;
     private final Application application = mock(Application.class);
 
     {
         Arrays.fill(payload.byteArray(), PAYLOAD_VALUE);
+        when(session.requestUri()).thenReturn("/someendpoint");
     }
 
     @TempDir

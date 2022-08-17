@@ -69,8 +69,10 @@ public class WebSocketSessionBenchmark
     private final FrameDecoder frameDecoder = new FrameDecoder(
         messageDispatcher, SESSION_CONFIG, bufferPool, pingAgent, false, SESSION_CONTAINER_STATISTICS);
     private final ByteBuffer singleFramePayload = ByteBuffer.allocateDirect(106);
+    private final StringBuilder requestUri = new StringBuilder(64);
     private final WebSocketSession session = new WebSocketSession(SESSION_DATA_LISTENER, frameDecoder, frameEncoder,
-        SESSION_CONFIG, bufferPool, application, pingAgent, CLOCK, SESSION_STATISTICS, SESSION_CONTAINER_STATISTICS);
+        SESSION_CONFIG, bufferPool, application, pingAgent, CLOCK, requestUri, SESSION_STATISTICS,
+        SESSION_CONTAINER_STATISTICS);
     private final DataSource dataSource = new DataSource();
     private final DataSink dataSink = new DataSink();
 
@@ -190,7 +192,7 @@ public class WebSocketSessionBenchmark
         }
 
         @Override
-        boolean handleUpgrade(final ByteBuffer input, final ByteBuffer output)
+        boolean handleUpgrade(final ByteBuffer input, final ByteBuffer output, final StringBuilder outputRequestUri)
         {
             return true;
         }

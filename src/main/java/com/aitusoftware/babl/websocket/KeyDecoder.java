@@ -40,6 +40,7 @@ final class KeyDecoder implements Consumer<BiConsumer<CharSequence, CharSequence
     private static final String UPGRADE_PATTERN = "upgrade";
 
     private final StringBuilder accumulator = new StringBuilder();
+    private final StringBuilder requestUri = new StringBuilder();
     private final StringBuilder secWebSocketKey = new StringBuilder();
     private final StringBuilder unhandledHeaderKey = new StringBuilder();
     private final ObjectPool<HttpHeader> httpHeaderPool = new ObjectPool<>(HttpHeader::new, 8);
@@ -49,6 +50,7 @@ final class KeyDecoder implements Consumer<BiConsumer<CharSequence, CharSequence
     void reset()
     {
         accumulator.setLength(0);
+        requestUri.setLength(0);
         unhandledHeaderKey.setLength(0);
         secWebSocketKey.setLength(0);
         header = Header.UNHANDLED;
@@ -58,7 +60,8 @@ final class KeyDecoder implements Consumer<BiConsumer<CharSequence, CharSequence
 
     boolean decode(
         final ByteBuffer input,
-        final Consumer<CharSequence> webSocketSecKeyHandler)
+        final Consumer<CharSequence> webSocketSecKeyHandler,
+        final Consumer<CharSequence> requestUriHandler)
     {
         State state = State.READ_HEADER_KEY;
         boolean keyDecoded = false;
@@ -85,6 +88,7 @@ final class KeyDecoder implements Consumer<BiConsumer<CharSequence, CharSequence
                         }
                         if (charSequencesEqual(GET_REQUEST, accumulator, GET_REQUEST.length()))
                         {
+                            copyCharUntilSpace(accumulator, GET_REQUEST.length() - 1, requestUri);
                             startsWithGetRequest = true;
                         }
                         i++;
@@ -147,6 +151,7 @@ final class KeyDecoder implements Consumer<BiConsumer<CharSequence, CharSequence
         if (processingCompleted)
         {
             webSocketSecKeyHandler.accept(secWebSocketKey);
+            requestUriHandler.accept(requestUri);
         }
         return processingCompleted;
     }
@@ -257,6 +262,23 @@ final class KeyDecoder implements Consumer<BiConsumer<CharSequence, CharSequence
             }
         }
         return patternIndex == pattern.length();
+    }
+
+    private static int copyCharUntilSpace(final CharSequence source, final int pos, final StringBuilder out)
+    {
+        int i;
+        char c;
+        for (i = pos; i < source.length(); i++)
+        {
+            c = source.charAt(i);
+            if (c == ' ')
+            {
+                break;
+            }
+            out.append(c);
+
+        }
+        return i - pos;
     }
 
     private static final class HttpHeader implements Pooled
