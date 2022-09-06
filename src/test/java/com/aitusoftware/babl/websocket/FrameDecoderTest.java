@@ -24,15 +24,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.aitusoftware.babl.log.Logger;
+import com.aitusoftware.babl.config.SessionConfig;
 import com.aitusoftware.babl.monitoring.NoOpSessionContainerStatistics;
 import com.aitusoftware.babl.monitoring.NoOpSessionStatistics;
 import com.aitusoftware.babl.pool.BufferPool;
 import com.aitusoftware.babl.user.ContentType;
-import com.aitusoftware.babl.config.SessionConfig;
 
 import org.agrona.DirectBuffer;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -53,12 +51,6 @@ class FrameDecoderTest
         new NoOpSessionContainerStatistics());
     private final byte[] payload = new byte[PAYLOAD_LENGTH];
     private final ByteBuffer sourceBuffer = ByteBuffer.allocateDirect(128);
-
-    @BeforeAll
-    static void enableLogging()
-    {
-        System.setProperty(Logger.DEBUG_ENABLED_PROPERTY, "true");
-    }
 
     @BeforeEach
     void setUp()

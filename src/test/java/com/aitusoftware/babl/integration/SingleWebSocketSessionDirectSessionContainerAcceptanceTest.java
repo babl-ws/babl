@@ -17,34 +17,8 @@
  */
 package com.aitusoftware.babl.integration;
 
-import com.aitusoftware.babl.log.Logger;
-import com.aitusoftware.babl.user.ContentType;
-import com.aitusoftware.babl.user.EchoApplication;
-import com.aitusoftware.babl.websocket.Client;
-import com.aitusoftware.babl.websocket.ClientEventHandler;
-import com.aitusoftware.babl.websocket.ConnectionValidator;
-import com.aitusoftware.babl.websocket.ValidationResult;
-import com.aitusoftware.babl.websocket.ValidationResultPublisher;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.buffer.impl.BufferImpl;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.WebSocket;
-import io.vertx.core.http.WebSocketConnectOptions;
-import io.vertx.core.http.WebSocketFrame;
-import org.agrona.CloseHelper;
-import org.agrona.DirectBuffer;
-import org.agrona.concurrent.Agent;
-import org.agrona.concurrent.UnsafeBuffer;
-import org.awaitility.Awaitility;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import static com.aitusoftware.babl.websocket.Constants.CLOSE_REASON_PROTOCOL_ERROR;
+import static com.google.common.truth.Truth.assertThat;
 
 import java.io.IOException;
 import java.net.URL;
@@ -63,8 +37,34 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import static com.aitusoftware.babl.websocket.Constants.CLOSE_REASON_PROTOCOL_ERROR;
-import static com.google.common.truth.Truth.assertThat;
+import com.aitusoftware.babl.user.ContentType;
+import com.aitusoftware.babl.user.EchoApplication;
+import com.aitusoftware.babl.websocket.Client;
+import com.aitusoftware.babl.websocket.ClientEventHandler;
+import com.aitusoftware.babl.websocket.ConnectionValidator;
+import com.aitusoftware.babl.websocket.ValidationResult;
+import com.aitusoftware.babl.websocket.ValidationResultPublisher;
+
+import org.agrona.CloseHelper;
+import org.agrona.DirectBuffer;
+import org.agrona.concurrent.Agent;
+import org.agrona.concurrent.UnsafeBuffer;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.impl.BufferImpl;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.WebSocket;
+import io.vertx.core.http.WebSocketConnectOptions;
+import io.vertx.core.http.WebSocketFrame;
 
 class SingleWebSocketSessionDirectSessionContainerAcceptanceTest
 {
@@ -80,12 +80,6 @@ class SingleWebSocketSessionDirectSessionContainerAcceptanceTest
     private HttpClient client;
     @TempDir
     Path workingDir;
-
-    @BeforeAll
-    static void enableLogging()
-    {
-        System.setProperty(Logger.DEBUG_ENABLED_PROPERTY, "true");
-    }
 
     @BeforeEach
     void setUp() throws IOException

@@ -26,12 +26,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import com.aitusoftware.babl.log.Logger;
 import com.aitusoftware.babl.user.EchoApplication;
 
 import org.agrona.CloseHelper;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -51,12 +49,6 @@ class BackPressureDirectSessionContainerAcceptanceTest
     private HttpClient client;
     @TempDir
     Path workingDir;
-
-    @BeforeAll
-    static void enableLogging()
-    {
-        System.setProperty(Logger.DEBUG_ENABLED_PROPERTY, "true");
-    }
 
     @BeforeEach
     void setUp() throws IOException
@@ -96,11 +88,7 @@ class BackPressureDirectSessionContainerAcceptanceTest
             });
 
         assertThat(latch.await(20, TimeUnit.SECONDS)).isTrue();
-        if (!messagesSent.equals(messagesReceived))
-        {
-            System.out.println(messagesSent);
-            System.out.println(messagesReceived);
-        }
+
         assertThat(messagesReceived).isEqualTo(messagesSent);
     }
 

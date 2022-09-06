@@ -26,14 +26,12 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-import com.aitusoftware.babl.log.Logger;
 import com.aitusoftware.babl.user.EchoApplication;
 import com.aitusoftware.babl.websocket.Constants;
 
 import org.agrona.CloseHelper;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -56,11 +54,6 @@ class MultipleWebSocketSessionDirectSessionContainerAcceptanceTest
     @TempDir
     Path workingDir;
 
-    @BeforeAll
-    static void enableLogging()
-    {
-        System.setProperty(Logger.DEBUG_ENABLED_PROPERTY, "true");
-    }
 
     @BeforeEach
     void setUp() throws IOException

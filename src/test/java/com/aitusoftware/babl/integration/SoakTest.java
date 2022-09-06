@@ -61,7 +61,7 @@ class SoakTest
     private Path serverBaseDir;
 
     @BeforeAll
-    static void configureLogging()
+    static void disableLogging()
     {
         System.setProperty(Logger.DEBUG_ENABLED_PROPERTY, "false");
     }

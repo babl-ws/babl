@@ -40,7 +40,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import com.aitusoftware.babl.config.SessionConfig;
-import com.aitusoftware.babl.log.Logger;
 import com.aitusoftware.babl.monitoring.SessionContainerStatistics;
 import com.aitusoftware.babl.monitoring.SessionStatistics;
 import com.aitusoftware.babl.pool.BufferPool;
@@ -50,7 +49,6 @@ import com.aitusoftware.babl.user.ContentType;
 import org.agrona.DirectBuffer;
 import org.agrona.concurrent.EpochClock;
 import org.agrona.concurrent.UnsafeBuffer;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
@@ -98,12 +96,6 @@ class WebSocketSessionTest
         sessionConfig, bufferPool, application, pingAgent, clock, sessionStatistics, sessionContainerStatistics);
     private final UnsafeBuffer applicationBuffer = new UnsafeBuffer(new byte[512]);
     private final SelectionKey selectionKey = mock(SelectionKey.class);
-
-    @BeforeAll
-    static void enableLogging()
-    {
-        System.setProperty(Logger.DEBUG_ENABLED_PROPERTY, "true");
-    }
 
     @BeforeEach
     void setUp()
