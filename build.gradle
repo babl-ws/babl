@@ -145,7 +145,7 @@ dependencies {
 
     jmhImplementation 'org.openjdk.jmh:jmh-core:1.32'
 
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.1'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.1'
     testImplementation 'org.mockito:mockito-core:3.11.0'
     testImplementation 'com.google.truth:truth:1.1.2'
     testImplementation 'io.vertx:vertx-core:3.9.4'
