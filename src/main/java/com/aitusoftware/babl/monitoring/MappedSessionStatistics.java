@@ -34,7 +34,8 @@ public final class MappedSessionStatistics extends SessionStatistics implements 
     private static final int FRAMES_DECODED_OFFSET = SEND_BUFFERED_BYTES_OFFSET + BitUtil.SIZE_OF_INT;
     private static final int MESSAGES_RECEIVED_OFFSET = FRAMES_DECODED_OFFSET + BitUtil.SIZE_OF_LONG;
     private static final int FRAMES_ENCODED_OFFSET = MESSAGES_RECEIVED_OFFSET + BitUtil.SIZE_OF_LONG;
-    private static final int MESSAGES_SENT_OFFSET = FRAMES_ENCODED_OFFSET + BitUtil.SIZE_OF_LONG;
+    private static final int CACHE_LINE_PADDING_OFFSET = FRAMES_ENCODED_OFFSET + BitUtil.SIZE_OF_INT;
+    private static final int MESSAGES_SENT_OFFSET = CACHE_LINE_PADDING_OFFSET + BitUtil.SIZE_OF_LONG;
     private static final int INVALID_MESSAGES_RECEIVED_OFFSET = MESSAGES_SENT_OFFSET + BitUtil.SIZE_OF_LONG;
     private static final int INVALID_PINGS_RECEIVED_OFFSET = INVALID_MESSAGES_RECEIVED_OFFSET + BitUtil.SIZE_OF_INT;
     private static final int SEND_BACK_PRESSURE_EVENTS_OFFSET = INVALID_PINGS_RECEIVED_OFFSET + BitUtil.SIZE_OF_INT;
