@@ -43,8 +43,8 @@ import org.junit.jupiter.api.io.TempDir;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.WebSocketClient;
+import io.vertx.core.http.WebSocketClientOptions;
 import io.vertx.core.http.WebSocket;
 
 @Disabled
@@ -55,7 +55,7 @@ class SoakTest
 
     private final EchoApplication application = new EchoApplication(false);
     private final ServerHarness harness = new ServerHarness(application);
-    private HttpClient client;
+    private WebSocketClient client;
     @TempDir
     Path workingDir;
     private Path serverBaseDir;
@@ -104,7 +104,7 @@ class SoakTest
         for (int i = 0; i < ACTIVE_CLIENT_COUNT; i++)
         {
             final CompletableFuture<WebSocket> webSocketFuture = new CompletableFuture<>();
-            client.webSocket(harness.serverPort(), "localhost", "/some-uri",
+            client.connect(harness.serverPort(), "localhost", "/some-uri").onComplete(
                 new Handler<AsyncResult<WebSocket>>()
                 {
                     @Override
@@ -158,6 +158,6 @@ class SoakTest
         {
             client.close();
         }
-        client = Vertx.vertx().createHttpClient(new HttpClientOptions().setMaxPoolSize(ACTIVE_CLIENT_COUNT));
+        client = Vertx.vertx().createWebSocketClient(new WebSocketClientOptions());
     }
 }

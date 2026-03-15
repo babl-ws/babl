@@ -40,6 +40,7 @@ import org.agrona.concurrent.UnsafeBuffer;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
@@ -62,6 +63,10 @@ class DockerComposeIntegrationTest
     @BeforeEach
     void setUp() throws IOException
     {
+        if (!Files.isExecutable(Paths.get(DOCKER_COMPOSE_PATH)))
+        {
+            Assumptions.assumeTrue(false, "docker-compose not installed");
+        }
         assertFileExists(Paths.get("scripts", "docker-build.sh"));
         assertFileExists(DOCKER_DIR.resolve("docker-compose.yaml"));
         stdOut = tmpDir.resolve("stdout.txt");

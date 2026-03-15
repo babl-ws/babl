@@ -195,21 +195,31 @@ public final class BablServer
         final BablConfig config,
         final ApplicationAdapter applicationAdapter)
     {
-        final AgentInvoker mediaDriverInvoker = config.proxyConfig().mediaDriverInvoker();
         final Agent additionalWork = config.applicationConfig().additionalWork();
-        if (mediaDriverInvoker != null && additionalWork != null)
+        Agent combinedAgent = applicationAdapter;
+
+        final Aeron aeron = config.proxyConfig().aeron();
+        if (aeron != null)
         {
-            return new TripleAgent(applicationAdapter, mediaDriverInvoker.agent(), additionalWork);
+            final AgentInvoker conductorInvoker = aeron.conductorAgentInvoker();
+            if (conductorInvoker != null)
+            {
+                combinedAgent = new DoubleAgent(combinedAgent, new AgentInvokerAgent(conductorInvoker));
+            }
         }
+
+        final AgentInvoker mediaDriverInvoker = config.proxyConfig().mediaDriverInvoker();
         if (mediaDriverInvoker != null)
         {
-            return new DoubleAgent(applicationAdapter, mediaDriverInvoker.agent());
+            combinedAgent = new DoubleAgent(combinedAgent, new AgentInvokerAgent(mediaDriverInvoker));
         }
+
         if (additionalWork != null)
         {
-            return new DoubleAgent(applicationAdapter, additionalWork);
+            combinedAgent = new DoubleAgent(combinedAgent, additionalWork);
         }
-        return applicationAdapter;
+
+        return combinedAgent;
     }
 
     private static void initialiseServerInstance(

@@ -44,7 +44,7 @@ final class VertxServer implements AutoCloseable
     {
         vertx = Vertx.vertx();
         httpServer = vertx.createHttpServer(new HttpServerOptions());
-        httpServer.websocketHandler(new Handler<ServerWebSocket>()
+        httpServer.webSocketHandler(new Handler<ServerWebSocket>()
         {
             @Override
             public void handle(final ServerWebSocket event)
@@ -53,7 +53,7 @@ final class VertxServer implements AutoCloseable
             }
         });
         final CountDownLatch latch = new CountDownLatch(1);
-        httpServer.listen(port, new Handler<AsyncResult<HttpServer>>()
+        httpServer.listen(port).onComplete(new Handler<AsyncResult<HttpServer>>()
         {
             @Override
             public void handle(final AsyncResult<HttpServer> event)

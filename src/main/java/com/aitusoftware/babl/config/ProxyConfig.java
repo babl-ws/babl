@@ -280,6 +280,7 @@ public final class ProxyConfig implements AutoCloseable
             {
                 mediaDriverInvoker = mediaDriver.sharedAgentInvoker();
                 aeronClientContext.driverAgentInvoker(mediaDriverInvoker);
+                aeronClientContext.useConductorAgentInvoker(true);
             }
         }
         aeron = Aeron.connect(aeronClientContext);

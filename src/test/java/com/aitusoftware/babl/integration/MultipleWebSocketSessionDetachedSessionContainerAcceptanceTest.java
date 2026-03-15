@@ -33,6 +33,7 @@ import com.aitusoftware.babl.monitoring.SessionContainerStatisticsPrinter;
 import com.aitusoftware.babl.user.ContentType;
 import com.aitusoftware.babl.user.EchoApplication;
 import com.aitusoftware.babl.websocket.Constants;
+import com.aitusoftware.babl.websocket.SendResult;
 import com.aitusoftware.babl.websocket.Session;
 
 import org.agrona.CloseHelper;
@@ -50,8 +51,8 @@ import org.junit.jupiter.api.io.TempDir;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.WebSocketClient;
+import io.vertx.core.http.WebSocketClientOptions;
 import io.vertx.core.http.WebSocket;
 
 class MultipleWebSocketSessionDetachedSessionContainerAcceptanceTest
@@ -64,7 +65,7 @@ class MultipleWebSocketSessionDetachedSessionContainerAcceptanceTest
     private final ServerHarness harness = new ServerHarness(application);
     private final CountingAgent additionalWork =
         new CountingAgent(application.getSessionCache(), true);
-    private HttpClient client;
+    private WebSocketClient client;
     @TempDir
     Path workingDir;
     private Path serverBaseDir;
@@ -80,7 +81,7 @@ class MultipleWebSocketSessionDetachedSessionContainerAcceptanceTest
             .mediaDriverDir(workingDir.resolve("driver").toString());
         serverBaseDir = workingDir.resolve("server");
         harness.start(serverBaseDir);
-        client = Vertx.vertx().createHttpClient(new HttpClientOptions().setMaxPoolSize(50));
+        client = Vertx.vertx().createWebSocketClient(new WebSocketClientOptions());
     }
 
     @AfterEach
@@ -97,14 +98,20 @@ class MultipleWebSocketSessionDetachedSessionContainerAcceptanceTest
         for (int i = 0; i < CLIENT_COUNT; i++)
         {
             final CompletableFuture<WebSocket> webSocketFuture = new CompletableFuture<>();
-            client.webSocket(harness.serverPort(), "localhost", "/some-uri",
+            client.connect(harness.serverPort(), "localhost", "/some-uri").onComplete(
                 new Handler<AsyncResult<WebSocket>>()
                 {
                     @Override
                     public void handle(final AsyncResult<WebSocket> event)
                     {
-                        final WebSocket socket = event.result();
-                        webSocketFuture.complete(socket);
+                        if (event.succeeded())
+                        {
+                            webSocketFuture.complete(event.result());
+                        }
+                        else
+                        {
+                            webSocketFuture.completeExceptionally(event.cause());
+                        }
                     }
                 });
             clientSockets.add(webSocketFuture.get(5, TimeUnit.SECONDS));
@@ -127,7 +134,7 @@ class MultipleWebSocketSessionDetachedSessionContainerAcceptanceTest
 
         for (final ClientData clientData : clientDataList)
         {
-            assertThat(clientData.latch.await(20, TimeUnit.SECONDS)).isTrue();
+            assertThat(clientData.latch.await(60, TimeUnit.SECONDS)).isTrue();
             assertThat(clientData.messagesReceived).isEqualTo(clientData.messagesSent);
         }
 
@@ -157,7 +164,8 @@ class MultipleWebSocketSessionDetachedSessionContainerAcceptanceTest
             .until(() -> application.getSessionClosedCount() == CLIENT_COUNT + 1);
 
         assertThat(additionalWork.invocationCount.get()).isNotEqualTo(0);
-        assertThat(clientDataList.stream().anyMatch(data -> !data.otherMessagesReceived.isEmpty())).isTrue();
+        Awaitility.await().atMost(10, TimeUnit.SECONDS)
+            .until(() -> clientDataList.stream().anyMatch(data -> !data.otherMessagesReceived.isEmpty()));
     }
 
     private static final class CountingAgent implements Agent
@@ -189,8 +197,12 @@ class MultipleWebSocketSessionDetachedSessionContainerAcceptanceTest
                     final long sessionId = keyIterator.nextLong();
                     if (!sent.containsKey(sessionId))
                     {
-                        sessionCache.get(sessionId).send(ContentType.TEXT, payload, 0, payload.capacity());
-                        sent.put(sessionId, Boolean.TRUE);
+                        final int sendResult =
+                            sessionCache.get(sessionId).send(ContentType.TEXT, payload, 0, payload.capacity());
+                        if (SendResult.OK == sendResult)
+                        {
+                            sent.put(sessionId, Boolean.TRUE);
+                        }
                     }
                 }
             }

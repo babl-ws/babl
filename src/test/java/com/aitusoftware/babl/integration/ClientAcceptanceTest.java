@@ -55,7 +55,7 @@ class ClientAcceptanceTest
     void setUp() throws Exception
     {
         httpServer = Vertx.vertx().createHttpServer(new HttpServerOptions());
-        httpServer.websocketHandler(new Handler<ServerWebSocket>()
+        httpServer.webSocketHandler(new Handler<ServerWebSocket>()
         {
             @Override
             public void handle(final ServerWebSocket event)
@@ -74,7 +74,7 @@ class ClientAcceptanceTest
             }
         });
         final CountDownLatch latch = new CountDownLatch(1);
-        httpServer.listen(8192, new Handler<AsyncResult<HttpServer>>()
+        httpServer.listen(8192).onComplete(new Handler<AsyncResult<HttpServer>>()
         {
             @Override
             public void handle(final AsyncResult<HttpServer> event)

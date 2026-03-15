@@ -54,8 +54,8 @@ import org.junit.jupiter.api.io.TempDir;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.WebSocketClient;
+import io.vertx.core.http.WebSocketClientOptions;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebSocketFrame;
 
@@ -72,7 +72,7 @@ class MultipleWebSocketSessionBroadcastAcceptanceTest
 
     private final BroadcastApplication application = new BroadcastApplication();
     private final ServerHarness harness = new ServerHarness(application);
-    private HttpClient client;
+    private WebSocketClient client;
     @TempDir
     Path workingDir;
     private Path serverBaseDir;
@@ -89,7 +89,7 @@ class MultipleWebSocketSessionBroadcastAcceptanceTest
             .mediaDriverDir(workingDir.resolve("driver").toString());
         serverBaseDir = workingDir.resolve("server");
         harness.start(serverBaseDir);
-        client = Vertx.vertx().createHttpClient(new HttpClientOptions().setMaxPoolSize(50));
+        client = Vertx.vertx().createWebSocketClient(new WebSocketClientOptions());
     }
 
     @AfterEach
@@ -106,14 +106,20 @@ class MultipleWebSocketSessionBroadcastAcceptanceTest
         for (int i = 0; i < CLIENT_COUNT; i++)
         {
             final CompletableFuture<WebSocket> webSocketFuture = new CompletableFuture<>();
-            client.webSocket(harness.serverPort(), "localhost", "/some-uri",
+            client.connect(harness.serverPort(), "localhost", "/some-uri").onComplete(
                 new Handler<AsyncResult<WebSocket>>()
                 {
                     @Override
                     public void handle(final AsyncResult<WebSocket> event)
                     {
-                        final WebSocket socket = event.result();
-                        webSocketFuture.complete(socket);
+                        if (event.succeeded())
+                        {
+                            webSocketFuture.complete(event.result());
+                        }
+                        else
+                        {
+                            webSocketFuture.completeExceptionally(event.cause());
+                        }
                     }
                 });
             clientSockets.add(webSocketFuture.get(5, TimeUnit.SECONDS));

@@ -5,7 +5,7 @@ buildscript {
 }
 
 plugins {
-    id 'com.github.johnrengelman.shadow' version '6.1.0'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
     id 'java'
     id 'application'
     id 'org.cadixdev.licenser' version '0.6.1'
@@ -55,8 +55,6 @@ static def getBuildJavaVersion() {
 int buildJavaVersion = getBuildJavaVersion()
 
 compileJava {
-    sourceCompatibility = '1.8'
-    targetCompatibility = '1.8'
 }
 
 
@@ -136,25 +134,26 @@ sourceSets {
 }
 
 dependencies {
-    implementation 'org.agrona:agrona:1.14.0'
-    implementation 'io.aeron:aeron-driver:1.37.0'
+    implementation 'org.agrona:agrona:2.4.0'
+    implementation 'io.aeron:aeron-driver:1.50.0'
 
-    codegen 'uk.co.real-logic:sbe-all:1.25.1'
+    codegen 'uk.co.real-logic:sbe-all:1.37.1'
 
-    jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.32'
+    jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
 
-    jmhImplementation 'org.openjdk.jmh:jmh-core:1.32'
+    jmhImplementation 'org.openjdk.jmh:jmh-core:1.37'
 
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.1'
-    testImplementation 'org.mockito:mockito-core:3.11.0'
-    testImplementation 'com.google.truth:truth:1.1.2'
-    testImplementation 'io.vertx:vertx-core:3.9.4'
-    testImplementation 'io.vertx:vertx-web:3.9.4'
-    testImplementation 'org.hdrhistogram:HdrHistogram:2.1.12'
-    testImplementation 'org.awaitility:awaitility:4.1.0'
-    testImplementation 'com.caucho:resin:4.0.65'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:6.0.2'
+    testImplementation 'org.mockito:mockito-core:5.21.0'
+    testImplementation 'com.google.truth:truth:1.4.5'
+    testImplementation 'io.vertx:vertx-core:5.0.7'
+    testImplementation 'io.vertx:vertx-web:5.0.7'
+    testImplementation 'org.hdrhistogram:HdrHistogram:2.2.2'
+    testImplementation 'org.awaitility:awaitility:4.3.0'
+    testImplementation 'com.caucho:resin:4.0.66'
 
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:6.0.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:6.0.2'
 }
 
 compileJava.dependsOn('generateCodecs')
@@ -162,7 +161,15 @@ compileJava.dependsOn('generateCodecs')
 task generateCodecs(type: JavaExec) {
     mainClass.set('uk.co.real_logic.sbe.SbeTool')
     classpath configurations.codegen.asPath
-    jvmArgs = ["-Dsbe.output.dir=${generatedSrcDir.getAbsolutePath()}", '-Dsbe.generate.ir=true', '-Dsbe.java.generate.interfaces=true']
+    def codecJvmArgs = [
+        "-Dsbe.output.dir=${generatedSrcDir.getAbsolutePath()}",
+        '-Dsbe.generate.ir=true',
+        '-Dsbe.java.generate.interfaces=true'
+    ]
+    if (buildJavaVersion >= 9) {
+        codecJvmArgs += ['--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED']
+    }
+    jvmArgs = codecJvmArgs
     args "${project.projectDir}/src/main/resources/sbe-schema.xml"
 }
 
@@ -170,7 +177,9 @@ test {
     useJUnitPlatform()
     if (buildJavaVersion >= 9) {
         jvmArgs = [
-            "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED"
+            "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED",
+            "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED",
+            "--enable-native-access=ALL-UNNAMED"
         ]
     }
 }

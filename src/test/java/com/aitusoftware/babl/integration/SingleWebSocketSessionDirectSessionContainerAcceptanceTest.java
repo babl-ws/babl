@@ -60,8 +60,8 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.buffer.impl.BufferImpl;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.WebSocketClient;
+import io.vertx.core.http.WebSocketClientOptions;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebSocketConnectOptions;
 import io.vertx.core.http.WebSocketFrame;
@@ -77,7 +77,7 @@ class SingleWebSocketSessionDirectSessionContainerAcceptanceTest
     private final ServerHarness harness = new ServerHarness(application);
     private final TestConnectionValidator testConnectionValidator = new TestConnectionValidator();
 
-    private HttpClient client;
+    private WebSocketClient client;
     @TempDir
     Path workingDir;
 
@@ -89,7 +89,7 @@ class SingleWebSocketSessionDirectSessionContainerAcceptanceTest
         harness.sessionContainerConfig().validationTimeoutNanos(TimeUnit.MILLISECONDS.toNanos(500L));
         harness.sessionConfig().maxBufferSize(1 << 20);
         harness.start(workingDir);
-        client = Vertx.vertx().createHttpClient(new HttpClientOptions());
+        client = Vertx.vertx().createWebSocketClient(new WebSocketClientOptions());
     }
 
     @AfterEach
@@ -179,7 +179,7 @@ class SingleWebSocketSessionDirectSessionContainerAcceptanceTest
         final CountDownLatch latch = new CountDownLatch(1);
         final List<String> messagesSent = new ArrayList<>();
         final List<String> messagesReceived = new ArrayList<>();
-        client.webSocket(harness.serverPort(), HOST, REQUEST_URI,
+        client.connect(harness.serverPort(), HOST, REQUEST_URI).onComplete(
             new Handler<AsyncResult<WebSocket>>()
             {
                 @Override
@@ -211,7 +211,7 @@ class SingleWebSocketSessionDirectSessionContainerAcceptanceTest
             .addHeader("custom-header-0", "value-0")
             .addHeader("X-custom-header-1", "VaLuE-1");
         final CountDownLatch latch = new CountDownLatch(1);
-        client.webSocket(connectOptions,
+        client.connect(connectOptions).onComplete(
             new Handler<AsyncResult<WebSocket>>()
             {
                 @Override
@@ -234,7 +234,7 @@ class SingleWebSocketSessionDirectSessionContainerAcceptanceTest
         testConnectionValidator.validationResultCode.set(ValidationResult.VALIDATION_FAILED);
 
         final CountDownLatch latch = new CountDownLatch(1);
-        client.webSocket(harness.serverPort(), HOST, REQUEST_URI,
+        client.connect(harness.serverPort(), HOST, REQUEST_URI).onComplete(
             new Handler<AsyncResult<WebSocket>>()
             {
                 @Override
@@ -282,14 +282,20 @@ class SingleWebSocketSessionDirectSessionContainerAcceptanceTest
         java.util.concurrent.TimeoutException
     {
         final CompletableFuture<WebSocket> socketFuture = new CompletableFuture<>();
-        client.webSocket(harness.serverPort(), HOST, REQUEST_URI,
+        client.connect(harness.serverPort(), HOST, REQUEST_URI).onComplete(
             new Handler<AsyncResult<WebSocket>>()
             {
                 @Override
                 public void handle(final AsyncResult<WebSocket> event)
                 {
-                    final WebSocket socket = event.result();
-                    socketFuture.complete(socket);
+                    if (event.succeeded())
+                    {
+                        socketFuture.complete(event.result());
+                    }
+                    else
+                    {
+                        socketFuture.completeExceptionally(event.cause());
+                    }
                 }
             });
 
@@ -301,7 +307,7 @@ class SingleWebSocketSessionDirectSessionContainerAcceptanceTest
         final CountDownLatch latch = new CountDownLatch(1);
         final List<String> messagesSent = new ArrayList<>();
         final List<String> messagesReceived = new ArrayList<>();
-        client.webSocket(harness.serverPort(), HOST, REQUEST_URI,
+        client.connect(harness.serverPort(), HOST, REQUEST_URI).onComplete(
             new Handler<AsyncResult<WebSocket>>()
             {
                 @Override

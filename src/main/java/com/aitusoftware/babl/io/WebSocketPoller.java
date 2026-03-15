@@ -21,6 +21,7 @@ import java.io.UncheckedIOException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import com.aitusoftware.babl.websocket.WebSocketSession;
@@ -58,14 +59,13 @@ public final class WebSocketPoller extends TransportPoller implements Agent
     {
         if (selector.selectNow() != 0)
         {
-            final SelectionKey[] keys = selectedKeySet.keys();
-            for (int i = 0; i < selectedKeySet.size(); i++)
+            final Set<SelectionKey> keys = selector.selectedKeys();
+            for (final SelectionKey key : keys)
             {
-                final SelectionKey key = keys[i];
                 final WebSocketSession session = (WebSocketSession)key.attachment();
                 readyToReadListener.accept(session);
             }
-            selectedKeySet.reset();
+            keys.clear();
             return 1;
         }
         return 0;

@@ -37,8 +37,8 @@ import org.junit.jupiter.api.io.TempDir;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.WebSocketClient;
+import io.vertx.core.http.WebSocketClientOptions;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebSocketFrame;
 
@@ -46,7 +46,7 @@ class BackPressureDirectSessionContainerAcceptanceTest
 {
     private static final int MESSAGE_COUNT = 100;
     private final ServerHarness harness = new ServerHarness(new EchoApplication(true));
-    private HttpClient client;
+    private WebSocketClient client;
     @TempDir
     Path workingDir;
 
@@ -54,7 +54,7 @@ class BackPressureDirectSessionContainerAcceptanceTest
     void setUp() throws IOException
     {
         harness.start(workingDir);
-        client = Vertx.vertx().createHttpClient(new HttpClientOptions());
+        client = Vertx.vertx().createWebSocketClient(new WebSocketClientOptions());
     }
 
     @AfterEach
@@ -70,7 +70,7 @@ class BackPressureDirectSessionContainerAcceptanceTest
         final CountDownLatch latch = new CountDownLatch(1);
         final List<String> messagesSent = new CopyOnWriteArrayList<>();
         final List<String> messagesReceived = new CopyOnWriteArrayList<>();
-        client.webSocket(harness.serverPort(), "localhost", "/some-uri",
+        client.connect(harness.serverPort(), "localhost", "/some-uri").onComplete(
             new Handler<AsyncResult<WebSocket>>()
             {
                 @Override

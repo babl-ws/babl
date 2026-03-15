@@ -24,6 +24,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Queue;
+import java.util.Set;
 
 import com.aitusoftware.babl.config.SocketConfig;
 import com.aitusoftware.babl.monitoring.ConnectorStatistics;
@@ -97,7 +98,8 @@ public final class ConnectionPoller extends TransportPoller implements Agent
 
         if (selected != 0)
         {
-            selectedKeySet.forEach(selectionKey ->
+            final Set<SelectionKey> keys = selector.selectedKeys();
+            for (final SelectionKey selectionKey : keys)
             {
                 try
                 {
@@ -122,9 +124,8 @@ public final class ConnectionPoller extends TransportPoller implements Agent
                 {
                     throw new UncheckedIOException(e);
                 }
-                return 1;
-            });
-            selectedKeySet.reset();
+            }
+            keys.clear();
         }
         return selected;
     }
