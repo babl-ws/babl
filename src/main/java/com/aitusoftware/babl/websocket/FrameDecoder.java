@@ -394,7 +394,7 @@ final class FrameDecoder
         payloadLength = frameHeader.maskedPayloadLength;
         if (frameHeader.frameSize == FrameSize.MEDIUM)
         {
-            payloadLength = (int)Integer.toUnsignedLong(srcBuffer.getShort(2, NETWORK_BYTE_ORDER));
+            payloadLength = (int)Short.toUnsignedLong(srcBuffer.getShort(2, NETWORK_BYTE_ORDER));
         }
         else if (frameHeader.frameSize == FrameSize.LARGE)
         {
