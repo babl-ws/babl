@@ -25,10 +25,12 @@ import org.agrona.concurrent.AtomicBuffer;
 
 public final class MappedApplicationAdapterStatistics extends ApplicationAdapterStatistics implements Closeable
 {
+    private static final boolean ARM_64 = "aarch64".equalsIgnoreCase(System.getProperty("os.arch"));
+    private static final int ARM_ALIGNMENT_PAD = ARM_64 ? BitUtil.SIZE_OF_INT : 0;
     private static final int POLL_LIMIT_REACHED_OFFSET = 0;
     private static final int PROXY_BACK_PRESSURE_COUNT_OFFSET = POLL_LIMIT_REACHED_OFFSET + BitUtil.SIZE_OF_LONG;
     private static final int PROXY_BACK_PRESSURED_OFFSET = PROXY_BACK_PRESSURE_COUNT_OFFSET + BitUtil.SIZE_OF_LONG;
-    private static final int EVENT_LOOP_DURATION_OFFSET = PROXY_BACK_PRESSURED_OFFSET + BitUtil.SIZE_OF_INT;
+    private static final int EVENT_LOOP_DURATION_OFFSET = PROXY_BACK_PRESSURED_OFFSET + BitUtil.SIZE_OF_INT + ARM_ALIGNMENT_PAD;
     private static final int HEARTBEAT_OFFSET = EVENT_LOOP_DURATION_OFFSET + BitUtil.SIZE_OF_LONG;
     public static final int LENGTH = HEARTBEAT_OFFSET + BitUtil.SIZE_OF_LONG;
     public static final String FILE_NAME = "application-adapter-stats.data";
