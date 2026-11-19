@@ -22,11 +22,13 @@ import org.agrona.concurrent.AtomicBuffer;
 
 public final class MappedSessionContainerStatistics extends SessionContainerStatistics
 {
+    private static final boolean ARM_64 = "aarch64".equalsIgnoreCase(System.getProperty("os.arch"));
+    private static final int ARM_ALIGNMENT_PAD = ARM_64 ? BitUtil.SIZE_OF_INT : 0;
     private static final int ACTIVITY_TIMESTAMP_OFFSET = 0;
     private static final int BYTES_READ_OFFSET = ACTIVITY_TIMESTAMP_OFFSET + BitUtil.SIZE_OF_LONG;
     private static final int BYTES_WRITTEN_OFFSET = BYTES_READ_OFFSET + BitUtil.SIZE_OF_LONG;
     private static final int ACTIVE_SESSION_COUNT_OFFSET = BYTES_WRITTEN_OFFSET + BitUtil.SIZE_OF_LONG;
-    private static final int RECEIVE_BACK_PRESSURE_EVENTS_OFFSET = ACTIVE_SESSION_COUNT_OFFSET + BitUtil.SIZE_OF_INT;
+    private static final int RECEIVE_BACK_PRESSURE_EVENTS_OFFSET = ACTIVE_SESSION_COUNT_OFFSET + BitUtil.SIZE_OF_INT + ARM_ALIGNMENT_PAD;
     private static final int INVALID_OPCODE_EVENTS_OFFSET = RECEIVE_BACK_PRESSURE_EVENTS_OFFSET + BitUtil.SIZE_OF_LONG;
     private static final int MAX_EVENT_LOOP_DURATION_MS_OFFSET = INVALID_OPCODE_EVENTS_OFFSET + BitUtil.SIZE_OF_LONG;
     private static final int PROXY_BACK_PRESSURE_EVENTS_OFFSET = MAX_EVENT_LOOP_DURATION_MS_OFFSET +

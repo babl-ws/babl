@@ -27,7 +27,9 @@ import org.agrona.concurrent.UnsafeBuffer;
 
 public final class ServerMarkFile extends MarkFile
 {
-    public static final int DATA_OFFSET = BitUtil.SIZE_OF_INT + BitUtil.SIZE_OF_LONG;
+    private static final boolean ARM_64 = "aarch64".equalsIgnoreCase(System.getProperty("os.arch"));
+    private static final int ARM_ALIGNMENT_PAD = ARM_64 ? BitUtil.SIZE_OF_INT : 0;
+    public static final int DATA_OFFSET = BitUtil.SIZE_OF_INT + BitUtil.SIZE_OF_LONG + ARM_ALIGNMENT_PAD;
     public static final int DATA_LENGTH = MappedSessionContainerStatistics.LENGTH;
     public static final int ERROR_BUFFER_OFFSET = BitUtil.align(DATA_OFFSET + DATA_LENGTH,
         BitUtil.CACHE_LINE_LENGTH);

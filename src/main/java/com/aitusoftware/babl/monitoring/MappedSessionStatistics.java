@@ -25,9 +25,11 @@ import org.agrona.concurrent.AtomicBuffer;
 
 public final class MappedSessionStatistics extends SessionStatistics implements Pooled
 {
+    private static final boolean ARM_64 = "aarch64".equalsIgnoreCase(System.getProperty("os.arch"));
+    private static final int ARM_ALIGNMENT_PAD = ARM_64 ? BitUtil.SIZE_OF_INT : 0;
     private static final int SESSION_ID_OFFSET = 0;
     private static final int SESSION_STATE_OFFSET = SESSION_ID_OFFSET + BitUtil.SIZE_OF_LONG;
-    private static final int BYTES_READ_OFFSET = SESSION_STATE_OFFSET + BitUtil.SIZE_OF_INT;
+    private static final int BYTES_READ_OFFSET = SESSION_STATE_OFFSET + BitUtil.SIZE_OF_INT + ARM_ALIGNMENT_PAD;
     private static final int BYTES_WRITTEN_OFFSET = BYTES_READ_OFFSET + BitUtil.SIZE_OF_LONG;
     private static final int RECEIVE_BUFFERED_BYTES_OFFSET = BYTES_WRITTEN_OFFSET + BitUtil.SIZE_OF_LONG;
     private static final int SEND_BUFFERED_BYTES_OFFSET = RECEIVE_BUFFERED_BYTES_OFFSET + BitUtil.SIZE_OF_INT;
@@ -35,7 +37,7 @@ public final class MappedSessionStatistics extends SessionStatistics implements 
     private static final int MESSAGES_RECEIVED_OFFSET = FRAMES_DECODED_OFFSET + BitUtil.SIZE_OF_LONG;
     private static final int FRAMES_ENCODED_OFFSET = MESSAGES_RECEIVED_OFFSET + BitUtil.SIZE_OF_LONG;
     private static final int CACHE_LINE_PADDING_OFFSET = FRAMES_ENCODED_OFFSET + BitUtil.SIZE_OF_INT;
-    private static final int MESSAGES_SENT_OFFSET = CACHE_LINE_PADDING_OFFSET + BitUtil.SIZE_OF_LONG;
+    private static final int MESSAGES_SENT_OFFSET = CACHE_LINE_PADDING_OFFSET + BitUtil.SIZE_OF_LONG + ARM_ALIGNMENT_PAD;
     private static final int INVALID_MESSAGES_RECEIVED_OFFSET = MESSAGES_SENT_OFFSET + BitUtil.SIZE_OF_LONG;
     private static final int INVALID_PINGS_RECEIVED_OFFSET = INVALID_MESSAGES_RECEIVED_OFFSET + BitUtil.SIZE_OF_INT;
     private static final int SEND_BACK_PRESSURE_EVENTS_OFFSET = INVALID_PINGS_RECEIVED_OFFSET + BitUtil.SIZE_OF_INT;
